@@ -15,15 +15,15 @@ def test_base_ist_gueltig(cfg):
 
 
 def test_offener_parameter_bricht_ab(cfg):
-    assert "kollektor.eta0" in cfg.offene()
+    assert "strom.aufschlag_day_ahead" in cfg.offene()
     with pytest.raises(OffenerParameter):
-        cfg.get("kollektor.eta0")
-    with pytest.raises(OffenerParameter, match="netz.x_TL"):
-        cfg.require(["netz.T_VL", "netz.x_TL"])
+        cfg.get("strom.aufschlag_day_ahead")
+    with pytest.raises(OffenerParameter, match="strom.aufschlag_day_ahead"):
+        cfg.require(["netz.T_VL", "strom.aufschlag_day_ahead"])
 
 
 def test_get_liefert_wert(cfg):
-    assert cfg.get("netz.T_VL") == 75
+    assert cfg.get("netz.T_VL") == 80
     assert cfg.get("ptes.c_wasser") == pytest.approx(1.163e-3)
 
 
@@ -36,7 +36,7 @@ def test_szenario_ueberschreibt_skalar():
     c = load_config("rl_40")
     assert c.get("netz.T_RL") == 40
     assert c.get("ptes.T_mitte") == 40
-    assert c.get("netz.T_VL") == 75  # unverändert
+    assert c.get("netz.T_VL") == 80  # unverändert
 
 
 def test_unbekannter_schluessel_im_szenario():

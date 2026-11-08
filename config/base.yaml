@@ -3,10 +3,10 @@
 # =====================================================================================
 # Jeder Parameter ist ein Mapping mit:
 #   wert:     Zahl/Text/Liste; null = unbekannt (`x` im Schema)
-#   einheit:  MW, MWh, m3, degC, ... (Kelvin nur intern im COP)
+#   einheit:  MW, MWh, m3, degC, EUR ... (Kelvin nur intern im COP)
 #   status:   belegt  = mit Primärquelle/Messwert/eigener Rechnung auf Rohdaten
-#             vorgabe = Teamentscheidung (Briefing §2), nicht neu diskutieren
-#             annahme = begründet, ohne Primärquelle -> braucht Sensitivität, falls ergebnisrelevant
+#             vorgabe = Teamentscheidung (Briefing §2 oder Team-Rückmeldung), nicht neu diskutieren
+#             annahme = begründet, ohne (abrufbare) Primärquelle -> Sensitivität, falls ergebnisrelevant
 #             offen   = noch zu klären; wert muss null sein
 #   quelle:   Quelle oder Begründung (Pflicht außer bei offen)
 #   sens:     optional, Sensitivitätswerte
@@ -14,13 +14,16 @@
 # Zugriff im Code über Config.get("pfad.zum.param") -> bricht ab, wenn wert null ist.
 # Abkürzungen Quellen: BRF = obsidian/AGENT_BRIEFING_SERTS.md (Stand 08.11.2026),
 #   SCH = obsidian/Waermenetz_PTES_Modellschema_v3.md, DRL = Dronninglund (Solites 2019),
-#   NB = data/raw/bad_lippspringe/results netzberechnung.xlsx (eigene Netzberechnung des Teams)
+#   NB = data/raw/bad_lippspringe/results netzberechnung.xlsx (eigene Netzberechnung des Teams),
+#   TEAM = Rückmeldung des Teams vom 09.11.2026, SIF = Sifnaios et al. 2023 (Solar Energy 251),
+#   BSW = BSW-Solar (2025): Wärmeplanung mit Solarthermie
+# Geldwerte: EUR, Preisbasis oekonomie.preisbasisjahr, netto (ohne MwSt.)
 # =====================================================================================
 
 meta:
   projekt: SERTS
   fallstudie: Bad Lippspringe
-  config_version: 1
+  config_version: 2
 
 # -------------------------------------------------------------------------------------
 standort:
@@ -54,6 +57,12 @@ standort:
     einheit: "m"
     status: belegt
     quelle: "DWD Metadaten_Geographie_03028.txt"
+  flaeche_verfuegbar:
+    wert: 13000
+    einheit: "m2"
+    status: vorgabe
+    quelle: "TEAM: ca. 13.000 m2 Grundstück am Erzeugerstandort, annähernd quadratisch"
+    hinweis: "Muss Kollektorfeld (inkl. Reihenabstand, Technik) UND PTES aufnehmen -> Flächencheck je Rasterpunkt."
 
 # -------------------------------------------------------------------------------------
 zeit:
@@ -62,13 +71,13 @@ zeit:
     einheit: "a"
     status: belegt
     quelle: "NB Blatt Lastprofil: Zeitstempel 2022-01-01 00:00 bis 2022-12-31 23:00 (8760 h)"
-    hinweis: "Wetter (DWD TU) und Last müssen dasselbe Jahr nutzen; anderes Jahr nur mit neuer Last."
+    hinweis: "TEAM: NB-Lastgang beruht auf Wetter Münster 2022; Modell nutzt DWD Bad Lippspringe 2022 (gleiches Jahr, Nachbarregion)."
   zeitzone:
     wert: UTC
     einheit: "-"
     status: annahme
     quelle: "DWD-Stundenwerte sind UTC (Metadaten_Parameter). Zeitbasis des NB-Lastgangs nicht dokumentiert -> als UTC behandelt."
-    hinweis: "Mit Team klären (Tool der Netzberechnung). Fehler max. 1-2 h Phasenversatz, für Jahresbilanz irrelevant."
+    hinweis: "Fehler max. 1-2 h Phasenversatz, für Jahresbilanz irrelevant."
   stunden:
     wert: 8760
     einheit: "h"
@@ -94,7 +103,7 @@ last:
     status: belegt
     quelle: "NB Lastprofil, Spalte 'Verlust' (konstant 0,107 MW; Zusammenfassung 935,4), gerechnet bei 80/50 degC"
     sens: [849.7]
-    hinweis: "849,7 MWh/a = Variante extra Dämmung (Szenario daemmung.yaml). Bei 75/45 degC wären die Verluste etwas geringer -> konservativ."
+    hinweis: "849,7 MWh/a = Variante extra Dämmung (Szenario netz_daemmung)."
   netzverlust_variante:
     wert: standard
     einheit: "-"
@@ -129,23 +138,22 @@ last:
 # -------------------------------------------------------------------------------------
 netz:
   T_VL:
-    wert: 75
+    wert: 80
     einheit: "degC"
     status: vorgabe
-    quelle: "BRF §2 (konstant)"
-    sens: [70, 80]
+    quelle: "TEAM: Netz bleibt bei 80 degC Vorlauf wie in der NB (ersetzt BRF-Wert 75 degC)"
+    sens: [75]
   T_RL:
     wert: 45
     einheit: "degC"
     status: vorgabe
-    quelle: "BRF §2"
+    quelle: "BRF §2 (TEAM: Rücklauf frei '80/x'); NB rechnet 50 degC"
     sens: [40, 50]
   T_VL_netzberechnung:
     wert: 80
     einheit: "degC"
     status: belegt
     quelle: "NB Zusammenfassung, Spalte Vorlauftemp"
-    hinweis: "Abweichung zu T_VL=75! Netzverluste in NB gelten für 80/50. Siehe docs/entscheidungen.md E3."
   T_RL_netzberechnung:
     wert: 50
     einheit: "degC"
@@ -157,17 +165,16 @@ netz:
     status: belegt
     quelle: "NB Zusammenfassung, Summe Trassenlänge (ohne Hausanschlüsse 3413 m)"
   x_TL:
-    wert: null
+    wert: 10.0
     einheit: "MW"
-    status: offen
-    quelle: ""
-    hinweis: "Netzanschluss/Transmission Erzeugerstandort -> Stadt. Erzeugerstandort in Bad Lippspringe noch nicht festgelegt."
+    status: annahme
+    quelle: "TEAM: Erzeugerstandort in Bad Lippspringe am Netz -> keine Transmission modelliert; 10 MW > 6x P_max = nicht bindend"
+    hinweis: "Check 'Stunden an der Grenze' muss 0 ergeben."
   TL_verlust:
-    wert: 0.015
+    wert: 0.0
     einheit: "-"
     status: annahme
-    quelle: "BRF §3.5 Startwert; DRL Transmission ≈1,4 % (558 MWh/a Auslegung)"
-    hinweis: "Länge der Transmission in Bad Lippspringe offen; bei kurzer Leitung eher kleiner."
+    quelle: "Erzeugung am Netz (TEAM); Leitungsverluste stecken in den NB-Netzverlusten"
 
 # -------------------------------------------------------------------------------------
 ptes:
@@ -182,7 +189,8 @@ ptes:
     einheit: "degC"
     status: vorgabe
     quelle: "BRF §3.1; Liner-Grenze (Xiang et al. 2022)"
-    sens: [80, 90]
+    sens: [90]
+    hinweis: "Direktentladung braucht T_oben >= T_VL + 5 K = 85 degC -> bei VL 80 genau an der Grenze."
   T_mitte:
     wert: 45
     einheit: "degC"
@@ -199,23 +207,40 @@ ptes:
     status: annahme
     quelle: "BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh)"
     sens: [1.5e-5, 8.0e-5]
-    hinweis: "Bad Lippspringe-PTES ist ≈7x kleiner als DRL (V≈8.700 vs. 60.000 m3). Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (eigene Abschätzung)."
-  x_HX_lad:
-    wert: null
-    einheit: "MW"
-    status: offen
-    quelle: ""
-  x_HX_ent:
-    wert: null
-    einheit: "MW"
-    status: offen
-    quelle: ""
-  kosten_spez:
-    wert: null
+    hinweis: "PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10)."
+  kosten_ref:
+    wert: 38.3
     einheit: "EUR/m3"
-    status: offen
-    quelle: ""
-    hinweis: "DEA Technology Catalogue (Energy Storage, Brief LTES 02/2025), PlanEnergi 2025. DK 2014/15: 24-48 EUR/m3 nur für große PTES; < 10.000 m3 deutlich teurer -> degressive Kurve nötig."
+    status: belegt
+    quelle: "SIF Kap. 2: DRL 60.000 m3, Speicherkosten ≈ 2,3 Mio. EUR (38,3 EUR/m3), Preisstand ≈ 2014"
+  V_ref:
+    wert: 60000
+    einheit: "m3"
+    status: belegt
+    quelle: "SIF / DRL"
+  kosten_exponent:
+    wert: -0.31
+    einheit: "-"
+    status: annahme
+    quelle: "eigene Anpassung c ~ V^b durch Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019 via IEA SHC) und DRL; Kontrolle Vojens 200.000 m3: Modell 26, real 24 EUR/m3"
+    sens: [-0.2, -0.4]
+  preisindex:
+    wert: 1.5
+    einheit: "-"
+    status: annahme
+    quelle: "Preissteigerung Tiefbau/Bau 2014 -> 2025 grob +50 % (Größenordnung Destatis Baupreisindex; genauer Index noch einzusetzen)"
+    sens: [1.3, 1.8]
+  geometrie_ref:
+    wert: {V: 60000, a_oben: 90, a_unten: 26, tiefe: 16}
+    einheit: "m3, m"
+    status: belegt
+    quelle: "DRL: Pyramidenstumpf 90x90 m oben, 26x26 m unten, 16 m tief (SIF; Kontrolle h/3(a²+ab+b²) = 59.300 m3)"
+    hinweis: "Andere Volumina geometrisch ähnlich skaliert (Faktor (V/V_ref)^(1/3))."
+  randstreifen:
+    wert: 5
+    einheit: "m"
+    status: annahme
+    quelle: "Damm/Weg um das Becken (eigene Annahme, Größenordnung Böschungskrone + Zufahrt)"
 
 # -------------------------------------------------------------------------------------
 kollektor:
@@ -224,24 +249,29 @@ kollektor:
     einheit: "-"
     status: vorgabe
     quelle: "SCH A3 (wie DRL)"
-  eta0:
-    wert: null
+  modell:
+    wert: "Großflächen-Flachkollektor mit Konvektionsfolie, Typ Arcon-Sunmark HTHEATstore 35/10 (wie DRL)"
     einheit: "-"
-    status: offen
-    quelle: ""
-    hinweis: "Solar-Keymark-Datenblatt eines großen Flachkollektors (typ. 0,75-0,82 lt. BRF, nicht ungeprüft übernehmen)"
+    status: annahme
+    quelle: "SIF Kap. 2: DRL nutzt Arcon 35/10 HEATstore mit Folie; Solar-Keymark-Zertifikat SP SC0843-14"
+    hinweis: "Keymark-Datenblatt war am 09.11.2026 nicht abrufbar (solarkeymark.nl Verbindung abgelehnt) -> eta0/a1/a2 unten sind Annahmen in der BRF-Bandbreite."
+  eta0:
+    wert: 0.80
+    einheit: "-"
+    status: annahme
+    quelle: "Mitte der BRF-Bandbreite 0,75-0,82 für große Flachkollektoren; Bezug Bruttofläche"
+    sens: [0.75, 0.82]
+    hinweis: "Durch Keymark SP SC0843-14 ersetzen. Plausibilisierung: spez. Ertrag vs. BSW 430-500 kWh/(m2 a)."
   a1:
-    wert: null
+    wert: 2.4
     einheit: "W/(m2 K)"
-    status: offen
-    quelle: ""
-    hinweis: "typ. 2-2,5 (BRF)"
+    status: annahme
+    quelle: "BRF-Bandbreite 2-2,5 W/(m2 K), oberes Drittel (konservativ)"
   a2:
-    wert: null
+    wert: 0.012
     einheit: "W/(m2 K2)"
-    status: offen
-    quelle: ""
-    hinweis: "typ. 0,01-0,016 (BRF)"
+    status: annahme
+    quelle: "BRF-Bandbreite 0,01-0,016 W/(m2 K2)"
   T_m_hoch:
     wert: 67.5
     einheit: "degC"
@@ -259,16 +289,22 @@ kollektor:
     quelle: "BRF §3.3 Startwert"
     sens: [0.05, 0.15]
   neigung:
-    wert: null
+    wert: 35
     einheit: "deg"
-    status: offen
-    quelle: ""
-    hinweis: "Freiflächenanlagen DE/DK meist 30-45 deg; mit Team/Literatur festlegen (KWP-NRW Freiflächen-Solarthermie-Doku prüfen)"
+    status: annahme
+    quelle: "TEAM: einfache Annahme; 35 deg = übliche Neigung großer Freiflächenfelder in DE/DK (Kompromiss Ertrag/Reihenabstand)"
+    sens: [25, 45]
   azimut:
     wert: 180
     einheit: "deg"
     status: annahme
     quelle: "Südausrichtung (pvlib-Konvention 180 = Süd), Standard bei Freifeldanlagen"
+  flaechenfaktor:
+    wert: 2.3
+    einheit: "m2 Grund / m2 Kollektor"
+    status: belegt
+    quelle: "BSW: 2- bis 2,3-fache Bruttokollektorfläche inkl. Reihenabstände und Heizzentrale (Berlin.de nennt ≈ 3)"
+    sens: [2.0, 3.0]
   frostschutz_anteil:
     wert: 0.01
     einheit: "-"
@@ -278,8 +314,14 @@ kollektor:
     wert: pvgis_sarah3
     einheit: "-"
     status: annahme
-    quelle: "DWD-Strahlung an Stn. 3028 endet 31.08.2011 (Ordner stundenwerte_ST_03028_row) -> 2022 fehlt. PVGIS-SARAH3 deckt 2005-2023 ab (JRC)."
-    hinweis: "Vor Nutzung: Jahressumme PVGIS gegen DWD-Klimamittel 1991-2010 an Stn. 3028 plausibilisieren (serts check-strahlung)."
+    quelle: "DWD-Strahlung an Stn. 3028 endet 31.08.2011 -> 2022 fehlt. PVGIS-SARAH3 deckt 2005-2023 ab (JRC)."
+  kosten_spez:
+    wert: 450
+    einheit: "EUR/m2"
+    status: annahme
+    quelle: "Bitterfeld-Wolfen (BBU 2024): Budget 2,25 Mio. EUR für 5.000 m2 -> 450 EUR/m2 (Planung 2020); DRL 2014: (5,856+0,321) Mio. EUR / 37.573 m2 = 164 EUR/m2 (sehr groß, DK)"
+    sens: [300, 550]
+    hinweis: "Feldgröße hier ≈ 2.000-5.000 m2 -> Bitterfeld-Größenordnung passender als DRL."
 
 # -------------------------------------------------------------------------------------
 waermepumpe:
@@ -327,6 +369,7 @@ waermepumpe:
     status: annahme
     quelle: "BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5"
     sens: [3.5, 5.5]
+    hinweis: "Bei VL 80 statt 75 degC eher etwas niedriger (≈ -5 %) -> in Sensitivität abgedeckt."
   p_max_pu_ptes:
     wert: 0.75
     einheit: "-"
@@ -334,11 +377,12 @@ waermepumpe:
     quelle: "BRF §3.4: Marstal, Leistung halbiert sich 50 -> 15 degC Quelle"
     sens: [0.5, 1.0]
   kosten_spez:
-    wert: null
+    wert: 1000000
     einheit: "EUR/MW_th"
-    status: offen
-    quelle: ""
-    hinweis: "DEA Technology Catalogue District Heating; Frederikssund 2022 ≈ 6,4 Mio. DKK/MW nur Orientierung"
+    status: annahme
+    quelle: "Frederikssund 2022: ≈ 6,4 Mio. DKK/MW Luft-WP ≈ 0,86 Mio. EUR/MW (SCH); kleine Leistung (1-2 MW) + NH3 + Luftkühler -> 1,0 Mio. EUR/MW"
+    sens: [700000, 1400000]
+    hinweis: "DEA Technology Data (District heating, 2025) nachtragen."
 
 # -------------------------------------------------------------------------------------
 pth:
@@ -347,17 +391,24 @@ pth:
     einheit: "-"
     status: vorgabe
     quelle: "BRF §2"
+  redundanz:
+    wert: 1.0
+    einheit: "x P_max"
+    status: annahme
+    quelle: "SCH A6: x_PtH >= P_max (n-1-Redundanz, Versorgungssicherheit); p_nom_min der PtH (elektrisch: /eta)"
+    sens: [0.0]
+    hinweis: "0 = PtH nur so groß, wie das LP sie braucht (Variante SCH A6: x_PtH = P_max - x_WP)."
   laden_ptes:
     wert: false
     einheit: "-"
     status: vorgabe
     quelle: "BRF §3.5 (Variante, Standard aus)"
   kosten_spez:
-    wert: null
+    wert: 100000
     einheit: "EUR/MW_th"
-    status: offen
-    quelle: ""
-    hinweis: "DEA; Frederikssund 2022 ≈ 0,5 Mio. DKK/MW nur Orientierung"
+    status: annahme
+    quelle: "Frederikssund 2022: ≈ 0,5 Mio. DKK/MW ≈ 0,07 Mio. EUR/MW (SCH); kleine Leistung -> 0,1 Mio. EUR/MW"
+    sens: [70000, 150000]
 
 biomasse:
   eta:
@@ -367,34 +418,49 @@ biomasse:
     quelle: "BRF §3.5 / SCH A6: 0,85-0,90 (Mittelwert)"
     sens: [0.85, 0.90]
   brennstoffkosten:
-    wert: null
+    wert: 100
     einheit: "EUR/MWh"
-    status: offen
-    quelle: ""
+    status: vorgabe
+    quelle: "TEAM: 10 ct/kWh, real konstant"
 
 gas_referenz:
   eta:
     wert: 0.95
     einheit: "-"
     status: annahme
-    quelle: "BRF §3.5 (x)"
+    quelle: "BRF §3.5 (x); Brennwertkessel bezogen auf Hi"
   emissionsfaktor:
     wert: 0.201
     einheit: "t/MWh_Hi"
-    status: annahme
-    quelle: "UBA, CO2-Emissionsfaktoren für fossile Brennstoffe: Erdgas ≈ 55,8 t/TJ (Hi) = 0,201 t/MWh"
-    hinweis: "Wert ohne Primärdokument im Repo übernommen -> UBA-Tabelle (aktuelle Ausgabe) prüfen, dann status: belegt. Bezug Hi; Gaspreise meist auf Hs (Hs/Hi ≈ 1,11)."
+    status: vorgabe
+    quelle: "UBA: Erdgas ≈ 55,8 t/TJ (Hi) = 0,201 t/MWh; TEAM bestätigt"
+  hs_hi:
+    wert: 1.11
+    einheit: "-"
+    status: belegt
+    quelle: "Verhältnis Brennwert/Heizwert Erdgas H ≈ 1,11 (DVGW G 685 Größenordnung)"
   gaspreis:
-    wert: null
+    wert: 120
     einheit: "EUR/MWh_Hs"
-    status: offen
-    quelle: ""
+    status: vorgabe
+    quelle: "TEAM: ca. 12 ct/kWh; interpretiert als Bezugspreis netto OHNE CO2-Bepreisung (CO2 separat über co2_preis)"
+    sens: [80, 160]
   co2_preis:
-    wert: null
+    wert: 100
     einheit: "EUR/t"
-    status: offen
-    quelle: ""
-    hinweis: "3 Pfade ab ETS2 (AP 7 Mittel)"
+    status: vorgabe
+    quelle: "TEAM: ETS ca. 100 EUR/t"
+    sens: [55, 200]
+  kosten_spez:
+    wert: 100000
+    einheit: "EUR/MW_th"
+    status: annahme
+    quelle: "Gaskessel Fernwärme ≈ 0,05-0,1 Mio. EUR/MW (DEA-Größenordnung); kleine Leistung -> oberer Wert"
+  auslegung:
+    wert: 1.1
+    einheit: "x P_max"
+    status: annahme
+    quelle: "Kesselleistung = 1,1 x Spitzenlast (Reserve)"
 
 # -------------------------------------------------------------------------------------
 strom:
@@ -402,68 +468,130 @@ strom:
     wert: fest
     einheit: "-"
     status: vorgabe
-    quelle: "BRF §3.5: Basis fester Tarif, Variante Day-Ahead + Aufschlag"
+    quelle: "BRF §3.5 / TEAM: zunächst fester Tarif; später Zeitreihe oder PV-Anteil"
     sens: [day_ahead]
   preis_fest:
-    wert: null
+    wert: 300
     einheit: "EUR/MWh"
-    status: offen
-    quelle: ""
+    status: vorgabe
+    quelle: "TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto)"
   aufschlag_day_ahead:
     wert: null
     einheit: "EUR/MWh"
     status: offen
     quelle: ""
+    hinweis: "erst für Day-Ahead-Variante nötig"
   emissionsfaktor:
-    wert: null
+    wert: 0.363
     einheit: "t/MWh"
-    status: offen
-    quelle: ""
-    hinweis: "UBA Strommix-Jahresmittel, Bezugsjahr angeben"
+    status: belegt
+    quelle: "UBA: CO2-Emissionen pro kWh Strom 2024 = 363 g/kWh (Themenseite; UBA-FAQ nennt 353 g)"
+    sens: [0.2]
+  ee_anteil:
+    wert: 0.544
+    einheit: "-"
+    status: belegt
+    quelle: "AGEE-Stat/UBA: Anteil EE am Bruttostromverbrauch 2024 = 54,4 %"
 
 # -------------------------------------------------------------------------------------
 oekonomie:
   zins:
-    wert: null
+    wert: 0.05
     einheit: "-"
-    status: offen
-    quelle: ""
+    status: vorgabe
+    quelle: "TEAM: 5 %; als realer Kalkulationszins verwendet (Preise real konstant)"
+    sens: [0.03, 0.07]
   betrachtungszeitraum:
-    wert: null
+    wert: 20
     einheit: "a"
-    status: offen
-    quelle: ""
+    status: vorgabe
+    quelle: "TEAM"
   preisbasisjahr:
-    wert: null
+    wert: 2025
     einheit: "a"
-    status: offen
-    quelle: ""
+    status: vorgabe
+    quelle: "TEAM: 2025/26"
   foerderquote:
     wert: 0.0
     einheit: "-"
     status: vorgabe
     quelle: "AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss"
+  preisaenderung:
+    strom:
+      wert: 0.0
+      einheit: "1/a"
+      status: vorgabe
+      quelle: "TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a"
+      sens: [0.02]
+    gas:
+      wert: 0.0
+      einheit: "1/a"
+      status: vorgabe
+      quelle: "TEAM: real gleichbleibend; Variante +2 %/a"
+      sens: [0.02]
+    co2:
+      wert: 0.0
+      einheit: "1/a"
+      status: vorgabe
+      quelle: "TEAM: real gleichbleibend"
+      sens: [0.05]
+    biomasse:
+      wert: 0.0
+      einheit: "1/a"
+      status: vorgabe
+      quelle: "TEAM: real gleichbleibend"
   lebensdauer:
     ptes:
-      wert: null
+      wert: 25
       einheit: "a"
-      status: offen
-      quelle: ""
+      status: annahme
+      quelle: "Liner-Lebensdauer; Größenordnung DEA Technology Data Energy Storage (20-40 a)"
     kollektor:
-      wert: null
+      wert: 25
       einheit: "a"
-      status: offen
-      quelle: ""
+      status: annahme
+      quelle: "Größenordnung DEA/VDI 2067-1 (20-30 a)"
     waermepumpe:
-      wert: null
+      wert: 20
       einheit: "a"
-      status: offen
-      quelle: ""
+      status: annahme
+      quelle: "Größenordnung DEA/VDI 2067-1 (18-25 a)"
     pth:
-      wert: null
+      wert: 20
       einheit: "a"
-      status: offen
-      quelle: ""
+      status: annahme
+      quelle: "Größenordnung DEA (20 a)"
+    gaskessel:
+      wert: 20
+      einheit: "a"
+      status: annahme
+      quelle: "Größenordnung VDI 2067-1 (18-20 a)"
+  om_fix:
+    ptes:
+      wert: 0.005
+      einheit: "1/a vom Invest"
+      status: annahme
+      quelle: "geringe Wartung (Pumpen/Deckel), Größenordnung VDI 2067-1"
+    kollektor:
+      wert: 0.01
+      einheit: "1/a vom Invest"
+      status: annahme
+      quelle: "Größenordnung VDI 2067-1 (Solaranlagen 1-1,5 %/a)"
+    waermepumpe:
+      wert: 0.025
+      einheit: "1/a vom Invest"
+      status: annahme
+      quelle: "Größenordnung VDI 2067-1 (Wärmepumpen 2,5 %/a)"
+    pth:
+      wert: 0.02
+      einheit: "1/a vom Invest"
+      status: annahme
+      quelle: "Größenordnung VDI 2067-1"
+    gaskessel:
+      wert: 0.02
+      einheit: "1/a vom Invest"
+      status: annahme
+      quelle: "Größenordnung VDI 2067-1"
 
 # -------------------------------------------------------------------------------------
 raster:
@@ -471,7 +599,7 @@ raster:
     wert: einspeisung
     einheit: "-"
     status: vorgabe
-    quelle: "BRF §5: m2 je MWh/a Bedarf; DRL-Bezug ist 'Wärme ans Netz' (inkl. Netzverluste) -> hier Q_gebaeude + Q_netzverlust = 5.462 MWh/a"
+    quelle: "BRF §5: m2 je MWh/a Bedarf; DRL-Bezug 'Wärme ans Netz' -> Q_gebaeude + Q_netzverlust = 5.462 MWh/a"
   A_spez:
     wert: [0.4, 0.6, 0.8, 1.0, 1.2, 1.5]
     einheit: "m2/(MWh/a)"
@@ -490,3 +618,8 @@ solver:
     einheit: "-"
     status: vorgabe
     quelle: "BRF §2"
+  tie_breaker:
+    wert: 0.1
+    einheit: "EUR/MWh"
+    status: vorgabe
+    quelle: "numerische Hilfsgröße (keine Kosten): Speicherladen minimal teurer als Direktnutzung; << Strompreis, LCOH-Einfluss < 0,01 EUR/MWh"

@@ -35,7 +35,7 @@ def test_cop_luft_briefing(t_luft, soll):
 def test_cop_luft_mit_abtau(cfg):
     T = pd.Series([-5.0, 4.9, 5.0, 10.0])
     cop = cop_luft(cfg, T)
-    ref = cop_lorenz(45, 75, T, T - 5, eta_g=0.5, approach=3)
+    ref = cop_lorenz(cfg.get("netz.T_RL"), cfg.get("netz.T_VL"), T, T - 5, eta_g=0.5, approach=3)
     np.testing.assert_allclose(cop.to_numpy(), ref * np.array([0.95, 0.95, 1.0, 1.0]))
 
 

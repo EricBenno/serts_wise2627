@@ -90,6 +90,15 @@ def validate(tree: dict) -> list[str]:
             errors.append(f"{path}: wert ist null, status muss 'offen' sein")
         if status == "offen" and p.get("wert") is not None:
             errors.append(f"{path}: status 'offen', aber wert gesetzt -> status anpassen")
+        w = p.get("wert")
+        if isinstance(w, str) and "e" in w.lower():
+            try:
+                float(w)
+                errors.append(
+                    f"{path}: wert '{w}' wurde als Text gelesen (YAML 1.1: z. B. 1e6 -> 1000000 schreiben)"
+                )
+            except ValueError:
+                pass
         if status != "offen" and not str(p.get("quelle") or "").strip():
             errors.append(f"{path}: quelle/Begründung fehlt (status {status})")
     return errors

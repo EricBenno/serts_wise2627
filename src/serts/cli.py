@@ -67,6 +67,51 @@ def _cmd_fetch_pvgis(a):
     print(f"gespeichert: {fetch_pvgis(load_config(a.szenario))}")
 
 
+def _cmd_run(a):
+    from serts.run import run_single
+
+    out = run_single(load_config(a.szenario), a.A_spez, a.V_pro_A, stunden=a.stunden)
+    k = json.loads((out / "kpi.json").read_text("utf-8"))
+    keys = [
+        "A_koll_m2",
+        "V_m3",
+        "lcoh",
+        "gas_lcoh",
+        "solar_gesamt",
+        "ee_anteil",
+        "P_WP_MW",
+        "P_PtH_MW",
+        "speicher_wirkungsgrad",
+        "flaeche_gesamt_m2",
+        "flaeche_ok",
+    ]
+    for key in keys:
+        if key in k:
+            print(f"{key:24s} {k[key]}")
+    print(f"\nErgebnis: {out}")
+
+
+def _cmd_raster(a):
+    import pandas as pd
+
+    from serts.run import run_raster
+
+    out = run_raster(load_config(a.szenario), stunden=a.stunden)
+    df = pd.read_csv(out / "raster.csv")
+    cols = [
+        "A_spez",
+        "V_pro_A",
+        "A_koll_m2",
+        "V_m3",
+        "lcoh",
+        "solar_gesamt",
+        "ee_anteil",
+        "flaeche_ok",
+    ]
+    print(df[cols].round(3).to_string(index=False))
+    print(f"\nErgebnis: {out}")
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     ap = argparse.ArgumentParser(prog="serts")
@@ -89,6 +134,18 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name, help=hlp)
         p.add_argument("--szenario", default=None)
         p.set_defaults(func=func)
+
+    p = sub.add_parser("run", help="Einzellauf (M5) für eine Rastergröße")
+    p.add_argument("--szenario", default=None)
+    p.add_argument("--A-spez", type=float, default=0.6, help="m2 je MWh/a Einspeisung")
+    p.add_argument("--V-pro-A", type=float, default=1.6, help="m3 je m2 Kollektor")
+    p.add_argument("--stunden", type=int, default=None, help="nur die ersten N Stunden (Test)")
+    p.set_defaults(func=_cmd_run)
+
+    p = sub.add_parser("raster", help="Rasterlauf (M6): Heatmap LCOH + Pareto")
+    p.add_argument("--szenario", default=None)
+    p.add_argument("--stunden", type=int, default=None, help="nur die ersten N Stunden (Test)")
+    p.set_defaults(func=_cmd_raster)
 
     sub.add_parser("annahmen", help="docs/annahmen.md erzeugen").set_defaults(func=_cmd_annahmen)
     sub.add_parser(
