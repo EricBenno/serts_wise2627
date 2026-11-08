@@ -143,6 +143,8 @@ def build_network(
             p_nom=1e3,
             efficiency=cop,
             efficiency2=-(cop - 1.0),
+            # nur in der Heizperiode als Quelle (waermepumpe.speicher_monate, docs E21)
+            p_max_pu=ts.index.month.isin(cfg.get("waermepumpe.speicher_monate")).astype(float),
         )
     n.add(
         "Link",

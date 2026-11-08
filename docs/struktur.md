@@ -18,6 +18,7 @@ Leitlinie: **so simpel wie möglich, so komplex wie nötig** (docs/entscheidunge
 - PyPSA minimiert die Jahreskosten (Annuitäten + Strom) über 8760 h und legt dabei die Größen von
   Kollektorfeld, Speicher, Wärmepumpe und PtH fest.
 - Zwei Zusatzbedingungen (`constraints.py`): Fläche ≤ 13.000 m² und Direktanteil des Speichers ≤ 53 %.
+  Die Speicher-WP darf nur Nov–Mär laufen (Parameter, E21).
 - Alle Zahlen stehen in `config/base.yaml` (mit Quelle/Status); Varianten als kleine YAML-Dateien in
   `config/scenarios/`.
 
@@ -56,7 +57,7 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 | Thema | Stand |
 |---|---|
 | Daten Bad Lippspringe, Wetter 2022, PVGIS | ✅ |
-| Modell + Optimierung der Größen | ✅ (Basis: A ≈ 3.840 m², V ≈ 5.800 m³, LCOH ≈ 129 €/MWh vs. Gas ≈ 165 €/MWh) |
+| Modell + Optimierung der Größen | ✅ (Basis: A ≈ 3.500 m², V ≈ 5.550 m³, WP ≈ 1,0 MW, LCOH ≈ 132 €/MWh vs. Gas ≈ 165 €/MWh) |
 | Tests (Bilanzen, Constraints, COP-Prüfwerte, Solites-Definitionen) | ✅ 43 |
 | Validierung Dronninglund | ⏭ ausgelassen (Referenzwerte liegen in `data/reference/`) |
 | Varianten / Sensitivitäten / Bericht | ⬜ |

@@ -316,6 +316,12 @@ waermepumpe:
     status: annahme
     quelle: "BRF §3.4: ökonomische Grenze; Referenzen nur bis ≈ -5 degC (SCH D7)"
     sens: [-15, 0]
+  speicher_monate:
+    wert: [11, 12, 1, 2, 3]
+    einheit: "Monat"
+    status: annahme
+    quelle: "SIF Kap. 2.1: Speicher-WP in DRL lief ab ≈ November bis Januar/Februar; März als Puffer für späte Kälte"
+    hinweis: "Nur in diesen Monaten darf die WP den Speicher als Quelle nutzen (verhindert Sommer-Artefakt der Jahresregel, docs E21)."
   COP_ptes:
     wert: 4.5
     einheit: "-"

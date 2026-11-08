@@ -140,3 +140,11 @@ Das Briefing ist Orientierung, nicht Pflicht. Ziel: Das Team soll das Modell ver
 - **Weggefallen:** Transmission/x_TL (Erzeugung am Netz), WÜT-Caps, Leistungsabschläge der WP je Quelle
   (nur noch: Luft-WP aus unter −7 °C), Frostschutz (≈ 1 % Ertrag), LP-Skalierung, Raster, Heatmap/Pareto.
 - **Bleibt:** Tie-Breaker auf dem Speicherladen (E16), PtH-Redundanz (E15), Preisdynamik (E14).
+
+### E21 Speicher als WP-Quelle nur in der Heizperiode
+Mit nur der Jahresregel (E20) nutzte das LP im Sommer die WP aus dem Speicher, um sich Direktentladung für den
+Winter „freizuschalten“ – physikalisch unsinnig (oben im Speicher ist es im Sommer heiß). Ein Parameter
+`waermepumpe.speicher_monate` (Basis Nov–Mär, nach DRL-Betrieb Nov–Feb) beschränkt die Speicher-WP auf die
+Heizperiode. Ergebnis: Sommer Kurzzeitnutzung, Ladung Jun–Sep, Entladung Nov–Jan wie in Dronninglund.
+Bleibende Eigenheit (perfekte Voraussicht): Der volle Speicher wird bis Nov/Dez gehalten, weil die Wärme dort
+die Luft-WP mit schlechterem COP ersetzt.

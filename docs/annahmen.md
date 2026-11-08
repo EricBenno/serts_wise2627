@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 19, vorgabe 33, annahme 35, offen 1
+Status: belegt 19, vorgabe 33, annahme 36, offen 1
 
 
 ## standort
@@ -87,6 +87,7 @@ Status: belegt 19, vorgabe 33, annahme 35, offen 1
 | `waermepumpe.abtau_abschlag` | 0.05 | - | annahme | BRF §3.4 (x) | 0, 0.1 |  |
 | `waermepumpe.abtau_grenze` | 5 | degC | annahme | BRF §3.4: Abschlag für T_a < 5 degC |  |  |
 | `waermepumpe.T_min_luft` | -7 | degC | annahme | BRF §3.4: ökonomische Grenze; Referenzen nur bis ≈ -5 degC (SCH D7) | -15, 0 |  |
+| `waermepumpe.speicher_monate` | [11, 12, 1, 2, 3] | Monat | annahme | SIF Kap. 2.1: Speicher-WP in DRL lief ab ≈ November bis Januar/Februar; März als Puffer für späte Kälte |  | Nur in diesen Monaten darf die WP den Speicher als Quelle nutzen (verhindert Sommer-Artefakt der Jahresregel, docs E21). |
 | `waermepumpe.COP_ptes` | 4.5 | - | annahme | BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5 | 3.5, 5.5 | Bei VL 80 statt 75 degC eher etwas niedriger (≈ -5 %) -> in Sensitivität abgedeckt. |
 | `waermepumpe.kosten_spez` | 1000000 | EUR/MW_th | annahme | Frederikssund 2022: ≈ 6,4 Mio. DKK/MW Luft-WP ≈ 0,86 Mio. EUR/MW (SCH); kleine Leistung (1-2 MW) + NH3 + Luftkühler -> 1,0 Mio. EUR/MW | 700000, 1400000 | DEA Technology Data (District heating, 2025) nachtragen. |
 
