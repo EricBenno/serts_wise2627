@@ -197,7 +197,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         )
 
     # --- Kosten -------------------------------------------------------------------
-    zins, T = cfg.get("oekonomie.zins"), cfg.get("oekonomie.betrachtungszeitraum")
+    zins = cfg.get("oekonomie.zins")
     from serts.network import annualisiert
 
     capex = {
