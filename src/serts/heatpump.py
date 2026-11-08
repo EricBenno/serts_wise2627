@@ -55,13 +55,3 @@ def cop_luft(cfg: Config, T_a: pd.Series) -> pd.Series:
         T_a < cfg.get("waermepumpe.abtau_grenze"), 1.0 - cfg.get("waermepumpe.abtau_abschlag"), 1.0
     )
     return pd.Series(cop * abtau, index=T_a.index, name="COP_luft")
-
-
-def p_max_pu_luft(cfg: Config, T_a: pd.Series) -> pd.Series:
-    """Verfügbare Leistung Luftbetrieb [-]: 1 ab Knick 1, linear bis Knick 2, 0 unter T_min."""
-    (t1, p1), (t2, p2) = cfg.get("waermepumpe.p_max_pu_luft_knick")
-    t_min = cfg.get("waermepumpe.T_min_luft")
-    x = np.asarray(T_a, dtype=float)
-    pu = np.interp(x, [t2, t1], [p2, p1])  # konstant außerhalb, linear dazwischen
-    pu = np.where(x < t_min, 0.0, pu)
-    return pd.Series(pu, index=T_a.index, name="p_max_pu_luft")

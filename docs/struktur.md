@@ -1,82 +1,77 @@
 # Struktur und Stand
 
-## Datenfluss
+Leitlinie: **so simpel wie möglich, so komplex wie nötig** (docs/entscheidungen.md E20).
+
+## Das Modell auf einer Seite
 
 ```
-../Bad Lippspringe ──serts import-raw──> data/raw (+MANIFEST.sha256)
-PVGIS-API ─────────serts fetch-pvgis──> data/raw/pvgis
-                                            │
-config/base.yaml (+ scenarios/*.yaml) ──────┤
-                                            ▼
-                prepare.build_zeitreihen (8760 h): Last, T_a, COP_luft, p_max_pu_luft,
-                G_poa, P_hi, P_lo [kW/m²], Strompreis   (serts prepare -> data/processed + Plots)
-                                            │
-                                            ▼
-          network.build_network(A, V) + constraints.extra_functionality ─> PyPSA/HiGHS
-                                            │
-                                            ▼
-          kpi.auswerten: Bilanzen, Speicher-η, Solaranteil getrennt, EE-Anteil, Caps, Regel-Checks,
-                         LCOH (economics), Gas-Referenz, CO₂, Flächencheck (flaeche)
-                                            │
-                                            ▼
-          results/<zeit>_<szenario>_<label>/  config.yaml, meta.json (Git-Hash),
-              Einzellauf: kpi.json, zeitreihen.csv, network.nc, monatsbilanz.png
-              Raster:     raster.csv, heatmap_lcoh.png, pareto_ee_lcoh.png
+                 ┌──────────── solar_direkt ─────────────┐
+    Kollektor ──>│ solar                                 ▼
+                 └── laden ──> [Speicher MWh] ──> entladen_direkt ──> waerme ──> Last
+                                     │   (≤ 53 % der Entladung direkt)    ▲   ▲   (Gebäude
+                                     └── Quellwärme ──┐                   │   │    + Netzverluste)
+    Netzstrom ──> hp_luft ──────────────────────> wp ─┴─> wp_out ─────────┘   │
+             └──> hp_speicher (holt Quellwärme aus dem Speicher) ─┘           │
+             └──> pth (Mindestleistung = Spitzenlast) ────────────────────────┘
 ```
+
+- PyPSA minimiert die Jahreskosten (Annuitäten + Strom) über 8760 h und legt dabei die Größen von
+  Kollektorfeld, Speicher, Wärmepumpe und PtH fest.
+- Zwei Zusatzbedingungen (`constraints.py`): Fläche ≤ 13.000 m² und Direktanteil des Speichers ≤ 53 %.
+- Alle Zahlen stehen in `config/base.yaml` (mit Quelle/Status); Varianten als kleine YAML-Dateien in
+  `config/scenarios/`.
 
 ## Befehle
 
 ```bash
-uv run serts run --A-spez 0.6 --V-pro-A 1.6          # Einzellauf, ≈ 1–1,5 min
-uv run serts run --A-spez 0.6 --V-pro-A 1.6 --stunden 168   # Schnelltest 1 Woche
-uv run serts raster --jobs 4                         # 24 Rasterpunkte, ≈ 6–8 min
-uv run serts raster --szenario rl_50 --jobs 4        # Raster für ein Szenario
-uv run pytest                                        # 45 Tests
+uv run serts run                         # Basis: Größen optimieren (≈ 30 s)
+uv run serts run --V 0                   # Variante ohne Speicher
+uv run serts run --A 4000 --V 6000       # feste Größen vorgeben
+uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis)
+uv run serts run --stunden 168           # Schnelltest
+uv run serts prepare                     # nur Zeitreihen + Plots
+uv run serts annahmen                    # docs/annahmen.md neu erzeugen
+uv run pytest                            # 43 Tests
 ```
+
+Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennzahlen), `zeitreihen.csv`,
+`monatsbilanz.png`, `network.nc`, `config.yaml` + `meta.json` (Git-Hash).
 
 ## Module (`src/serts/`)
 
-| Modul | Aufgabe | Stand |
-|---|---|---|
-| `config.py` | YAML laden, Szenario mischen, prüfen; `get()` bricht bei `null` ab | fertig |
-| `sources/` | NB-Excel, DWD (Lückenfüllung, Strahlungsklima), Rohdaten-Import | fertig |
-| `weather.py` | T_a 2022, PVGIS laden/lesen | fertig |
-| `demand.py`, `heatpump.py`, `solar.py`, `prices.py` | Last, COP, Kollektor, Strompreis (fest) | fertig; Day-Ahead offen |
-| `network.py` | PyPSA-Netz (Pools, Kollektor hi/lo, WP Luft/PTES, PtH, Transmission) | fertig |
-| `constraints.py` | Volumensumme, Verluste, gemeinsame Kollektorfläche, WP-Leistung je Quelle | fertig, getestet |
-| `kpi.py` | Auswertung gelöster Netze inkl. Regel-Checks BRF §7 | fertig (Basis) |
-| `economics.py` | Annuität + O&M, Preisdynamik (VDI 2067), PTES-Kostenkurve, Gas-Referenz | fertig |
-| `flaeche.py` | Flächenbedarf Kollektor + PTES vs. 13.000 m² | fertig |
-| `run.py`, `cli.py`, `plots.py` | Einzel-/Rasterlauf (parallel), Plots | fertig |
+| Modul | Aufgabe |
+|---|---|
+| `config.py` | YAML laden/prüfen; `cfg.get("a.b")` bricht ab, wenn der Wert fehlt |
+| `sources/` | Leser: Netzberechnung (Excel), DWD, Rohdaten-Import |
+| `demand.py`, `weather.py`, `solar.py`, `heatpump.py`, `prices.py` | Zeitreihen: Last, T_a, Strahlung, Kollektorleistung, COP, Strompreis |
+| `prepare.py` | baut daraus eine Tabelle 8760 h |
+| `network.py` | das PyPSA-Netz (Bild oben) |
+| `constraints.py` | Fläche + Direktanteil |
+| `kpi.py` | Kennzahlen: Bilanzen, Solar-/EE-Anteil, Speicher-η, LCOH, CO₂, Gas-Referenz |
+| `economics.py` | Annuität, Preisdynamik (VDI 2067), Gas-Referenz |
+| `run.py`, `cli.py`, `plots.py` | Lauf speichern, Kommandozeile, Abbildungen |
 
-## Meilensteine (BRF §5)
+## Stand
 
-| | Inhalt | Stand |
-|---|---|---|
-| M0 | Repo, Config, Tests | ✅ |
-| M1 | Zeitreihen | ✅ (Kollektorkennwerte = Annahme, E18) |
-| M2 | Mini-Netz 48 h ohne Speicher | ✅ Test Energiebilanz < 0,1 % |
-| M3 | Pool-Speicher + Constraints | ✅ Tests Volumensumme, Verluste, Fläche, WP-Caps, Speicherbilanz |
-| M4 | Validierung Dronninglund | ⏭ übersprungen (braucht dänisches Wetter + Last; Szenario/Referenz liegen bereit) |
-| M5 | Basisszenario | ✅ `serts run` (KPI, Monatsbilanz) |
-| M6 | Raster, LCOH, CO₂ | ✅ `serts raster` (Heatmap, Pareto) – vereinfacht, s. u. |
-| M7–M9 | Varianten, Tornado, Bericht | ⬜ |
+| Thema | Stand |
+|---|---|
+| Daten Bad Lippspringe, Wetter 2022, PVGIS | ✅ |
+| Modell + Optimierung der Größen | ✅ (Basis: A ≈ 3.840 m², V ≈ 5.800 m³, LCOH ≈ 129 €/MWh vs. Gas ≈ 165 €/MWh) |
+| Tests (Bilanzen, Constraints, COP-Prüfwerte, Solites-Definitionen) | ✅ 43 |
+| Validierung Dronninglund | ⏭ ausgelassen (Referenzwerte liegen in `data/reference/`) |
+| Varianten / Sensitivitäten / Bericht | ⬜ |
 
-**Vereinfachungen (bewusst):** keine Wärmeübertrager-Caps (E12), Fläche nur als Check (E17), PtH-Laden des
-PTES und Biomasse-Variante nicht implementiert, Gas-Referenz als Formel statt LP, M4 ausgelassen.
+## Weiterarbeiten
 
-## Weiterarbeiten – sinnvolle nächste Schritte
-
-1. Keymark-Datenblatt HTHEATstore 35/10 besorgen → `kollektor.eta0/a1/a2` als `belegt`.
-2. DEA Technology Data (Storage 2025, District Heating) für PTES-, WP-, PtH-Kosten nachziehen.
-3. Strahlungsarmes bzw. Normaljahr (z. B. PVGIS-TMY) als Sensitivität „Solarressource“.
-4. M7: Varianten als Szenarien (ohne Speicher = V/A 0 ist schon im Raster; PV für WP; Biomasse).
-5. M8: Tornado – Schleife über `sens`-Werte in `base.yaml` (Struktur dafür ist vorhanden).
+1. Sensitivitäten: Szenario-YAML anlegen (z. B. `ptes.kosten_spez: 140`) und `serts run --szenario …`.
+   Kleine Schleife über die `sens`-Werte in `base.yaml` wäre der nächste Schritt (Tornado).
+2. Keymark-Datenblatt HTHEATstore 35/10 → Kollektorkennwerte als `belegt`.
+3. Normaljahr für die Strahlung (2022 war sonnig) als Sensitivität „Solarressource“.
+4. Varianten: PV für die WP, Biomasse statt PtH, Day-Ahead-Strompreis.
 
 ## Konventionen
 
-- Einheiten: MW, MWh, m³, °C, EUR (real, Preisbasis 2025, netto); Kelvin nur in `heatpump.py`.
-- Keine Zahl im Code: alles über `cfg.get()`. YAML-Zahlen ohne Exponent-Kurzform (1e6 wird Text!) –
-  der Validator meldet das.
+- Einheiten: MW, MWh, m³, °C, EUR (real, Preisbasis 2025, netto).
+- Keine Zahl im Code – alles über `cfg.get()`. YAML-Zahlen ohne Kurzform wie `1e6` (wird Text; Validator meldet es).
 - Neuer Parameter → `base.yaml` mit einheit/status/quelle → `serts annahmen` → Commit.
-- Ergebnisse nur über `run.new_run_dir()` (Config-Kopie + Git-Hash).
+- Neue Komplexität nur, wenn sie eine Kernaussage ändert; Begründung in `docs/entscheidungen.md`.

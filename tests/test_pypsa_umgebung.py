@@ -3,8 +3,6 @@
 import pandas as pd
 import pytest
 
-from serts.network import pool_links
-
 
 @pytest.mark.solver
 def test_pypsa_highs_mini_netz():
@@ -20,11 +18,3 @@ def test_pypsa_highs_mini_netz():
     assert status == "ok"
     # Handrechnung: billig 1,0+1,5+1,5 = 4,0 MWh, teuer 0,5 MWh -> 40 + 50 = 90
     assert n.objective == pytest.approx(90.0)
-
-
-def test_pool_links_vorzeichen(cfg):
-    links = {d["name"]: d for d in pool_links(cfg)}
-    c = 1.163e-3 * 1000  # MWh je 1.000 m3 (network.VOL)
-    assert links["laden_hi_aus10"]["efficiency2"] == pytest.approx(-75 * c)
-    assert links["entladen_direkt"]["efficiency2"] == pytest.approx(40 * c)
-    assert links["wp_quelle_ptes"]["efficiency2"] == pytest.approx(35 * c)

@@ -23,7 +23,7 @@
 meta:
   projekt: SERTS
   fallstudie: Bad Lippspringe
-  config_version: 2
+  config_version: 3
 
 # -------------------------------------------------------------------------------------
 standort:
@@ -164,18 +164,6 @@ netz:
     einheit: "m"
     status: belegt
     quelle: "NB Zusammenfassung, Summe Trassenlänge (ohne Hausanschlüsse 3413 m)"
-  x_TL:
-    wert: 10.0
-    einheit: "MW"
-    status: annahme
-    quelle: "TEAM: Erzeugerstandort in Bad Lippspringe am Netz -> keine Transmission modelliert; 10 MW > 6x P_max = nicht bindend"
-    hinweis: "Check 'Stunden an der Grenze' muss 0 ergeben."
-  TL_verlust:
-    wert: 0.0
-    einheit: "-"
-    status: annahme
-    quelle: "Erzeugung am Netz (TEAM); Leitungsverluste stecken in den NB-Netzverlusten"
-
 # -------------------------------------------------------------------------------------
 ptes:
   c_wasser:
@@ -208,39 +196,19 @@ ptes:
     quelle: "BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh)"
     sens: [1.5e-5, 8.0e-5]
     hinweis: "PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10)."
-  kosten_ref:
-    wert: 38.3
+  kosten_spez:
+    wert: 105
     einheit: "EUR/m3"
-    status: belegt
-    quelle: "SIF Kap. 2: DRL 60.000 m3, Speicherkosten ≈ 2,3 Mio. EUR (38,3 EUR/m3), Preisstand ≈ 2014"
-  V_ref:
-    wert: 60000
-    einheit: "m3"
-    status: belegt
-    quelle: "SIF / DRL"
-  kosten_exponent:
-    wert: -0.31
-    einheit: "-"
     status: annahme
-    quelle: "eigene Anpassung c ~ V^b durch Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019 via IEA SHC) und DRL; Kontrolle Vojens 200.000 m3: Modell 26, real 24 EUR/m3"
-    sens: [-0.2, -0.4]
-  preisindex:
-    wert: 1.5
-    einheit: "-"
+    quelle: "Kostenkurve aus DRL 60.000 m3 / 38,3 EUR/m3 (SIF, 2014) und Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019): c ~ V^-0,31; bei ≈ 8.700 m3 -> 70 EUR/m3, x 1,5 Baupreissteigerung 2014->2025 ≈ 105 EUR/m3"
+    sens: [70, 140]
+    hinweis: "Linear im LP (konstant je m3). Gilt für ≈ 5.000-12.000 m3; bei ganz anderer optimaler Größe neu ableiten (docs E20)."
+  volumen_je_grundflaeche:
+    wert: 2.65
+    einheit: "m3/m2"
     status: annahme
-    quelle: "Preissteigerung Tiefbau/Bau 2014 -> 2025 grob +50 % (Größenordnung Destatis Baupreisindex; genauer Index noch einzusetzen)"
-    sens: [1.3, 1.8]
-  geometrie_ref:
-    wert: {V: 60000, a_oben: 90, a_unten: 26, tiefe: 16}
-    einheit: "m3, m"
-    status: belegt
-    quelle: "DRL: Pyramidenstumpf 90x90 m oben, 26x26 m unten, 16 m tief (SIF; Kontrolle h/3(a²+ab+b²) = 59.300 m3)"
-    hinweis: "Andere Volumina geometrisch ähnlich skaliert (Faktor (V/V_ref)^(1/3))."
-  randstreifen:
-    wert: 5
-    einheit: "m"
-    status: annahme
-    quelle: "Damm/Weg um das Becken (eigene Annahme, Größenordnung Böschungskrone + Zufahrt)"
+    quelle: "DRL-Geometrie (Pyramidenstumpf 90/26 m, 16 m tief) ähnlich skaliert auf 8.700 m3: Oberkante 47 m, Tiefe 8 m; + 5 m Randstreifen -> 3.280 m2 Grund -> 8.700/3.280"
+    sens: [2.0, 4.0]
 
 # -------------------------------------------------------------------------------------
 kollektor:
@@ -272,16 +240,11 @@ kollektor:
     einheit: "W/(m2 K2)"
     status: annahme
     quelle: "BRF-Bandbreite 0,01-0,016 W/(m2 K2)"
-  T_m_hoch:
+  T_m:
     wert: 67.5
     einheit: "degC"
     status: vorgabe
-    quelle: "BRF §3.3 (Rücklauf 50 -> 85 degC)"
-  T_m_tief:
-    wert: 30
-    einheit: "degC"
-    status: vorgabe
-    quelle: "BRF §3.3 (10 -> 50 degC)"
+    quelle: "BRF §3.3: mittlere Kollektortemperatur 50 -> 85 degC; ein Niveau für Direktnutzung und Speicherladen (docs E20)"
   feldverluste:
     wert: 0.10
     einheit: "-"
@@ -305,11 +268,6 @@ kollektor:
     status: belegt
     quelle: "BSW: 2- bis 2,3-fache Bruttokollektorfläche inkl. Reihenabstände und Heizzentrale (Berlin.de nennt ≈ 3)"
     sens: [2.0, 3.0]
-  frostschutz_anteil:
-    wert: 0.01
-    einheit: "-"
-    status: annahme
-    quelle: "BRF §3.3 Startwert (1 % des Kollektorertrags, verteilt auf Stunden mit T_a < 0)"
   strahlungsquelle:
     wert: pvgis_sarah3
     einheit: "-"
@@ -358,11 +316,6 @@ waermepumpe:
     status: annahme
     quelle: "BRF §3.4: ökonomische Grenze; Referenzen nur bis ≈ -5 degC (SCH D7)"
     sens: [-15, 0]
-  p_max_pu_luft_knick:
-    wert: [[-1, 1.0], [-7, 0.8]]
-    einheit: "[degC, -]"
-    status: annahme
-    quelle: "BRF §3.4: 1 ab -1 degC (DRL 6 MW bei -1 degC), linear auf 0,8 bei -7 degC; Rest Annahme"
   COP_ptes:
     wert: 4.5
     einheit: "-"
@@ -370,12 +323,6 @@ waermepumpe:
     quelle: "BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5"
     sens: [3.5, 5.5]
     hinweis: "Bei VL 80 statt 75 degC eher etwas niedriger (≈ -5 %) -> in Sensitivität abgedeckt."
-  p_max_pu_ptes:
-    wert: 0.75
-    einheit: "-"
-    status: annahme
-    quelle: "BRF §3.4: Marstal, Leistung halbiert sich 50 -> 15 degC Quelle"
-    sens: [0.5, 1.0]
   kosten_spez:
     wert: 1000000
     einheit: "EUR/MW_th"
@@ -398,11 +345,6 @@ pth:
     quelle: "SCH A6: x_PtH >= P_max (n-1-Redundanz, Versorgungssicherheit); p_nom_min der PtH (elektrisch: /eta)"
     sens: [0.0]
     hinweis: "0 = PtH nur so groß, wie das LP sie braucht (Variante SCH A6: x_PtH = P_max - x_WP)."
-  laden_ptes:
-    wert: false
-    einheit: "-"
-    status: vorgabe
-    quelle: "BRF §3.5 (Variante, Standard aus)"
   kosten_spez:
     wert: 100000
     einheit: "EUR/MW_th"
@@ -592,24 +534,6 @@ oekonomie:
       einheit: "1/a vom Invest"
       status: annahme
       quelle: "Größenordnung VDI 2067-1"
-
-# -------------------------------------------------------------------------------------
-raster:
-  bezug:
-    wert: einspeisung
-    einheit: "-"
-    status: vorgabe
-    quelle: "BRF §5: m2 je MWh/a Bedarf; DRL-Bezug 'Wärme ans Netz' -> Q_gebaeude + Q_netzverlust = 5.462 MWh/a"
-  A_spez:
-    wert: [0.4, 0.6, 0.8, 1.0, 1.2, 1.5]
-    einheit: "m2/(MWh/a)"
-    status: vorgabe
-    quelle: "BRF §5 Raster-Vorschlag (DRL ≈ 1,0)"
-  V_pro_A:
-    wert: [0.0, 1.0, 1.6, 2.5]
-    einheit: "m3/m2"
-    status: vorgabe
-    quelle: "BRF §5 (DRL ≈ 1,6; Bracht ≈ 2,3)"
 
 # -------------------------------------------------------------------------------------
 solver:

@@ -31,30 +31,18 @@ def spez_leistung(G, T_m, T_a, eta0, a1, a2, feldverluste: float):
     return eta * np.asarray(G, dtype=float) * (1.0 - feldverluste) / 1000.0
 
 
-def kollektor_zeitreihen(cfg: Config, G_poa: pd.Series, T_a: pd.Series) -> pd.DataFrame:
-    """``P_hi`` (T_m hoch) und ``P_lo`` (T_m tief) in kW/m2."""
-    kw = dict(
+def kollektor_zeitreihe(cfg: Config, G_poa: pd.Series, T_a: pd.Series) -> pd.Series:
+    """Nutzbare Kollektorleistung ``P_solar`` [kW/m2] bei der mittleren Temperatur kollektor.T_m."""
+    G = G_poa.reindex(T_a.index)
+    if G.isna().any():
+        raise ValueError("Strahlung und Temperatur haben unterschiedliche Zeitachsen")
+    p = spez_leistung(
+        G,
+        cfg.get("kollektor.T_m"),
+        T_a,
         eta0=cfg.get("kollektor.eta0"),
         a1=cfg.get("kollektor.a1"),
         a2=cfg.get("kollektor.a2"),
         feldverluste=cfg.get("kollektor.feldverluste"),
     )
-    G = G_poa.reindex(T_a.index)
-    if G.isna().any():
-        raise ValueError("Strahlung und Temperatur haben unterschiedliche Zeitachsen")
-    return pd.DataFrame(
-        {
-            "P_hi": spez_leistung(G, cfg.get("kollektor.T_m_hoch"), T_a, **kw),
-            "P_lo": spez_leistung(G, cfg.get("kollektor.T_m_tief"), T_a, **kw),
-        },
-        index=T_a.index,
-    )
-
-
-def frostschutz_last(cfg: Config, T_a: pd.Series, solarertrag_MWh: float) -> pd.Series:
-    """Frostschutzbedarf [MW]: Anteil des Jahresertrags (Feld gesamt), gleich auf Froststunden verteilt."""
-    frost = (T_a < 0).astype(float)
-    n = frost.sum()
-    if n == 0:
-        return frost * 0.0
-    return frost * cfg.get("kollektor.frostschutz_anteil") * solarertrag_MWh / n
+    return pd.Series(p, index=T_a.index, name="P_solar")

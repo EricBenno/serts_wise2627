@@ -33,12 +33,10 @@ def build_zeitreihen(cfg: Config, vollstaendig: bool = True) -> tuple[pd.DataFra
     for c in last.columns:
         ts[f"last_{c}"] = last[c]
     ts["COP_luft"] = heatpump.cop_luft(cfg, T_a)
-    ts["p_max_pu_luft"] = heatpump.p_max_pu_luft(cfg, T_a)
     try:
         strahlung = weather.strahlung_kollektorebene(cfg)
         ts["G_poa"] = strahlung["G_poa"].reindex(ts.index)
-        koll = solar.kollektor_zeitreihen(cfg, ts["G_poa"], T_a)
-        ts["P_hi"], ts["P_lo"] = koll["P_hi"], koll["P_lo"]
+        ts["P_solar"] = solar.kollektor_zeitreihe(cfg, ts["G_poa"], T_a)
     except (OffenerParameter, FileNotFoundError) as exc:
         if vollstaendig:
             raise
@@ -76,14 +74,9 @@ def prepare(cfg: Config) -> dict:
             "stunden_unter_T_min_luft": int((T_a < cfg.get("waermepumpe.T_min_luft")).sum()),
         }
     )
-    if "P_hi" in ts:
-        kz.update(
-            {
-                "G_poa_kWh_m2": float(ts["G_poa"].sum() / 1000),
-                "P_hi_kWh_m2": float(ts["P_hi"].sum()),
-                "P_lo_kWh_m2": float(ts["P_lo"].sum()),
-            }
-        )
+    if "P_solar" in ts:
+        kz["G_poa_kWh_m2"] = float(ts["G_poa"].sum() / 1000)
+        kz["P_solar_kWh_m2"] = float(ts["P_solar"].sum())
     kz["hinweise"] = hinweise
     (out_dir / "kennzahlen.json").write_text(json.dumps(kz, indent=2, ensure_ascii=False), "utf-8")
 

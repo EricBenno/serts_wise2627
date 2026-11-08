@@ -42,18 +42,6 @@ def preisdynamik(zins: float, jahre: float, r: float) -> float:
     return annuitaetenfaktor(zins, jahre) * b
 
 
-def ptes_invest(cfg: Config, V_m3: float) -> float:
-    """Invest PTES [EUR]: c(V) = c_ref * (V/V_ref)^b * Preisindex (degressiv, docs E13)."""
-    if V_m3 <= 0:
-        return 0.0
-    c = (
-        cfg.get("ptes.kosten_ref")
-        * (V_m3 / cfg.get("ptes.V_ref")) ** cfg.get("ptes.kosten_exponent")
-        * cfg.get("ptes.preisindex")
-    )
-    return c * V_m3
-
-
 def lcoh(annuitaeten_capex: float, opex_jahr: float, waerme_MWh: float) -> float:
     """Wärmegestehungskosten [EUR/MWh]. Bezug (erzeugt vs. geliefert) im Aufruf festlegen."""
     if waerme_MWh <= 0:

@@ -1,73 +1,50 @@
-"""Zusatz-Constraints über ``extra_functionality`` (linopy), BRF §3.2-3.4.
+"""Zwei Zusatzbedingungen (linopy) – alles andere erledigt PyPSA selbst.
 
-1. Volumensumme:   e_V85(t) + e_V45(t) + e_V10(t) = V                     für alle t
-2. Verluste:       p_verlust_oben(t)  = lambda * e_V85(t)
-                   p_verlust_mitte(t) = lambda * e_V45(t)
-3. Kollektorfläche p_hi(t)*P_lo(t) + p_lo(t)*P_hi(t) <= A' * P_hi(t)*P_lo(t)
-                   (A' = A*1e-3 MW, nur Stunden mit P_hi, P_lo > 0; sonst greift p_max_pu)
-4. WP je Quelle:   COP_luft(t) * p_hp_air(t)  <= p_max_pu_luft(t) * P_WP
-                   COP_ptes    * p_hp_ptes(t) <= p_max_pu_ptes    * P_WP
-                   (Summe <= P_WP über Link hp_out, siehe network.py)
-
-Jede Constraint hat einen Test (tests/test_modell.py).
+1. Fläche:  A_Koll * flaechenfaktor + V / volumen_je_grundflaeche <= flaeche_verfuegbar
+            (nur wenn A oder V optimiert wird; bei festen Größen nur Check in kpi.py)
+2. Temperatur-Regel des Speichers, vereinfacht über das Jahr:
+            Σ Direktentladung <= f * (Σ Direktentladung + Σ Quellwärme an die WP)
+            mit f = (T_oben - T_mitte) / (T_oben - T_unten)  (≈ 53 %, SCH D3; DRL gemessen 52-63 %)
+   Begründung: Nur der Anteil oberhalb des Rücklaufs kann ohne WP genutzt werden; der Rest
+   (Rücklauf bis T_unten) ist nur als WP-Quelle nutzbar.
 """
 
 from __future__ import annotations
 
-import pandas as pd
-
 from serts.config import Config
-from serts.network import POOLS, VOL
+from serts.network import M2_JE_MW, mwh_je_m3
 
 
-def _sel(var, name: str):
-    return var.sel(name=name)
+def direktanteil_max(cfg: Config) -> float:
+    t_o, t_m, t_u = (cfg.get(f"ptes.T_{k}") for k in ("oben", "mitte", "unten"))
+    return (t_o - t_m) / (t_o - t_u)
 
 
-def extra_functionality(n, snapshots, *, cfg: Config, ts: pd.DataFrame) -> None:
+def extra_functionality(n, snapshots, *, cfg: Config) -> None:
     m = n.model
-    V = float(n.meta["V_m3"]) / VOL  # Pool-Einheit 1.000 m3
-    A = float(n.meta["A_koll_m2"]) * 1e-3
-    link_p = m["Link-p"]
+    hat_speicher = "ptes" in n.stores.index
 
-    # 1 + 2: Pool-Speicher
-    if V > 0:
-        e = m["Store-e"]
-        m.add_constraints(sum(_sel(e, p) for p in POOLS) == V, name="pool_volumensumme")
-        lam = cfg.get("ptes.verlustrate")
-        m.add_constraints(
-            _sel(link_p, "verlust_oben") - lam * _sel(e, "V85") == 0, name="pool_verlust_oben"
+    # 1 Fläche
+    a_var = bool(n.generators.at["kollektor", "p_nom_extendable"])
+    v_var = hat_speicher and bool(n.stores.at["ptes", "e_nom_extendable"])
+    if a_var or v_var:
+        kap = mwh_je_m3(cfg)
+        a = (
+            m["Generator-p_nom"].sel(name="kollektor")
+            if a_var
+            else n.generators.at["kollektor", "p_nom"]
         )
-        m.add_constraints(
-            _sel(link_p, "verlust_mitte") - lam * _sel(e, "V45") == 0, name="pool_verlust_mitte"
-        )
+        lhs = a * M2_JE_MW * cfg.get("kollektor.flaechenfaktor")
+        if hat_speicher:
+            e = m["Store-e_nom"].sel(name="ptes") if v_var else n.stores.at["ptes", "e_nom"]
+            lhs = lhs + e / kap / cfg.get("ptes.volumen_je_grundflaeche")
+        m.add_constraints(lhs <= cfg.get("standort.flaeche_verfuegbar"), name="flaeche")
 
-        # 3: gemeinsame Kollektorfläche
-        P_hi = ts["P_hi"].clip(0, 1)
-        P_lo = ts["P_lo"].clip(0, 1)
-        maske = (P_hi > 0) & (P_lo > 0)
-        if maske.any():
-            sn = ts.index[maske]
-            gp = m["Generator-p"].sel(snapshot=sn)
-            hi = pd.Series(P_hi[maske].to_numpy(), index=pd.Index(sn, name="snapshot")).to_xarray()
-            lo = pd.Series(P_lo[maske].to_numpy(), index=pd.Index(sn, name="snapshot")).to_xarray()
-            m.add_constraints(
-                lo * _sel(gp, "sol_hi") + hi * _sel(gp, "sol_lo") <= A * hi * lo,
-                name="kollektor_flaeche",
-            )
-
-    # 4: WP-Leistung je Quelle gegen die gemeinsame thermische Kapazität
-    P_wp = m["Link-p_nom"].sel(name="hp_out")
-    cop = pd.Series(
-        ts["COP_luft"].to_numpy(), index=pd.Index(ts.index, name="snapshot")
-    ).to_xarray()
-    pu = pd.Series(
-        ts["p_max_pu_luft"].to_numpy(), index=pd.Index(ts.index, name="snapshot")
-    ).to_xarray()
-    m.add_constraints(cop * _sel(link_p, "hp_air") - pu * P_wp <= 0, name="wp_luft_kapazitaet")
-    if V > 0:
-        cop_p = cfg.get("waermepumpe.COP_ptes")
-        pu_p = cfg.get("waermepumpe.p_max_pu_ptes")
-        m.add_constraints(
-            cop_p * _sel(link_p, "hp_ptes") - pu_p * P_wp <= 0, name="wp_ptes_kapazitaet"
-        )
+    # 2 Direktanteil der Speicherentladung
+    if hat_speicher:
+        p = m["Link-p"]
+        f = direktanteil_max(cfg)
+        cop = cfg.get("waermepumpe.COP_ptes")
+        direkt = p.sel(name="entladen_direkt").sum()
+        quelle = (cop - 1.0) * p.sel(name="hp_speicher").sum()
+        m.add_constraints((1 - f) * direkt - f * quelle <= 0, name="speicher_direktanteil")

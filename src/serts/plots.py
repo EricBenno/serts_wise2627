@@ -46,8 +46,8 @@ def monatsbilanz(r: pd.DataFrame, out: Path) -> Path:
     """Wärmeherkunft je Monat (gestapelt) + Speicherinhalt (Tagesmittel)."""
     quellen = {
         "Solar direkt": r["solar_direkt"],
-        "PTES direkt": r["entladen_direkt"],
-        "WP aus PTES": r["wp_waerme_ptes"],
+        "Speicher direkt": r["entladen_direkt"],
+        "WP aus Speicher": r["wp_waerme_speicher"],
         "WP Luft": r["wp_waerme_luft"],
         "PtH": r["pth_waerme"],
     }
@@ -61,60 +61,9 @@ def monatsbilanz(r: pd.DataFrame, out: Path) -> Path:
     a1.legend(ncol=3, fontsize=8)
     if "speicherinhalt" in r:
         r["speicherinhalt"].resample("D").mean().plot(ax=a2)
-        a2.set(ylabel="PTES-Inhalt [MWh] (bez. 10 °C)", xlabel="")
+        a2.set(ylabel="Speicherinhalt [MWh]", xlabel="")
     for a in (a1, a2):
         a.grid(alpha=0.3)
-    fig.tight_layout()
-    fig.savefig(out, dpi=150)
-    plt.close(fig)
-    return out
-
-
-def heatmap_lcoh(df: pd.DataFrame, out: Path) -> Path:
-    """LCOH über A_spez x V/A; Rasterpunkte über der verfügbaren Fläche schraffiert (x)."""
-    piv = df.pivot(index="V_pro_A", columns="A_spez", values="lcoh")
-    ok = df.pivot(index="V_pro_A", columns="A_spez", values="flaeche_ok")
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    im = ax.imshow(piv.to_numpy(), origin="lower", aspect="auto", cmap="viridis_r")
-    ax.set_xticks(range(len(piv.columns)), [f"{c:g}" for c in piv.columns])
-    ax.set_yticks(range(len(piv.index)), [f"{i:g}" for i in piv.index])
-    for i in range(piv.shape[0]):
-        for j in range(piv.shape[1]):
-            val = piv.iat[i, j]
-            mark = "" if bool(ok.iat[i, j]) else " ×"
-            ax.text(j, i, f"{val:.0f}{mark}", ha="center", va="center", fontsize=8, color="w")
-    ax.set(
-        xlabel="Kollektorfläche [m² je MWh/a Einspeisung]",
-        ylabel="PTES-Volumen [m³/m² Kollektor]",
-        title="LCOH [€/MWh] (× = Fläche > verfügbar)",
-    )
-    fig.colorbar(im, ax=ax, label="LCOH [€/MWh]")
-    fig.tight_layout()
-    fig.savefig(out, dpi=150)
-    plt.close(fig)
-    return out
-
-
-def pareto(df: pd.DataFrame, out: Path) -> Path:
-    fig, ax = plt.subplots(figsize=(7, 4.5))
-    for ok, marker, lab in [(True, "o", "Fläche ok"), (False, "x", "Fläche überschritten")]:
-        d = df[df["flaeche_ok"] == ok]
-        sc = ax.scatter(
-            d["ee_anteil"] * 100,
-            d["lcoh"],
-            c=d["V_pro_A"],
-            marker=marker,
-            cmap="plasma",
-            vmin=df["V_pro_A"].min(),
-            vmax=df["V_pro_A"].max(),
-            label=lab,
-        )
-    if "gas_lcoh" in df:
-        ax.axhline(df["gas_lcoh"].iloc[0], color="grey", ls="--", label="Gas-Referenz")
-    ax.set(xlabel="Erneuerbaren-Anteil [%]", ylabel="LCOH [€/MWh]")
-    fig.colorbar(sc, ax=ax, label="V/A [m³/m²]")
-    ax.legend(fontsize=8)
-    ax.grid(alpha=0.3)
     fig.tight_layout()
     fig.savefig(out, dpi=150)
     plt.close(fig)

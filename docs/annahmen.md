@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 22, vorgabe 37, annahme 41, offen 1
+Status: belegt 19, vorgabe 33, annahme 35, offen 1
 
 
 ## standort
@@ -47,8 +47,6 @@ Status: belegt 22, vorgabe 37, annahme 41, offen 1
 | `netz.T_VL_netzberechnung` | 80 | degC | belegt | NB Zusammenfassung, Spalte Vorlauftemp |  |  |
 | `netz.T_RL_netzberechnung` | 50 | degC | belegt | NB Zusammenfassung, Spalte Ruecklauftemp |  |  |
 | `netz.trassenlaenge` | 2432 | m | belegt | NB Zusammenfassung, Summe Trassenlänge (ohne Hausanschlüsse 3413 m) |  |  |
-| `netz.x_TL` | 10 | MW | annahme | TEAM: Erzeugerstandort in Bad Lippspringe am Netz -> keine Transmission modelliert; 10 MW > 6x P_max = nicht bindend |  | Check 'Stunden an der Grenze' muss 0 ergeben. |
-| `netz.TL_verlust` | 0 | - | annahme | Erzeugung am Netz (TEAM); Leitungsverluste stecken in den NB-Netzverlusten |  |  |
 
 ## ptes
 
@@ -59,12 +57,8 @@ Status: belegt 22, vorgabe 37, annahme 41, offen 1
 | `ptes.T_mitte` | 45 | degC | vorgabe | = Netz-Rücklauf (BRF §3.1) |  |  |
 | `ptes.T_unten` | 10 | degC | vorgabe | BRF §3.1; DRL Tmin 9-12 degC |  |  |
 | `ptes.verlustrate` | 4e-05 | 1/h | annahme | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) | 1.5e-05, 8e-05 | PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10). |
-| `ptes.kosten_ref` | 38.3 | EUR/m3 | belegt | SIF Kap. 2: DRL 60.000 m3, Speicherkosten ≈ 2,3 Mio. EUR (38,3 EUR/m3), Preisstand ≈ 2014 |  |  |
-| `ptes.V_ref` | 60000 | m3 | belegt | SIF / DRL |  |  |
-| `ptes.kosten_exponent` | -0.31 | - | annahme | eigene Anpassung c ~ V^b durch Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019 via IEA SHC) und DRL; Kontrolle Vojens 200.000 m3: Modell 26, real 24 EUR/m3 | -0.2, -0.4 |  |
-| `ptes.preisindex` | 1.5 | - | annahme | Preissteigerung Tiefbau/Bau 2014 -> 2025 grob +50 % (Größenordnung Destatis Baupreisindex; genauer Index noch einzusetzen) | 1.3, 1.8 |  |
-| `ptes.geometrie_ref` | {'V': 60000, 'a_oben': 90, 'a_unten': 26, 'tiefe': 16} | m3, m | belegt | DRL: Pyramidenstumpf 90x90 m oben, 26x26 m unten, 16 m tief (SIF; Kontrolle h/3(a²+ab+b²) = 59.300 m3) |  | Andere Volumina geometrisch ähnlich skaliert (Faktor (V/V_ref)^(1/3)). |
-| `ptes.randstreifen` | 5 | m | annahme | Damm/Weg um das Becken (eigene Annahme, Größenordnung Böschungskrone + Zufahrt) |  |  |
+| `ptes.kosten_spez` | 105 | EUR/m3 | annahme | Kostenkurve aus DRL 60.000 m3 / 38,3 EUR/m3 (SIF, 2014) und Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019): c ~ V^-0,31; bei ≈ 8.700 m3 -> 70 EUR/m3, x 1,5 Baupreissteigerung 2014->2025 ≈ 105 EUR/m3 | 70, 140 | Linear im LP (konstant je m3). Gilt für ≈ 5.000-12.000 m3; bei ganz anderer optimaler Größe neu ableiten (docs E20). |
+| `ptes.volumen_je_grundflaeche` | 2.65 | m3/m2 | annahme | DRL-Geometrie (Pyramidenstumpf 90/26 m, 16 m tief) ähnlich skaliert auf 8.700 m3: Oberkante 47 m, Tiefe 8 m; + 5 m Randstreifen -> 3.280 m2 Grund -> 8.700/3.280 | 2, 4 |  |
 
 ## kollektor
 
@@ -75,13 +69,11 @@ Status: belegt 22, vorgabe 37, annahme 41, offen 1
 | `kollektor.eta0` | 0.8 | - | annahme | Mitte der BRF-Bandbreite 0,75-0,82 für große Flachkollektoren; Bezug Bruttofläche | 0.75, 0.82 | Durch Keymark SP SC0843-14 ersetzen. Plausibilisierung: spez. Ertrag vs. BSW 430-500 kWh/(m2 a). |
 | `kollektor.a1` | 2.4 | W/(m2 K) | annahme | BRF-Bandbreite 2-2,5 W/(m2 K), oberes Drittel (konservativ) |  |  |
 | `kollektor.a2` | 0.012 | W/(m2 K2) | annahme | BRF-Bandbreite 0,01-0,016 W/(m2 K2) |  |  |
-| `kollektor.T_m_hoch` | 67.5 | degC | vorgabe | BRF §3.3 (Rücklauf 50 -> 85 degC) |  |  |
-| `kollektor.T_m_tief` | 30 | degC | vorgabe | BRF §3.3 (10 -> 50 degC) |  |  |
+| `kollektor.T_m` | 67.5 | degC | vorgabe | BRF §3.3: mittlere Kollektortemperatur 50 -> 85 degC; ein Niveau für Direktnutzung und Speicherladen (docs E20) |  |  |
 | `kollektor.feldverluste` | 0.1 | - | annahme | BRF §3.3 Startwert | 0.05, 0.15 |  |
 | `kollektor.neigung` | 35 | deg | annahme | TEAM: einfache Annahme; 35 deg = übliche Neigung großer Freiflächenfelder in DE/DK (Kompromiss Ertrag/Reihenabstand) | 25, 45 |  |
 | `kollektor.azimut` | 180 | deg | annahme | Südausrichtung (pvlib-Konvention 180 = Süd), Standard bei Freifeldanlagen |  |  |
 | `kollektor.flaechenfaktor` | 2.3 | m2 Grund / m2 Kollektor | belegt | BSW: 2- bis 2,3-fache Bruttokollektorfläche inkl. Reihenabstände und Heizzentrale (Berlin.de nennt ≈ 3) | 2, 3 |  |
-| `kollektor.frostschutz_anteil` | 0.01 | - | annahme | BRF §3.3 Startwert (1 % des Kollektorertrags, verteilt auf Stunden mit T_a < 0) |  |  |
 | `kollektor.strahlungsquelle` | pvgis_sarah3 | - | annahme | DWD-Strahlung an Stn. 3028 endet 31.08.2011 -> 2022 fehlt. PVGIS-SARAH3 deckt 2005-2023 ab (JRC). |  |  |
 | `kollektor.kosten_spez` | 450 | EUR/m2 | annahme | Bitterfeld-Wolfen (BBU 2024): Budget 2,25 Mio. EUR für 5.000 m2 -> 450 EUR/m2 (Planung 2020); DRL 2014: (5,856+0,321) Mio. EUR / 37.573 m2 = 164 EUR/m2 (sehr groß, DK) | 300, 550 | Feldgröße hier ≈ 2.000-5.000 m2 -> Bitterfeld-Größenordnung passender als DRL. |
 
@@ -95,9 +87,7 @@ Status: belegt 22, vorgabe 37, annahme 41, offen 1
 | `waermepumpe.abtau_abschlag` | 0.05 | - | annahme | BRF §3.4 (x) | 0, 0.1 |  |
 | `waermepumpe.abtau_grenze` | 5 | degC | annahme | BRF §3.4: Abschlag für T_a < 5 degC |  |  |
 | `waermepumpe.T_min_luft` | -7 | degC | annahme | BRF §3.4: ökonomische Grenze; Referenzen nur bis ≈ -5 degC (SCH D7) | -15, 0 |  |
-| `waermepumpe.p_max_pu_luft_knick` | [[-1, 1.0], [-7, 0.8]] | [degC, -] | annahme | BRF §3.4: 1 ab -1 degC (DRL 6 MW bei -1 degC), linear auf 0,8 bei -7 degC; Rest Annahme |  |  |
 | `waermepumpe.COP_ptes` | 4.5 | - | annahme | BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5 | 3.5, 5.5 | Bei VL 80 statt 75 degC eher etwas niedriger (≈ -5 %) -> in Sensitivität abgedeckt. |
-| `waermepumpe.p_max_pu_ptes` | 0.75 | - | annahme | BRF §3.4: Marstal, Leistung halbiert sich 50 -> 15 degC Quelle | 0.5, 1 |  |
 | `waermepumpe.kosten_spez` | 1000000 | EUR/MW_th | annahme | Frederikssund 2022: ≈ 6,4 Mio. DKK/MW Luft-WP ≈ 0,86 Mio. EUR/MW (SCH); kleine Leistung (1-2 MW) + NH3 + Luftkühler -> 1,0 Mio. EUR/MW | 700000, 1400000 | DEA Technology Data (District heating, 2025) nachtragen. |
 
 ## pth
@@ -106,7 +96,6 @@ Status: belegt 22, vorgabe 37, annahme 41, offen 1
 |---|---|---|---|---|---|---|
 | `pth.eta` | 0.99 | - | vorgabe | BRF §2 |  |  |
 | `pth.redundanz` | 1 | x P_max | annahme | SCH A6: x_PtH >= P_max (n-1-Redundanz, Versorgungssicherheit); p_nom_min der PtH (elektrisch: /eta) | 0 | 0 = PtH nur so groß, wie das LP sie braucht (Variante SCH A6: x_PtH = P_max - x_WP). |
-| `pth.laden_ptes` | False | - | vorgabe | BRF §3.5 (Variante, Standard aus) |  |  |
 | `pth.kosten_spez` | 100000 | EUR/MW_th | annahme | Frederikssund 2022: ≈ 0,5 Mio. DKK/MW ≈ 0,07 Mio. EUR/MW (SCH); kleine Leistung -> 0,1 Mio. EUR/MW | 70000, 150000 |  |
 
 ## biomasse
@@ -161,17 +150,10 @@ Status: belegt 22, vorgabe 37, annahme 41, offen 1
 | `oekonomie.om_fix.pth` | 0.02 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 |  |  |
 | `oekonomie.om_fix.gaskessel` | 0.02 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 |  |  |
 
-## raster
-
-| Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
-|---|---|---|---|---|---|---|
-| `raster.bezug` | einspeisung | - | vorgabe | BRF §5: m2 je MWh/a Bedarf; DRL-Bezug 'Wärme ans Netz' -> Q_gebaeude + Q_netzverlust = 5.462 MWh/a |  |  |
-| `raster.A_spez` | [0.4, 0.6, 0.8, 1.0, 1.2, 1.5] | m2/(MWh/a) | vorgabe | BRF §5 Raster-Vorschlag (DRL ≈ 1,0) |  |  |
-| `raster.V_pro_A` | [0.0, 1.0, 1.6, 2.5] | m3/m2 | vorgabe | BRF §5 (DRL ≈ 1,6; Bracht ≈ 2,3) |  |  |
-
 ## solver
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
 | `solver.name` | highs | - | vorgabe | BRF §2 |  |  |
+| `solver.optionen` | {'solver': 'ipm', 'run_crossover': 'off'} | - | vorgabe | Benchmark 09.11.2026 (A_spez 0,4, V/A 1,0, 8760 h, 1 Thread): Simplex 262 s, IPM ohne Crossover 56 s, identisches Optimum |  |  |
 | `solver.tie_breaker` | 0.1 | EUR/MWh | vorgabe | numerische Hilfsgröße (keine Kosten): Speicherladen minimal teurer als Direktnutzung; << Strompreis, LCOH-Einfluss < 0,01 EUR/MWh |  |  |

@@ -1,8 +1,9 @@
 # SERTS – Solares Wärmenetz mit Erdbeckenspeicher, Wärmepumpe und PtH
 
-Fallstudie **Bad Lippspringe** (AGS 05774008). Leitfrage, feste Entscheidungen und Modellarchitektur:
-`../obsidian/AGENT_BRIEFING_SERTS.md` (hat Vorrang), Inputs/Schema: `../obsidian/Waermenetz_PTES_Modellschema_v3.md`,
-Umfang: `../obsidian/Arbeitspakete_Saisonspeicher_Annahmen.md`.
+Fallstudie **Bad Lippspringe** (AGS 05774008). Ein einfaches, nachvollziehbares PyPSA-Modell: Kollektorfeld,
+Erdbeckenspeicher, Wärmepumpe (Luft/Speicher) und PtH versorgen das Netz; die Größen werden kostenoptimal
+bestimmt. Leitlinie: so simpel wie möglich, so komplex wie nötig. Hintergrund: `../obsidian/` (Briefing,
+Modellschema, Arbeitspakete); Abweichungen davon in [docs/entscheidungen.md](docs/entscheidungen.md).
 
 ## Schnellstart
 
@@ -13,8 +14,8 @@ uv run serts prepare         # Zeitreihen 8760 h -> data/processed/
 uv run serts offen           # Liste der offenen Parameter (x-Werte)
 uv run serts annahmen        # docs/annahmen.md aus config/base.yaml erzeugen
 uv run serts fetch-pvgis     # Strahlung 2022 (einmalig, Netzzugang)
-uv run serts run --A-spez 0.6 --V-pro-A 1.6   # Einzellauf (≈ 1,5 min)
-uv run serts raster --jobs 4 # Raster A × V, Heatmap LCOH, Pareto (≈ 6–10 min)
+uv run serts run             # Lauf: Größen optimieren, Kennzahlen ausgeben (≈ 30 s)
+uv run serts run --V 0       # Variante ohne Speicher (weitere Optionen: --A, --szenario, --stunden)
 uv run pytest                # Tests
 ```
 

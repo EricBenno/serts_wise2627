@@ -121,3 +121,22 @@ Pool-Volumen werden im LP in 1.000 m³ geführt (`network.VOL`), damit Volumen- 
 ähnlicher Größenordnung liegen. HiGHS mit Interior-Point ohne Crossover (`solver.optionen`). Benchmark
 8760 h, 1 Thread: Simplex 262 s → IPM 56 s bei identischem Optimum. Im Raster läuft je Prozess 1 Thread
 (`--jobs 4` auf 4 Kernen).
+
+---
+*Ab hier: Vereinfachung nach Team-Rückmeldung 09.11.2026 – „so simpel wie möglich, so komplex wie nötig“.*
+
+### E20 Einfaches Modell statt Pool-Modell und Raster (ersetzt E11, E12, E17, E19 und Teile von E13, E16)
+Das Briefing ist Orientierung, nicht Pflicht. Ziel: Das Team soll das Modell verstehen und anpassen können.
+- **Speicher:** ein PyPSA-Store in MWh (Inhalt bezogen auf 10 °C), Verlust = `verlustrate` × Inhalt je Stunde.
+  Statt drei Temperatur-Pools eine einzige Jahresregel: Direktentladung ≤ 53 % der Entladung
+  ((85−45)/(85−10), SCH D3; DRL gemessen 52–63 %), der Rest geht nur über die WP.
+- **Kollektor:** ein Temperaturniveau (T_m 67,5 °C) für Direktnutzung und Laden; kein Niedertemperatur-Laden.
+- **Größen werden mitoptimiert** (Kollektor, Speicher, WP, PtH) mit linearen Kosten; ein Lauf statt 24
+  Rasterpunkten (≈ 30 s statt ≈ 25 min). Feste Größen bleiben möglich (`serts run --A … --V …`), z. B. für
+  „ohne Speicher“ (`--V 0`) oder eine kleine Heatmap, falls gewünscht.
+- **Fläche** ist jetzt eine Nebenbedingung: A · 2,3 + V / 2,65 m³/m² ≤ 13.000 m².
+- **Speicherkosten** linear 105 €/m³ (aus der degressiven Kurve bei ≈ 8.700 m³ abgeleitet). Liegt das Optimum
+  weit davon entfernt, Wert neu ableiten.
+- **Weggefallen:** Transmission/x_TL (Erzeugung am Netz), WÜT-Caps, Leistungsabschläge der WP je Quelle
+  (nur noch: Luft-WP aus unter −7 °C), Frostschutz (≈ 1 % Ertrag), LP-Skalierung, Raster, Heatmap/Pareto.
+- **Bleibt:** Tie-Breaker auf dem Speicherladen (E16), PtH-Redundanz (E15), Preisdynamik (E14).
