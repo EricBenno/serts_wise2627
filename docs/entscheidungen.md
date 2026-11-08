@@ -115,3 +115,9 @@ abrufbar (solarkeymark.nl: Verbindung abgelehnt). η0 = 0,80, a1 = 2,4, a2 = 0,0
 Plausibilisierung: Hochtemperatur-Ertrag 587 kWh/(m²a) bei PVGIS 2022 (1.394 kWh/m² Ebene); auf ein
 Normaljahr skaliert (DWD-Klima ≈ 960 kWh/m² horizontal, Ebene ≈ 1.085 mit angenommenem Neigungsgewinn 1,13) ≈ 460 kWh/(m²a) → im BSW-Bereich
 430–500. **Nachtragen**, sobald das Keymark-Datenblatt vorliegt.
+
+### E19 LP-Skalierung und Solver
+Pool-Volumen werden im LP in 1.000 m³ geführt (`network.VOL`), damit Volumen- und Leistungsvariablen in
+ähnlicher Größenordnung liegen. HiGHS mit Interior-Point ohne Crossover (`solver.optionen`). Benchmark
+8760 h, 1 Thread: Simplex 262 s → IPM 56 s bei identischem Optimum. Im Raster läuft je Prozess 1 Thread
+(`--jobs 4` auf 4 Kernen).

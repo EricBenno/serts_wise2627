@@ -27,9 +27,9 @@ config/base.yaml (+ scenarios/*.yaml) ──────┤
 ## Befehle
 
 ```bash
-uv run serts run --A-spez 0.6 --V-pro-A 1.6          # Einzellauf, ≈ 1,5 min
+uv run serts run --A-spez 0.6 --V-pro-A 1.6          # Einzellauf, ≈ 1–1,5 min
 uv run serts run --A-spez 0.6 --V-pro-A 1.6 --stunden 168   # Schnelltest 1 Woche
-uv run serts raster --jobs 4                         # 24 Rasterpunkte, ≈ 6–10 min
+uv run serts raster --jobs 4                         # 24 Rasterpunkte, ≈ 6–8 min
 uv run serts raster --szenario rl_50 --jobs 4        # Raster für ein Szenario
 uv run pytest                                        # 45 Tests
 ```
