@@ -1,0 +1,7 @@
+# Sensitivität Rücklauftemperatur (BRF §2)
+meta:
+  beschreibung: "Rücklauf 40 degC (Pool-Mitte folgt dem Rücklauf)"
+netz:
+  T_RL: 40
+ptes:
+  T_mitte: 40

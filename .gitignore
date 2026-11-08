@@ -1,0 +1,33 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Daten: Rohdaten unveraendert ausserhalb von Git (Manifest + Herkunft bleiben versioniert)
+data/raw/**
+!data/raw/README.md
+!data/raw/MANIFEST.sha256
+!data/raw/bad_lippspringe/
+!data/raw/bad_lippspringe/results netzberechnung.xlsx
+data/processed/**
+!data/processed/.gitkeep
+
+# Ergebnisse (reproduzierbar aus Config-Kopie + Git-Hash)
+results/**
+!results/.gitkeep
+
+# Notebooks: Ausgaben nicht committen (vor Commit "Clear all outputs")
+.ipynb_checkpoints/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+~$*

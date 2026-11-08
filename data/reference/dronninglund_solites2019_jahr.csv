@@ -1,0 +1,17 @@
+# Quelle: Winterscheid & Schmidt (Solites 2019), Dronninglund Monitoring 2015-2017, Tab. 1; uebernommen aus AGENT_BRIEFING_SERTS.md §6
+# Einheiten: MWh bzw. % bzw. degC; Speicher-eta = (Q_out + dQ)/Q_in
+kennzahl,einheit,2015,2016,2017
+einstrahlung_kollektorebene,MWh,40631,40327,38674
+solarwaerme,MWh,16793,16071,15121
+beladung_ptes,MWh,12760,11855,11120
+entladung_ptes,MWh,11983,10716,11315
+dq_speicher,MWh,-497,93,-583
+verluste_ptes,MWh,1275,1046,388
+wp_quellwaerme_ptes,MWh,4375,4019,5398
+waerme_ans_netz,MWh,35447,37184,36869
+kollektorwirkungsgrad,%,41,40,39
+speicherwirkungsgrad,%,90,91,96
+zyklen,-,2.2,1.9,2.2
+t_max,degC,89,87,84
+t_min,degC,10,12,9
+solaranteil,%,41,38,40

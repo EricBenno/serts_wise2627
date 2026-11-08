@@ -1,0 +1,6 @@
+# Zusätzlicher Ankerkunde mit 20 % von Q_gebaeude, Bandlast (BRF §3.5)
+meta:
+  beschreibung: "Ankerkunde 20 %, Band"
+last:
+  ankerkunde_anteil: 0.2
+  ankerkunde_profil: band

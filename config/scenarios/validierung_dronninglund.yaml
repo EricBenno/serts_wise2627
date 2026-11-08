@@ -1,0 +1,20 @@
+# M4 Validierungslauf Dronninglund (BRF §6). Größen und Last aus Solites 2019.
+# Benötigt eigene Wetter- und Lastdaten für Nordjütland -> noch offen.
+meta:
+  beschreibung: "Nachrechnung Dronninglund 2015-2017 (A = 37.573 m2, V = 60.000 m3)"
+  A_koll_m2: 37573          # Solites 2019 / BRF §6
+  V_m3: 60000               # Solites 2019 / BRF §6
+  hinweis: >-
+    Absorptions-WP 2014-2021 (COP 1,6-1,8, Antrieb Bio-Öl-Kessel): hp_ptes mit COP 1,7 und
+    Antriebswärme statt Strom rechnen oder nur Speicher-/Solargrößen vergleichen.
+    Zielkorridore: data/reference/dronninglund_solites2019_*.csv
+netz:
+  T_VL:
+    wert: 80
+    status: belegt
+    quelle: "DRL Auslegung ≈ 80/40 degC (SCH A2)"
+waermepumpe:
+  COP_ptes:
+    wert: 1.7
+    status: belegt
+    quelle: "Solites 2019: Absorptions-WP COP 1,6-1,8"

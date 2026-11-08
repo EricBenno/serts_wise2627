@@ -1,0 +1,5 @@
+# Variante Netzverluste mit extra Dämmung (eigene Netzberechnung: 849,7 statt 937,3 MWh/a)
+meta:
+  beschreibung: "Verteilnetz mit verstärkter Dämmung"
+last:
+  netzverlust_variante: extra_daemmung
