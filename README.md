@@ -16,6 +16,7 @@ uv run serts annahmen        # docs/annahmen.md aus config/base.yaml erzeugen
 uv run serts fetch-pvgis     # Strahlung 2022 (einmalig, Netzzugang)
 uv run serts run             # Lauf: Größen optimieren, Kennzahlen ausgeben (≈ 30 s)
 uv run serts run --V 0       # Variante ohne Speicher (weitere Optionen: --A, --szenario, --stunden)
+uv run serts tornado         # Sensitivitäten (≈ 3 min), Ergebnisse: docs/ergebnisse.md
 uv run pytest                # Tests
 ```
 

@@ -30,6 +30,7 @@ uv run serts run --V 0                   # Variante ohne Speicher
 uv run serts run --A 4000 --V 6000       # feste Größen vorgeben
 uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis)
 uv run serts run --stunden 168           # Schnelltest
+uv run serts tornado                     # Sensitivitäten (24 Läufe, ≈ 3 min)
 uv run serts prepare                     # nur Zeitreihen + Plots
 uv run serts annahmen                    # docs/annahmen.md neu erzeugen
 uv run pytest                            # 43 Tests
@@ -60,14 +61,14 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 | Modell + Optimierung der Größen | ✅ (Basis: A ≈ 3.500 m², V ≈ 5.550 m³, WP ≈ 1,0 MW, LCOH ≈ 132 €/MWh vs. Gas ≈ 165 €/MWh) |
 | Tests (Bilanzen, Constraints, COP-Prüfwerte, Solites-Definitionen) | ✅ 43 |
 | Validierung Dronninglund | ⏭ ausgelassen (Referenzwerte liegen in `data/reference/`) |
-| Varianten / Sensitivitäten / Bericht | ⬜ |
+| Sensitivitäten (Tornado) | ✅ `serts tornado`, Ergebnisse in `docs/ergebnisse.md` |
+| Varianten (PV für WP, Biomasse, Day-Ahead) / Bericht | ⬜ |
 
 ## Weiterarbeiten
 
-1. Sensitivitäten: Szenario-YAML anlegen (z. B. `ptes.kosten_spez: 140`) und `serts run --szenario …`.
-   Kleine Schleife über die `sens`-Werte in `base.yaml` wäre der nächste Schritt (Tornado).
+1. Weitere Sensitivität: Parameter in `tornado.parameter` aufnehmen und `sens`-Werte setzen, dann `serts tornado`.
 2. Keymark-Datenblatt HTHEATstore 35/10 → Kollektorkennwerte als `belegt`.
-3. Normaljahr für die Strahlung (2022 war sonnig) als Sensitivität „Solarressource“.
+3. **Normaljahr für die Strahlung** – der Tornado zeigt, dass der Solaranteil daran hängt (37 % → 12 %).
 4. Varianten: PV für die WP, Biomasse statt PtH, Day-Ahead-Strompreis.
 
 ## Konventionen

@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 19, vorgabe 33, annahme 36, offen 1
+Status: belegt 19, vorgabe 34, annahme 36, offen 1
 
 
 ## standort
@@ -54,7 +54,6 @@ Status: belegt 19, vorgabe 33, annahme 36, offen 1
 |---|---|---|---|---|---|---|
 | `ptes.c_wasser` | 0.001163 | MWh/(m3 K) | belegt | rho*cp Wasser ≈ 1000 kg/m3 * 4,187 kJ/(kg K) = 1,163 kWh/(m3 K); BRF §3.2 |  | Bei 45-85 degC rho*cp ≈ 1,14-1,15 kWh/(m3 K) (-1...-2 %); vernachlässigt. |
 | `ptes.T_oben` | 85 | degC | vorgabe | BRF §3.1; Liner-Grenze (Xiang et al. 2022) | 90 | Direktentladung braucht T_oben >= T_VL + 5 K = 85 degC -> bei VL 80 genau an der Grenze. |
-| `ptes.T_mitte` | 45 | degC | vorgabe | = Netz-Rücklauf (BRF §3.1) |  |  |
 | `ptes.T_unten` | 10 | degC | vorgabe | BRF §3.1; DRL Tmin 9-12 degC |  |  |
 | `ptes.verlustrate` | 4e-05 | 1/h | annahme | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) | 1.5e-05, 8e-05 | PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10). |
 | `ptes.kosten_spez` | 105 | EUR/m3 | annahme | Kostenkurve aus DRL 60.000 m3 / 38,3 EUR/m3 (SIF, 2014) und Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019): c ~ V^-0,31; bei ≈ 8.700 m3 -> 70 EUR/m3, x 1,5 Baupreissteigerung 2014->2025 ≈ 105 EUR/m3 | 70, 140 | Linear im LP (konstant je m3). Gilt für ≈ 5.000-12.000 m3; bei ganz anderer optimaler Größe neu ableiten (docs E20). |
@@ -74,6 +73,7 @@ Status: belegt 19, vorgabe 33, annahme 36, offen 1
 | `kollektor.neigung` | 35 | deg | annahme | TEAM: einfache Annahme; 35 deg = übliche Neigung großer Freiflächenfelder in DE/DK (Kompromiss Ertrag/Reihenabstand) | 25, 45 |  |
 | `kollektor.azimut` | 180 | deg | annahme | Südausrichtung (pvlib-Konvention 180 = Süd), Standard bei Freifeldanlagen |  |  |
 | `kollektor.flaechenfaktor` | 2.3 | m2 Grund / m2 Kollektor | belegt | BSW: 2- bis 2,3-fache Bruttokollektorfläche inkl. Reihenabstände und Heizzentrale (Berlin.de nennt ≈ 3) | 2, 3 |  |
+| `kollektor.strahlung_skalierung` | 1 | - | vorgabe | Faktor auf die PVGIS-Strahlung 2022 (Sensitivität Solarressource) | 0.78 | 0,78 ≈ Normaljahr: DWD-Klima 03028 ≈ 960 kWh/m2 horizontal x 1,13 Neigungsgewinn ≈ 1.085 kWh/m2 vs. PVGIS 2022 1.394 kWh/m2 (datenbasis §2) |
 | `kollektor.strahlungsquelle` | pvgis_sarah3 | - | annahme | DWD-Strahlung an Stn. 3028 endet 31.08.2011 -> 2022 fehlt. PVGIS-SARAH3 deckt 2005-2023 ab (JRC). |  |  |
 | `kollektor.kosten_spez` | 450 | EUR/m2 | annahme | Bitterfeld-Wolfen (BBU 2024): Budget 2,25 Mio. EUR für 5.000 m2 -> 450 EUR/m2 (Planung 2020); DRL 2014: (5,856+0,321) Mio. EUR / 37.573 m2 = 164 EUR/m2 (sehr groß, DK) | 300, 550 | Feldgröße hier ≈ 2.000-5.000 m2 -> Bitterfeld-Größenordnung passender als DRL. |
 
@@ -123,7 +123,7 @@ Status: belegt 19, vorgabe 33, annahme 36, offen 1
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
 | `strom.tarif` | fest | - | vorgabe | BRF §3.5 / TEAM: zunächst fester Tarif; später Zeitreihe oder PV-Anteil | day_ahead |  |
-| `strom.preis_fest` | 300 | EUR/MWh | vorgabe | TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto) |  |  |
+| `strom.preis_fest` | 300 | EUR/MWh | vorgabe | TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto) | 200, 400 | Bandbreite ±1/3 als Annahme für die Sensitivität |
 | `strom.aufschlag_day_ahead` | **offen** | EUR/MWh | offen |  |  | erst für Day-Ahead-Variante nötig |
 | `strom.emissionsfaktor` | 0.363 | t/MWh | belegt | UBA: CO2-Emissionen pro kWh Strom 2024 = 363 g/kWh (Themenseite; UBA-FAQ nennt 353 g) | 0.2 |  |
 | `strom.ee_anteil` | 0.544 | - | belegt | AGEE-Stat/UBA: Anteil EE am Bruttostromverbrauch 2024 = 54,4 % |  |  |
@@ -158,3 +158,9 @@ Status: belegt 19, vorgabe 33, annahme 36, offen 1
 | `solver.name` | highs | - | vorgabe | BRF §2 |  |  |
 | `solver.optionen` | {'solver': 'ipm', 'run_crossover': 'off'} | - | vorgabe | Benchmark 09.11.2026 (A_spez 0,4, V/A 1,0, 8760 h, 1 Thread): Simplex 262 s, IPM ohne Crossover 56 s, identisches Optimum |  |  |
 | `solver.tie_breaker` | 0.1 | EUR/MWh | vorgabe | numerische Hilfsgröße (keine Kosten): Speicherladen minimal teurer als Direktnutzung; << Strompreis, LCOH-Einfluss < 0,01 EUR/MWh |  |  |
+
+## tornado
+
+| Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
+|---|---|---|---|---|---|---|
+| `tornado.parameter` | ['ptes.kosten_spez', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

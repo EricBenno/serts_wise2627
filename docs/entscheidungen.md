@@ -148,3 +148,12 @@ Winter „freizuschalten“ – physikalisch unsinnig (oben im Speicher ist es i
 Heizperiode. Ergebnis: Sommer Kurzzeitnutzung, Ladung Jun–Sep, Entladung Nov–Jan wie in Dronninglund.
 Bleibende Eigenheit (perfekte Voraussicht): Der volle Speicher wird bis Nov/Dez gehalten, weil die Wärme dort
 die Luft-WP mit schlechterem COP ersetzt.
+
+### E22 Tornado und kleine Aufräumarbeiten
+- `serts tornado`: Jeder Parameter aus `tornado.parameter` wird einzeln auf seine `sens`-Werte gesetzt, die
+  Größen werden jeweils neu optimiert (zeigt die LCOH des jeweils kostenoptimalen Systems). 3 parallele
+  Läufe à 1 Thread, ≈ 3 min für 24 Läufe.
+- Solarressource als Faktor `kollektor.strahlung_skalierung` (Variante 0,78 ≈ Normaljahr statt 2022).
+- Strompreis-Bandbreite 20–40 ct/kWh (Annahme ±1/3).
+- `ptes.T_mitte` entfällt: die Grenze direkt/WP ist der Netz-Rücklauf `netz.T_RL` (ein Parameter weniger,
+  Rücklauf-Sensitivität wirkt automatisch auf den Direktanteil).

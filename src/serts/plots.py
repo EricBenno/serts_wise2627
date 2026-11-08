@@ -80,17 +80,21 @@ def tornado(df: pd.DataFrame, spalte: str, titel: str, out: Path) -> Path:
     var["delta"] = var[spalte] - basis
     gruppen = []
     for p, g in var.groupby("parameter"):
-        werte = "  ".join(f"{w:g}" if isinstance(w, int | float) else str(w) for w in g["wert"])
-        bw = g["basiswert"].iloc[0]
-        label = f"{p}\n(Basis {bw:g} → {werte})" if isinstance(bw, int | float) else p
-        gruppen.append((label, g["delta"].min(), g["delta"].max(), g))
-    gruppen.sort(key=lambda x: max(abs(x[1]), abs(x[2])))
+        g = g.sort_values("wert")
+        bw = float(g["basiswert"].iloc[0])
+        werte = " / ".join(f"{w:g}" for w in g["wert"])
+        label = f"{p}\n(Basis {bw:g}; Variante {werte})"
+        # größter Ausschlag zuerst zeichnen, damit kleinere Balken sichtbar bleiben
+        g = g.reindex(g["delta"].abs().sort_values(ascending=False).index)
+        gruppen.append((label, bw, g))
+    gruppen.sort(key=lambda x: x[2]["delta"].abs().max())
 
     fig, ax = plt.subplots(figsize=(9, 0.55 * len(gruppen) + 1.5))
-    for i, (_label, _lo, _hi, g) in enumerate(gruppen):
+    for i, (_label, bw, g) in enumerate(gruppen):
         for _, row in g.iterrows():
-            farbe = "tab:blue" if row["delta"] < 0 else "tab:red"
-            ax.barh(i, row["delta"], left=basis, color=farbe, alpha=0.75, height=0.6)
+            # Farbe = Richtung der Parameteränderung (nicht der Kennzahl)
+            farbe = "tab:blue" if float(row["wert"]) < bw else "tab:orange"
+            ax.barh(i, row["delta"], left=basis, color=farbe, alpha=0.8, height=0.6)
             ax.text(
                 basis + row["delta"],
                 i,
@@ -100,10 +104,18 @@ def tornado(df: pd.DataFrame, spalte: str, titel: str, out: Path) -> Path:
                 fontsize=7,
             )
     ax.axvline(basis, color="k", lw=1)
+    from matplotlib.patches import Patch
+
+    handles = [
+        Patch(color="tab:blue", alpha=0.8, label="Parameter niedriger als Basis"),
+        Patch(color="tab:orange", alpha=0.8, label="Parameter höher als Basis"),
+    ]
     if spalte == "lcoh" and "gas_lcoh" in df:
         gas = float(df.loc[df["parameter"] == "basis", "gas_lcoh"].iloc[0])
-        ax.axvline(gas, color="grey", ls="--", lw=1, label=f"Gas-Referenz {gas:.0f}")
-        ax.legend(fontsize=8, loc="lower right")
+        handles.append(
+            ax.axvline(gas, color="grey", ls="--", lw=1, label=f"Gas-Referenz {gas:.0f}")
+        )
+    ax.legend(handles=handles, fontsize=7, loc="lower right")
     ax.set_yticks(range(len(gruppen)), [g[0] for g in gruppen], fontsize=7)
     ax.set_xlabel(titel)
     ax.set_title(
