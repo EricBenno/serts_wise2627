@@ -1,7 +1,5 @@
-# Sensitivität Rücklauftemperatur (BRF §2)
+# Sensitivität Rücklauftemperatur (BRF §2); Speicher-Direktanteil folgt dem Rücklauf
 meta:
-  beschreibung: "Rücklauf 40 degC (Pool-Mitte folgt dem Rücklauf)"
+  beschreibung: "Rücklauf 40 degC"
 netz:
   T_RL: 40
-ptes:
-  T_mitte: 40

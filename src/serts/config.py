@@ -150,6 +150,17 @@ class Config:
                 + "\n  - ".join(missing)
             )
 
+    def variante(self, dotted: str, wert: Any) -> Config:
+        """Kopie mit einem geänderten Parameterwert (für Sensitivitäten)."""
+        tree = copy.deepcopy(self.tree)
+        node: Any = tree
+        for part in dotted.split("."):
+            node = node[part]
+        if not is_param(node):
+            raise KeyError(f"'{dotted}' ist kein Parameter")
+        node["wert"] = wert
+        return Config(tree=tree, name=f"{self.name}:{dotted}={wert}", sources=self.sources)
+
     def params(self) -> list[tuple[str, dict]]:
         return list(iter_params(self.tree))
 

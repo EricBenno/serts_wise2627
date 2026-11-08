@@ -173,8 +173,11 @@ def build_network(
     return n
 
 
-def optimize(n, cfg: Config):
-    """Löst das LP (HiGHS) mit den zwei Zusatzbedingungen aus constraints.py."""
+def optimize(n, cfg: Config, threads: int | None = None):
+    """Löst das LP (HiGHS) mit den zwei Zusatzbedingungen aus constraints.py.
+
+    ``threads=1`` bei parallelen Läufen (sonst überbuchen mehrere HiGHS-Prozesse die Kerne).
+    """
     from functools import partial
 
     from serts.constraints import extra_functionality
@@ -185,6 +188,7 @@ def optimize(n, cfg: Config):
         include_objective_constant=False,
         log_to_console=False,
         **dict(cfg.get("solver.optionen")),
+        **({"threads": threads} if threads else {}),
     )
     if status != "ok":
         raise RuntimeError(f"Optimierung fehlgeschlagen: {status} / {cond}")

@@ -92,6 +92,18 @@ def _cmd_run(a):
     print(f"\nErgebnis: {out}")
 
 
+def _cmd_tornado(a):
+    import pandas as pd
+
+    from serts.tornado import tornado
+
+    out = tornado(load_config(a.szenario), jobs=a.jobs)
+    df = pd.read_csv(out / "tornado.csv").sort_values(["parameter", "wert"])
+    cols = ["parameter", "wert", "lcoh", "solar_gesamt", "A_koll_m2", "V_m3", "P_WP_MW"]
+    print(df[cols].round(3).to_string(index=False))
+    print(f"\nErgebnis: {out}")
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     ap = argparse.ArgumentParser(prog="serts")
@@ -121,6 +133,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--V", type=float, default=None, help="Speichervolumen fest [m3] (0 = ohne)")
     p.add_argument("--stunden", type=int, default=None, help="nur die ersten N Stunden (Test)")
     p.set_defaults(func=_cmd_run)
+
+    p = sub.add_parser("tornado", help="Sensitivitäten (tornado.parameter x sens-Werte)")
+    p.add_argument("--szenario", default=None)
+    p.add_argument("--jobs", type=int, default=3, help="parallele Läufe (je 1 Thread)")
+    p.set_defaults(func=_cmd_tornado)
 
     sub.add_parser("annahmen", help="docs/annahmen.md erzeugen").set_defaults(func=_cmd_annahmen)
     sub.add_parser(

@@ -4,7 +4,7 @@
             (nur wenn A oder V optimiert wird; bei festen Größen nur Check in kpi.py)
 2. Temperatur-Regel des Speichers, vereinfacht über das Jahr:
             Σ Direktentladung <= f * (Σ Direktentladung + Σ Quellwärme an die WP)
-            mit f = (T_oben - T_mitte) / (T_oben - T_unten)  (≈ 53 %, SCH D3; DRL gemessen 52-63 %)
+            mit f = (T_oben - T_RL) / (T_oben - T_unten)  (≈ 53 %, SCH D3; DRL gemessen 52-63 %)
    Begründung: Nur der Anteil oberhalb des Rücklaufs kann ohne WP genutzt werden; der Rest
    (Rücklauf bis T_unten) ist nur als WP-Quelle nutzbar.
 """
@@ -16,7 +16,7 @@ from serts.network import M2_JE_MW, mwh_je_m3
 
 
 def direktanteil_max(cfg: Config) -> float:
-    t_o, t_m, t_u = (cfg.get(f"ptes.T_{k}") for k in ("oben", "mitte", "unten"))
+    t_o, t_m, t_u = (cfg.get(k) for k in ("ptes.T_oben", "netz.T_RL", "ptes.T_unten"))
     return (t_o - t_m) / (t_o - t_u)
 
 

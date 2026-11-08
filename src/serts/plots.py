@@ -70,6 +70,52 @@ def monatsbilanz(r: pd.DataFrame, out: Path) -> Path:
     return out
 
 
+def tornado(df: pd.DataFrame, spalte: str, titel: str, out: Path) -> Path:
+    """Balken je Parameter von min bis max der Kennzahl, Basis als senkrechte Linie.
+
+    ``df`` aus tornado.py: Zeile 'basis' + je Parameter/Wert eine Zeile.
+    """
+    basis = float(df.loc[df["parameter"] == "basis", spalte].iloc[0])
+    var = df[df["parameter"] != "basis"].copy()
+    var["delta"] = var[spalte] - basis
+    gruppen = []
+    for p, g in var.groupby("parameter"):
+        werte = "  ".join(f"{w:g}" if isinstance(w, int | float) else str(w) for w in g["wert"])
+        bw = g["basiswert"].iloc[0]
+        label = f"{p}\n(Basis {bw:g} → {werte})" if isinstance(bw, int | float) else p
+        gruppen.append((label, g["delta"].min(), g["delta"].max(), g))
+    gruppen.sort(key=lambda x: max(abs(x[1]), abs(x[2])))
+
+    fig, ax = plt.subplots(figsize=(9, 0.55 * len(gruppen) + 1.5))
+    for i, (_label, _lo, _hi, g) in enumerate(gruppen):
+        for _, row in g.iterrows():
+            farbe = "tab:blue" if row["delta"] < 0 else "tab:red"
+            ax.barh(i, row["delta"], left=basis, color=farbe, alpha=0.75, height=0.6)
+            ax.text(
+                basis + row["delta"],
+                i,
+                f" {row[spalte]:.3g} ",
+                va="center",
+                ha="left" if row["delta"] >= 0 else "right",
+                fontsize=7,
+            )
+    ax.axvline(basis, color="k", lw=1)
+    if spalte == "lcoh" and "gas_lcoh" in df:
+        gas = float(df.loc[df["parameter"] == "basis", "gas_lcoh"].iloc[0])
+        ax.axvline(gas, color="grey", ls="--", lw=1, label=f"Gas-Referenz {gas:.0f}")
+        ax.legend(fontsize=8, loc="lower right")
+    ax.set_yticks(range(len(gruppen)), [g[0] for g in gruppen], fontsize=7)
+    ax.set_xlabel(titel)
+    ax.set_title(
+        f"Sensitivität {titel} (Basis {basis:.3g}; Größen jeweils neu optimiert)", fontsize=9
+    )
+    ax.grid(axis="x", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out, dpi=150)
+    plt.close(fig)
+    return out
+
+
 def cop_kurve(T_a: pd.Series, cop: pd.Series, out: Path) -> Path:
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.scatter(T_a, cop, s=2)

@@ -35,7 +35,6 @@ def test_alle_szenarien_laden(szenario):
 def test_szenario_ueberschreibt_skalar():
     c = load_config("rl_40")
     assert c.get("netz.T_RL") == 40
-    assert c.get("ptes.T_mitte") == 40
     assert c.get("netz.T_VL") == 80  # unverändert
 
 

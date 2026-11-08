@@ -35,7 +35,8 @@ def build_zeitreihen(cfg: Config, vollstaendig: bool = True) -> tuple[pd.DataFra
     ts["COP_luft"] = heatpump.cop_luft(cfg, T_a)
     try:
         strahlung = weather.strahlung_kollektorebene(cfg)
-        ts["G_poa"] = strahlung["G_poa"].reindex(ts.index)
+        faktor = cfg.get("kollektor.strahlung_skalierung")
+        ts["G_poa"] = strahlung["G_poa"].reindex(ts.index) * faktor
         ts["P_solar"] = solar.kollektor_zeitreihe(cfg, ts["G_poa"], T_a)
     except (OffenerParameter, FileNotFoundError) as exc:
         if vollstaendig:

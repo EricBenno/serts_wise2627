@@ -39,10 +39,16 @@ def new_run_dir(cfg: Config, label: str = "", root: Path = RESULTS) -> Path:
     return out
 
 
-def loese(cfg: Config, ts: pd.DataFrame, A_m2: float | None = None, V_m3: float | None = None):
+def loese(
+    cfg: Config,
+    ts: pd.DataFrame,
+    A_m2: float | None = None,
+    V_m3: float | None = None,
+    threads: int | None = None,
+):
     """Netz bauen, optimieren, auswerten. A/V = None -> Größe wird optimiert."""
     n = network.build_network(cfg, ts, A_m2, V_m3)
-    network.optimize(n, cfg)
+    network.optimize(n, cfg, threads=threads)
     k, r = kpi.auswerten(n, cfg, ts)
     return n, k, r
 
