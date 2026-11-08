@@ -96,7 +96,7 @@ def _cmd_raster(a):
 
     from serts.run import run_raster
 
-    out = run_raster(load_config(a.szenario), stunden=a.stunden)
+    out = run_raster(load_config(a.szenario), stunden=a.stunden, jobs=a.jobs)
     df = pd.read_csv(out / "raster.csv")
     cols = [
         "A_spez",
@@ -145,6 +145,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("raster", help="Rasterlauf (M6): Heatmap LCOH + Pareto")
     p.add_argument("--szenario", default=None)
     p.add_argument("--stunden", type=int, default=None, help="nur die ersten N Stunden (Test)")
+    p.add_argument("--jobs", type=int, default=4, help="parallele Prozesse (je ≈ 1 GB RAM)")
     p.set_defaults(func=_cmd_raster)
 
     sub.add_parser("annahmen", help="docs/annahmen.md erzeugen").set_defaults(func=_cmd_annahmen)

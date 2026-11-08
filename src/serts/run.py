@@ -80,20 +80,32 @@ def run_single(cfg: Config, A_spez: float, V_pro_A: float, stunden: int | None =
     return out
 
 
-def run_raster(cfg: Config, stunden: int | None = None) -> Path:
+def _rasterpunkt(cfg: Config, ts: pd.DataFrame, Q: float, a: float, v: float) -> dict:
+    """Ein Rasterpunkt (top-level, damit er in einem Worker-Prozess laufen kann)."""
+    logging.getLogger("linopy").setLevel(logging.WARNING)
+    logging.getLogger("pypsa").setLevel(logging.WARNING)
+    _, k, _ = loese(cfg, ts, a * Q, v * a * Q)
+    k.update({"A_spez": a, "V_pro_A": v})
+    return k
+
+
+def run_raster(cfg: Config, stunden: int | None = None, jobs: int = 1) -> Path:
     """Rasterlauf (M6): A_spez x V_pro_A -> raster.csv, Heatmap LCOH, Pareto EE-Anteil vs. LCOH."""
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+
     ts, Q = _ts(cfg, stunden)
     out = new_run_dir(cfg, "raster" + (f"_{stunden}h" if stunden else ""))
+    punkte = [(a, v) for a in cfg.get("raster.A_spez") for v in cfg.get("raster.V_pro_A")]
     zeilen = []
-    for a in cfg.get("raster.A_spez"):
-        for v in cfg.get("raster.V_pro_A"):
-            A, V = a * Q, v * a * Q
-            log.info("Raster A_spez=%s V/A=%s (A=%.0f m2, V=%.0f m3)", a, v, A, V)
-            _, k, _ = loese(cfg, ts, A, V)
-            k.update({"A_spez": a, "V_pro_A": v})
-            zeilen.append(k)
+    with ProcessPoolExecutor(max_workers=jobs) as pool:
+        futs = {pool.submit(_rasterpunkt, cfg, ts, Q, a, v): (a, v) for a, v in punkte}
+        for f in as_completed(futs):
+            a, v = futs[f]
+            zeilen.append(f.result())
+            log.info("Raster %d/%d fertig: A_spez=%s V/A=%s", len(zeilen), len(punkte), a, v)
             pd.DataFrame(zeilen).to_csv(out / "raster.csv", index=False)  # Zwischenstand
-    df = pd.DataFrame(zeilen)
+    df = pd.DataFrame(zeilen).sort_values(["A_spez", "V_pro_A"])
+    df.to_csv(out / "raster.csv", index=False)
     plots.heatmap_lcoh(df, out / "heatmap_lcoh.png")
     plots.pareto(df, out / "pareto_ee_lcoh.png")
     return out
