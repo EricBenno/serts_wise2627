@@ -618,6 +618,11 @@ solver:
     einheit: "-"
     status: vorgabe
     quelle: "BRF §2"
+  optionen:
+    wert: {solver: ipm, run_crossover: "off"}
+    einheit: "-"
+    status: vorgabe
+    quelle: "Benchmark 09.11.2026 (A_spez 0,4, V/A 1,0, 8760 h, 1 Thread): Simplex 262 s, IPM ohne Crossover 56 s, identisches Optimum"
   tie_breaker:
     wert: 0.1
     einheit: "EUR/MWh"

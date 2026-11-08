@@ -4,66 +4,79 @@
 
 ```
 ../Bad Lippspringe ──serts import-raw──> data/raw (+MANIFEST.sha256)
+PVGIS-API ─────────serts fetch-pvgis──> data/raw/pvgis
                                             │
 config/base.yaml (+ scenarios/*.yaml) ──────┤
                                             ▼
-                                  serts prepare (prepare.py)
-          sources/netzberechnung ─> demand.py   ─┐
-          sources/dwd            ─> weather.py  ─┼─> data/processed/<szenario>/zeitreihen_2022.csv
-          PVGIS (fetch-pvgis)    ─> solar.py    ─┤                     kennzahlen.json, *.png
-                                    heatpump.py ─┘
-                                            │
-                                            ▼  (ab M2)
-          network.py + constraints.py ─> PyPSA/HiGHS ─> kpi.py, economics.py, plots.py
+                prepare.build_zeitreihen (8760 h): Last, T_a, COP_luft, p_max_pu_luft,
+                G_poa, P_hi, P_lo [kW/m²], Strompreis   (serts prepare -> data/processed + Plots)
                                             │
                                             ▼
-                     results/<zeit>_<szenario>/ (config.yaml, meta.json mit Git-Hash, netcdf, kpi.csv)
+          network.build_network(A, V) + constraints.extra_functionality ─> PyPSA/HiGHS
+                                            │
+                                            ▼
+          kpi.auswerten: Bilanzen, Speicher-η, Solaranteil getrennt, EE-Anteil, Caps, Regel-Checks,
+                         LCOH (economics), Gas-Referenz, CO₂, Flächencheck (flaeche)
+                                            │
+                                            ▼
+          results/<zeit>_<szenario>_<label>/  config.yaml, meta.json (Git-Hash),
+              Einzellauf: kpi.json, zeitreihen.csv, network.nc, monatsbilanz.png
+              Raster:     raster.csv, heatmap_lcoh.png, pareto_ee_lcoh.png
+```
+
+## Befehle
+
+```bash
+uv run serts run --A-spez 0.6 --V-pro-A 1.6          # Einzellauf, ≈ 1,5 min
+uv run serts run --A-spez 0.6 --V-pro-A 1.6 --stunden 168   # Schnelltest 1 Woche
+uv run serts raster --jobs 4                         # 24 Rasterpunkte, ≈ 6–10 min
+uv run serts raster --szenario rl_50 --jobs 4        # Raster für ein Szenario
+uv run pytest                                        # 45 Tests
 ```
 
 ## Module (`src/serts/`)
 
 | Modul | Aufgabe | Stand |
 |---|---|---|
-| `config.py` | YAML laden, Szenario mischen, prüfen; `get()` bricht bei `null` ab | fertig, getestet |
-| `paths.py` | zentrale Pfade | fertig |
-| `sources/netzberechnung.py` | Excel der NB lesen, Kennzahlen | fertig, getestet |
-| `sources/dwd.py` | DWD-Stundenwerte, Lückenfüllung, Strahlungsklima | fertig, getestet |
-| `sources/rawdata.py` | Rohdaten-Import + SHA-256 | fertig |
-| `weather.py` | T_a 2022; PVGIS laden/lesen | T_a fertig; PVGIS ungetestet (kein Download erfolgt) |
-| `demand.py` | Bedarf an heat_town (Gebäude, Netzverlust, Ankerkunde) | fertig, getestet |
-| `heatpump.py` | Lorenz-COP, COP_luft, p_max_pu_luft | fertig, Prüfwerte getestet |
-| `solar.py` | Kollektorkennlinie → P_hi/P_lo [kW/m²] | Formel getestet; Kennwerte offen |
-| `prices.py` | Strompreis fest / Day-Ahead | fertig; Werte offen |
-| `economics.py` | Annuität, LCOH, CO₂-Vermeidungskosten | fertig, getestet |
-| `kpi.py` | Speicherbilanz (Solites-Definitionen), Solaranteil | Grundfunktionen getestet; Auswertung aus Netz fehlt |
-| `network.py` | PyPSA-Netz bauen; Busse + Pool-Link-Tabelle | **Gerüst** (M2/M3) |
-| `constraints.py` | extra_functionality (Volumensumme, Verluste, Fläche, WP-Kapazität) | **Gerüst** (M3) |
-| `run.py` | Ergebnisordner mit Config + Git-Hash; Einzel/Raster | Ordner fertig; Läufe M5/M6 |
-| `plots.py`, `prepare.py`, `annahmen.py`, `cli.py` | Darstellung, M1-Pipeline, Annahmentabelle, CLI | fertig |
+| `config.py` | YAML laden, Szenario mischen, prüfen; `get()` bricht bei `null` ab | fertig |
+| `sources/` | NB-Excel, DWD (Lückenfüllung, Strahlungsklima), Rohdaten-Import | fertig |
+| `weather.py` | T_a 2022, PVGIS laden/lesen | fertig |
+| `demand.py`, `heatpump.py`, `solar.py`, `prices.py` | Last, COP, Kollektor, Strompreis (fest) | fertig; Day-Ahead offen |
+| `network.py` | PyPSA-Netz (Pools, Kollektor hi/lo, WP Luft/PTES, PtH, Transmission) | fertig |
+| `constraints.py` | Volumensumme, Verluste, gemeinsame Kollektorfläche, WP-Leistung je Quelle | fertig, getestet |
+| `kpi.py` | Auswertung gelöster Netze inkl. Regel-Checks BRF §7 | fertig (Basis) |
+| `economics.py` | Annuität + O&M, Preisdynamik (VDI 2067), PTES-Kostenkurve, Gas-Referenz | fertig |
+| `flaeche.py` | Flächenbedarf Kollektor + PTES vs. 13.000 m² | fertig |
+| `run.py`, `cli.py`, `plots.py` | Einzel-/Rasterlauf (parallel), Plots | fertig |
 
 ## Meilensteine (BRF §5)
 
 | | Inhalt | Stand |
 |---|---|---|
-| M0 | Repo, Config-Schema, Tests | ✅ `pytest` grün (37 Tests), `ruff` sauber |
-| M1 | Zeitreihen | 🟡 Last, T_a, COP_luft fertig; **Kollektor wartet auf** `kollektor.eta0/a1/a2/neigung` + PVGIS; Strompreis offen |
-| M2 | Mini-Netz 48 h ohne Speicher | ⬜ `network.build_network` |
-| M3 | Pool-Speicher + Constraints, 8760 h | ⬜ `constraints.py` |
-| M4 | Validierung Dronninglund | ⬜ Szenario + Referenz-CSV vorhanden; dänisches Wetter fehlt |
-| M5–M9 | Basis, Raster, Varianten, Sensitivitäten, Bericht | ⬜ |
+| M0 | Repo, Config, Tests | ✅ |
+| M1 | Zeitreihen | ✅ (Kollektorkennwerte = Annahme, E18) |
+| M2 | Mini-Netz 48 h ohne Speicher | ✅ Test Energiebilanz < 0,1 % |
+| M3 | Pool-Speicher + Constraints | ✅ Tests Volumensumme, Verluste, Fläche, WP-Caps, Speicherbilanz |
+| M4 | Validierung Dronninglund | ⏭ übersprungen (braucht dänisches Wetter + Last; Szenario/Referenz liegen bereit) |
+| M5 | Basisszenario | ✅ `serts run` (KPI, Monatsbilanz) |
+| M6 | Raster, LCOH, CO₂ | ✅ `serts raster` (Heatmap, Pareto) – vereinfacht, s. u. |
+| M7–M9 | Varianten, Tornado, Bericht | ⬜ |
 
-## Weiterarbeiten – nächste Schritte
+**Vereinfachungen (bewusst):** keine Wärmeübertrager-Caps (E12), Fläche nur als Check (E17), PtH-Laden des
+PTES und Biomasse-Variante nicht implementiert, Gas-Referenz als Formel statt LP, M4 ausgelassen.
 
-1. Offene Werte mit Quelle setzen: `uv run serts offen` (aktuell u. a. Kollektorkennwerte, Neigung, Kosten,
-   Strompreis, Zins, x_TL, x_HX). Danach `uv run serts annahmen`.
-2. PVGIS laden (`uv run serts fetch-pvgis`), Jahressumme gegen DWD-Klima prüfen → M1 abschließen.
-3. M2: `build_network` für 48 h ohne Speicher + Test „Energiebilanz < 0,1 %“.
-4. M3: Pool-Stores + `constraints.py`, je Constraint ein Mini-Netz-Test mit Handrechnung.
+## Weiterarbeiten – sinnvolle nächste Schritte
+
+1. Keymark-Datenblatt HTHEATstore 35/10 besorgen → `kollektor.eta0/a1/a2` als `belegt`.
+2. DEA Technology Data (Storage 2025, District Heating) für PTES-, WP-, PtH-Kosten nachziehen.
+3. Strahlungsarmes bzw. Normaljahr (z. B. PVGIS-TMY) als Sensitivität „Solarressource“.
+4. M7: Varianten als Szenarien (ohne Speicher = V/A 0 ist schon im Raster; PV für WP; Biomasse).
+5. M8: Tornado – Schleife über `sens`-Werte in `base.yaml` (Struktur dafür ist vorhanden).
 
 ## Konventionen
 
-- Einheiten: MW, MWh, m³, °C; Kelvin nur in `heatpump.py`. Zeitindex tz-naiv, UTC, 8760 h.
-- Keine Zahl im Code: alles über `cfg.get()`. Testwerte in Tests sind als solche kommentiert.
+- Einheiten: MW, MWh, m³, °C, EUR (real, Preisbasis 2025, netto); Kelvin nur in `heatpump.py`.
+- Keine Zahl im Code: alles über `cfg.get()`. YAML-Zahlen ohne Exponent-Kurzform (1e6 wird Text!) –
+  der Validator meldet das.
 - Neuer Parameter → `base.yaml` mit einheit/status/quelle → `serts annahmen` → Commit.
-- Notebooks nur zur Auswertung, Logik gehört nach `src/serts`.
-- Ergebnisse nur über `run.new_run_dir()` speichern (Config-Kopie + Git-Hash).
+- Ergebnisse nur über `run.new_run_dir()` (Config-Kopie + Git-Hash).

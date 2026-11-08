@@ -49,9 +49,9 @@ def bezugsmenge(cfg: Config, ts: pd.DataFrame) -> float:
     return float(ts["last_gesamt"].sum()) * 8760.0 / len(ts)
 
 
-def loese(cfg: Config, ts: pd.DataFrame, A_m2: float, V_m3: float):
+def loese(cfg: Config, ts: pd.DataFrame, A_m2: float, V_m3: float, threads: int | None = None):
     n = network.build_network(cfg, ts, A_m2, V_m3)
-    network.optimize(n, cfg, ts)
+    network.optimize(n, cfg, ts, threads=threads)
     k, r = kpi.auswerten(n, cfg, ts)
     return n, k, r
 
@@ -80,11 +80,13 @@ def run_single(cfg: Config, A_spez: float, V_pro_A: float, stunden: int | None =
     return out
 
 
-def _rasterpunkt(cfg: Config, ts: pd.DataFrame, Q: float, a: float, v: float) -> dict:
+def _rasterpunkt(
+    cfg: Config, ts: pd.DataFrame, Q: float, a: float, v: float, threads: int | None
+) -> dict:
     """Ein Rasterpunkt (top-level, damit er in einem Worker-Prozess laufen kann)."""
     logging.getLogger("linopy").setLevel(logging.WARNING)
     logging.getLogger("pypsa").setLevel(logging.WARNING)
-    _, k, _ = loese(cfg, ts, a * Q, v * a * Q)
+    _, k, _ = loese(cfg, ts, a * Q, v * a * Q, threads=threads)
     k.update({"A_spez": a, "V_pro_A": v})
     return k
 
@@ -98,7 +100,10 @@ def run_raster(cfg: Config, stunden: int | None = None, jobs: int = 1) -> Path:
     punkte = [(a, v) for a in cfg.get("raster.A_spez") for v in cfg.get("raster.V_pro_A")]
     zeilen = []
     with ProcessPoolExecutor(max_workers=jobs) as pool:
-        futs = {pool.submit(_rasterpunkt, cfg, ts, Q, a, v): (a, v) for a, v in punkte}
+        futs = {
+            pool.submit(_rasterpunkt, cfg, ts, Q, a, v, 1 if jobs > 1 else None): (a, v)
+            for a, v in punkte
+        }
         for f in as_completed(futs):
             a, v = futs[f]
             zeilen.append(f.result())

@@ -42,7 +42,14 @@ und höhere spezifische Kosten als DRL (siehe `ptes.verlustrate`, `ptes.kosten_s
 | SD Sonnenscheindauer | 1951–02/2025 | nicht verwendet |
 
 Kennwerte 2022 (TU): Mittel **11,2 °C**, Minimum −10,7 °C, 60 h unter −7 °C (`waermepumpe.T_min_luft`).
-Lastgewichteter Jahres-COP der Luft-WP (η_G 0,5, 45→75 °C, Abtau 5 %) = **2,79**.
+Lastgewichteter Jahres-COP der Luft-WP (η_G 0,5, 45→80 °C, Abtau 5 %) = **2,70** (bei 45→75 °C: 2,79).
+
+**PVGIS-SARAH3 2022** (35° Süd, mit Horizont): Einstrahlung Kollektorebene **1.394 kWh/m²** – deutlich über
+dem DWD-Klimamittel (≈ 960 kWh/m² horizontal ≈ 1.085 auf 35° bei angenommenem Neigungsgewinn 1,13).
+PVGIS-T_a korreliert mit DWD 03028 zu r = 0,98 (PVGIS im Mittel 1 K kälter). Kollektor-Potenzial (Annahme-Kennwerte):
+P_hi 587 kWh/(m²a), P_lo 871 kWh/(m²a).
+**Standort:** TEAM 09.11.2026 – Erzeugerstandort am Netz in Bad Lippspringe, ≈ 13.000 m², annähernd quadratisch.
+Lastgang der NB beruht auf Wetter Münster 2022 (Abschnitt 3 damit erklärt).
 
 **Datenlücke:** 20.05.2022 16 UTC – 23.05.2022 11 UTC (68 h) fehlen. Gefüllt mit Tagesgang ±7 Tage, linear an
 die Ränder angeschlossen (`dwd.fuelle_tagesgang`, Test `test_dwd.py`). Lastarme Zeit → Einfluss vernachlässigbar.

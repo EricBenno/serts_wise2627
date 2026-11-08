@@ -59,3 +59,59 @@ Sensitivität bis 8·10⁻⁵. Eigene Abschätzung, Literaturbeleg (Xiang 2022) 
 
 ### E11 Kollektor im Netz: p_nom = A·10⁻³ MW, p_max_pu = kW/m²
 Damit p_max_pu ≤ 1 bleibt (max. ≈ 0,7 kW/m²) und A direkt in m² aus dem Raster kommt.
+
+---
+*Ab hier: Team-Rückmeldung 09.11.2026 und Umsetzung M2–M6.*
+
+### E3 (revidiert) Netztemperatur 80/45 °C
+TEAM: Netz bleibt bei 80 °C Vorlauf (wie NB), Rücklauf frei → Basis 80/45 °C, Sensitivität 40/50 °C.
+Die NB-Netzverluste (80/50 °C) passen damit; E3-Abschlag entfällt weitgehend. Folge: Direktentladung
+braucht T_oben ≥ 85 °C = T_max → Pool-Modell unverändert, aber kein Puffer mehr nach oben.
+
+### E12 Wärmeübertrager-Caps (x_HX) nicht modelliert
+Lade-Links: Wärme ist durch die Kollektorleistung (≤ 0,66 kW/m²) begrenzt, eine WÜT-Auslegung auf
+Kollektorspitze (SCH A3) bindet also nie. Entlade-Links: durch Last und WP-Leistung begrenzt. Pool-Links
+erhalten deshalb p_nom = V m³/h (praktisch unbegrenzt). x_TL = 10 MW (Erzeugung am Netz, TEAM), Check
+„Stunden am Cap“ = 0. Kosten der WÜT stecken pauschal in den spezifischen Kosten.
+
+### E13 Kostenansätze (Preisbasis 2025, netto, real)
+- **PTES** degressiv: c(V) = 38,3 €/m³ · (V/60.000)^−0,31 · 1,5. Stützstellen DRL 38,3 €/m³ (SIF) und
+  Marstal 10.000 m³ 67 €/m³ (DEA 2019); Kontrolle Vojens 200.000 m³: 26 vs. 24 €/m³ real. Faktor 1,5 =
+  grobe Baupreissteigerung 2014→2025. Ergebnis z. B. 8.700 m³ ≈ 105 €/m³.
+- **Kollektorfeld** 450 €/m² (Bitterfeld-Wolfen, Planung 2020, 5.000 m²); DRL 2014 (164 €/m², 37.500 m²)
+  nicht übertragbar (Größe, Land, Jahr).
+- **WP** 1,0 Mio. €/MW_th, **PtH** 0,1 Mio. €/MW_th (Frederikssund 2022 + Kleinanlagen-Aufschlag),
+  **Gaskessel** 0,1 Mio. €/MW. DEA-Technology-Data-Werte waren online nicht direkt abrufbar → Annahmen
+  mit Sensitivitätsbereich in `base.yaml`.
+- Kapitalkosten = Annuität über die technische Lebensdauer + fixe O&M (% vom Invest).
+
+### E14 Kennzahlen-Definitionen
+- **LCOH** = (Σ Kapitalkosten/a + Stromkosten/a) / Netzeinspeisung (inkl. Netzverluste; Systemgrenze
+  Erzeugung). Zusätzlich `lcoh_geliefert` bezogen auf Wärme an Gebäude.
+- **Preisänderung** über den preisdynamischen Faktor a·b nach VDI 2067-1; bei 0 %/a (TEAM: real konstant)
+  genau 1. Variante +2 %/a über `oekonomie.preisaenderung.*`. Der Faktor wirkt auch im LP (Strompreis).
+- **EE-Anteil** = 1 − Netzstrom · (1 − EE-Anteil Strommix) / Einspeisung (1 MWh Strom ≈ 1 MWh Wärme
+  bei PtH; bei WP konservativ, weil Umweltwärme voll als EE zählt).
+- **Gas-Referenz:** Gaspreis 12 ct/kWh_Hs als Preis **ohne** CO₂-Bepreisung gelesen, CO₂ (100 €/t) separat.
+- **CO₂-Vermeidungskosten** negativ = System ist günstiger als Gas.
+
+### E15 PtH-Redundanz
+SCH A6: PtH ≥ Spitzenlast (n−1). Umgesetzt als `p_nom_min` der PtH (`pth.redundanz` = 1,0; Variante 0).
+Ohne diese Grenze baut das LP bei perfekter Voraussicht keine PtH (WP + Speicher decken die Spitze).
+
+### E16 Tie-Breaker für Speicherladen
+Laden und Entladen in derselben Stunde ist im Pool-Modell verlustfrei → LP-Lösung nicht eindeutig
+(Solar „durch den Speicher“ statt direkt). Lade-Links kosten 0,1 €/MWh (numerische Hilfsgröße, nicht in
+der LCOH). Damit ist die Aufteilung Solar direkt / über PTES aussagekräftig.
+
+### E17 Flächencheck statt Flächen-Constraint
+TEAM: ≈ 13.000 m² Grundstück. Bedarf = A_Koll · 2,3 (BSW, inkl. Reihenabstand/Technik) + PTES-Grundfläche
+(geometrisch ähnlich DRL, + 5 m Rand). Wird je Rasterpunkt ausgewiesen (`flaeche_ok`), nicht als
+Nebenbedingung – so bleibt sichtbar, wie viel teurer/besser größere Anlagen wären.
+
+### E18 Kollektorkennwerte als Annahme
+Typ wie DRL (Arcon-Sunmark HTHEATstore 35/10, Keymark SP SC0843-14). Das Datenblatt war am 09.11.2026 nicht
+abrufbar (solarkeymark.nl: Verbindung abgelehnt). η0 = 0,80, a1 = 2,4, a2 = 0,012 (BRF-Bandbreite).
+Plausibilisierung: Hochtemperatur-Ertrag 587 kWh/(m²a) bei PVGIS 2022 (1.394 kWh/m² Ebene); auf ein
+Normaljahr skaliert (DWD-Klima ≈ 960 kWh/m² horizontal, Ebene ≈ 1.085 mit angenommenem Neigungsgewinn 1,13) ≈ 460 kWh/(m²a) → im BSW-Bereich
+430–500. **Nachtragen**, sobald das Keymark-Datenblatt vorliegt.

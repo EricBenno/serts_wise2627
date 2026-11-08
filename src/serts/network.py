@@ -6,7 +6,7 @@ Busse (BRF §3.1):
 
 Konventionen:
 - Kollektor: p_nom = A[m2] * 1e-3, p_max_pu = P_spez[kW/m2] (solar.py, docs E11)
-- Pools: Store-Energie = Volumen [m3], e_nom = V, e_cyclic = True
+- Pools: Store-Energie = Volumen in 1.000 m3 (VOL), e_nom = V/VOL, e_cyclic = True
 - Pool-Links: efficiency = 1 (Volumen), Wärme über bus2 mit efficiency2 = ±dT * c
   (PyPSA: positiv = Abgabe an bus2, negativ = Entnahme)
 - Wärmepumpe: zwei Links (Luft / PTES) auf den Hilfsbus hp_heat; der Link ``hp_out``
@@ -30,6 +30,7 @@ from serts.config import Config
 log = logging.getLogger(__name__)
 
 POOLS = ("V85", "V45", "V10")
+VOL = 1000.0  # Pool-Einheit im LP: 1.000 m3 (bessere Konditionierung als m3, docs E19)
 
 # Pflichtparameter für einen Lauf (Abbruch, wenn null)
 PFLICHT = [
@@ -48,8 +49,8 @@ PFLICHT = [
 
 
 def pool_links(cfg: Config) -> list[dict]:
-    """Tabelle der Volumen-Links (BRF §3.2) inkl. Wärme-Effizienz auf bus2 [MWh/m3]."""
-    c = cfg.get("ptes.c_wasser")
+    """Tabelle der Volumen-Links (BRF §3.2) inkl. Wärme-Effizienz auf bus2 [MWh je 1.000 m3]."""
+    c = cfg.get("ptes.c_wasser") * VOL
     t_hi, t_mid, t_lo = (cfg.get(f"ptes.T_{k}") for k in ("oben", "mitte", "unten"))
     links = [
         dict(
@@ -190,7 +191,7 @@ def build_network(cfg: Config, ts: pd.DataFrame, A_koll_m2: float, V_m3: float):
     # --- PTES-Pools -----------------------------------------------------------------
     if mit_speicher:
         for pool in POOLS:
-            n.add("Store", pool, bus=pool, carrier="wasser", e_nom=V_m3, e_cyclic=True)
+            n.add("Store", pool, bus=pool, carrier="wasser", e_nom=V_m3 / VOL, e_cyclic=True)
         eps = cfg.get("solver.tie_breaker")
         for d in pool_links(cfg):
             name = d.pop("name")
@@ -198,7 +199,7 @@ def build_network(cfg: Config, ts: pd.DataFrame, A_koll_m2: float, V_m3: float):
             # "gleichzeitig laden und entladen" (sonst gleichwertige, nicht eindeutige Lösung)
             mc = eps * abs(d["efficiency2"]) if name.startswith("laden") else 0.0
             # p_nom = V je Stunde: Lade-/Entladeleistung praktisch nicht begrenzt (docs E12)
-            n.add("Link", name, carrier="wasser", p_nom=V_m3, marginal_cost=mc, **d)
+            n.add("Link", name, carrier="wasser", p_nom=V_m3 / VOL, marginal_cost=mc, **d)
 
     # --- Wärmepumpe -------------------------------------------------------------------
     n.add(
@@ -258,18 +259,25 @@ def build_network(cfg: Config, ts: pd.DataFrame, A_koll_m2: float, V_m3: float):
     return n
 
 
-def optimize(n, cfg: Config, ts: pd.DataFrame):
-    """Löst das LP mit HiGHS und den Zusatz-Constraints. Gibt (status, condition) zurück."""
+def optimize(n, cfg: Config, ts: pd.DataFrame, threads: int | None = None):
+    """Löst das LP mit HiGHS und den Zusatz-Constraints. Gibt (status, condition) zurück.
+
+    ``threads=1`` in parallelen Rasterprozessen (sonst Überbuchung der Kerne).
+    """
     from functools import partial
 
     from serts.constraints import extra_functionality
 
     ef = partial(extra_functionality, cfg=cfg, ts=ts)
+    opts = dict(cfg.get("solver.optionen"))
+    if threads:
+        opts["threads"] = threads
     status, cond = n.optimize(
         solver_name=cfg.get("solver.name"),
         extra_functionality=ef,
         include_objective_constant=False,
         log_to_console=False,
+        **opts,
     )
     if status != "ok":
         raise RuntimeError(f"Optimierung fehlgeschlagen: {status} / {cond}")

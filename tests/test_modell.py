@@ -62,7 +62,9 @@ def test_m2_ohne_speicher_energiebilanz(cfg, ts):
 def test_m3_volumensumme_und_verluste(cfg, ts, netz_mit_speicher):
     n = netz_mit_speicher
     e = n.stores_t.e
-    np.testing.assert_allclose(e[["V85", "V45", "V10"]].sum(axis=1), 3000.0, atol=1e-4)
+    np.testing.assert_allclose(
+        e[["V85", "V45", "V10"]].sum(axis=1) * network.VOL, 3000.0, atol=1e-3
+    )
     lam = cfg.get("ptes.verlustrate")
     np.testing.assert_allclose(n.links_t.p0["verlust_oben"], lam * e["V85"], atol=1e-6)
     np.testing.assert_allclose(n.links_t.p0["verlust_mitte"], lam * e["V45"], atol=1e-6)

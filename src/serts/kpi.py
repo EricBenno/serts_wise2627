@@ -67,7 +67,9 @@ def _link_waerme(n, name: str, eff_attr: str = "efficiency2") -> pd.Series:
 
 def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     """Stündliche Ergebnisgrößen [MW bzw. m3] für Bilanzen und Plots."""
-    c = cfg.get("ptes.c_wasser")
+    from serts.network import VOL
+
+    c = cfg.get("ptes.c_wasser")  # MWh/(m3 K); Pool-Größen im LP in 1.000 m3 -> * VOL
     t_hi, t_mid, t_lo = (cfg.get(f"ptes.T_{k}") for k in ("oben", "mitte", "unten"))
     g = n.generators_t.p
     p0 = n.links_t.p0
@@ -83,7 +85,7 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     r["entladen_direkt"] = _link_waerme(n, "entladen_direkt")
     r["wp_quelle_ptes"] = _link_waerme(n, "wp_quelle_ptes")
     r["speicherverlust"] = (
-        (p0["verlust_oben"] * (t_hi - t_mid) * c + p0["verlust_mitte"] * (t_mid - t_lo) * c)
+        (p0["verlust_oben"] * (t_hi - t_mid) + p0["verlust_mitte"] * (t_mid - t_lo)) * c * VOL
         if "verlust_oben" in p0
         else 0.0
     )
@@ -96,7 +98,7 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     r["strom_netz"] = g["netz_strom"]
     r["transmission"] = p0["transmission"]
     if "V85" in n.stores.index:
-        e = n.stores_t.e
+        e = n.stores_t.e * VOL  # -> m3
         r["V85"], r["V45"], r["V10"] = e["V85"], e["V45"], e["V10"]
         r["speicherinhalt"] = e["V85"] * (t_hi - t_lo) * c + e["V45"] * (t_mid - t_lo) * c
     # ungenutzte Kollektorfläche (Abregelung), bewertet auf Hochtemperatur-Niveau

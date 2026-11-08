@@ -17,7 +17,7 @@ from __future__ import annotations
 import pandas as pd
 
 from serts.config import Config
-from serts.network import POOLS
+from serts.network import POOLS, VOL
 
 
 def _sel(var, name: str):
@@ -26,7 +26,7 @@ def _sel(var, name: str):
 
 def extra_functionality(n, snapshots, *, cfg: Config, ts: pd.DataFrame) -> None:
     m = n.model
-    V = float(n.meta["V_m3"])
+    V = float(n.meta["V_m3"]) / VOL  # Pool-Einheit 1.000 m3
     A = float(n.meta["A_koll_m2"]) * 1e-3
     link_p = m["Link-p"]
 

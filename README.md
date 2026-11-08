@@ -12,6 +12,9 @@ uv run serts import-raw      # Rohdaten aus ../Bad Lippspringe nach data/raw kop
 uv run serts prepare         # Zeitreihen 8760 h -> data/processed/
 uv run serts offen           # Liste der offenen Parameter (x-Werte)
 uv run serts annahmen        # docs/annahmen.md aus config/base.yaml erzeugen
+uv run serts fetch-pvgis     # Strahlung 2022 (einmalig, Netzzugang)
+uv run serts run --A-spez 0.6 --V-pro-A 1.6   # Einzellauf (≈ 1,5 min)
+uv run serts raster --jobs 4 # Raster A × V, Heatmap LCOH, Pareto (≈ 6–10 min)
 uv run pytest                # Tests
 ```
 
