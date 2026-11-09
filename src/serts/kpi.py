@@ -53,6 +53,8 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     cop_s = cfg.get("waermepumpe.COP_ptes")
     r = pd.DataFrame(index=n.snapshots)
     r["last"] = ts["last_gesamt"]
+    r["T_a"] = ts["T_a"]  # nur für Plots
+    r["P_solar_spez"] = ts["P_solar"]  # kW/m2, nur für Plots
     r["kollektor"] = g["kollektor"]
     r["solar_direkt"] = p0["solar_direkt"]
     r["laden"] = p0.get("laden", leer)
@@ -159,6 +161,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     k["lcoh"] = economics.lcoh(sum(capex.values()), strom, Q)
     Q_geliefert = Q - float(ts["last_netzverlust"].sum()) * skal if "last_netzverlust" in ts else Q
     k["lcoh_geliefert"] = economics.lcoh(sum(capex.values()), strom, Q_geliefert)
+    k["Q_geliefert_MWh"] = Q_geliefert
     k["co2_t_a"] = S["strom_netz"] * cfg.get("strom.emissionsfaktor")
 
     ref = economics.gas_referenz(cfg, Q, float(ts["last_gesamt"].max()))

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from serts import kpi, network, plots
+from serts import ergebnisplots, kpi, network, plots
 from serts.config import Config
 from serts.paths import RESULTS, ROOT
 from serts.prepare import build_zeitreihen
@@ -99,4 +99,5 @@ def run(
     r.to_csv(out / "zeitreihen.csv", float_format="%.5g")
     n.export_to_netcdf(out / "network.nc")
     plots.monatsbilanz(r, out / "monatsbilanz.png")
+    ergebnisplots.alle(r, k, out)
     return out

@@ -654,6 +654,16 @@ tornado:
       - kollektor.kosten_spez
       - waermepumpe.kosten_spez
       - oekonomie.zins
+      - oekonomie.foerderquote
+      - oekonomie.preisaenderung.strom
+      - kollektor.eta0
+      - kollektor.feldverluste
+      - pth.redundanz
+      - netz.anteil_strasse
+      - netz.kosten_trasse_strasse
+      - netz.kosten_hausanschluss
+      - gas_referenz.gaspreis
+      - gas_referenz.co2_preis
     einheit: "-"
     status: vorgabe
     quelle: "BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens'"

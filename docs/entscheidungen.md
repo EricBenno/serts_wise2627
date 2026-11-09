@@ -176,3 +176,20 @@ die Ausgabe zeigt alle drei Stufen. Laufzeit ≈ 2,5 min statt 30 s. Sensitivit�
 (0,7 / 1,3 auf alle Stufen).
 Befund Basis: die drei Stufen liegen innerhalb ≈ 1 €/MWh (137,2–138,4) – das Kostenoptimum ist **flach**;
 größere Speicher kosten kaum mehr, bringen aber mehr Solaranteil (siehe docs/ergebnisse.md).
+
+### E25 LCOH nach VDI 2067 Blatt 1; Netzkosten
+- **Annuitätenmethode nach VDI 2067-1** über den Betrachtungszeitraum T = 20 a: kapitalgebundene Kosten mit
+  Ersatzbeschaffungen und linearem Restwert (vorher: Annuität über die Lebensdauer), betriebsgebundene Kosten
+  als Anteil vom Invest, bedarfsgebundene Kosten (Strom, Gas, CO₂) mit preisdynamischem Barwertfaktor.
+  Preisänderungen (Invest, Betrieb, Energie) als Parameter, Basis real 0 %/a.
+- **Abweichungen von VDI 2067 (bewusst, im Bericht nennen):** Instandsetzung und Wartung zusammengefasst
+  (`om_fix`); keine „sonstigen Kosten“ (Versicherung, Verwaltung) und kein Bedienpersonal; keine Erlöse;
+  Förderung als Abzug vom Invest; Kostenstand real 2025 (keine Inflation, Zins als Realzins).
+- **Verteilnetz:** Trasse 2.432 m × (Anteil Straße × 550 €/m + Rest × 250 €/m) + 159 Hausanschlüsse ×
+  10.000 €. Lebensdauer 40 a (Trasse) / 25 a (Hausanschluss), O&M 1 % / 2 %. Das Netz geht nicht in die
+  Optimierung ein (fix), sondern in den **Wärmepreis beim Kunden** (`lcoh_inkl_netz`, bezogen auf die
+  gelieferte Wärme). Die Gas-Referenz (Gas-Fernwärme) trägt dasselbe Netz (ohne Förderung) → der Abstand
+  System – Gas ändert sich nur durch die Förderung. `netz.anteil_strasse` steuert das Verhältnis Straße/Wiese.
+- Tornado erweitert um Förderung (BEW 40 %), Strompreissteigerung, Kollektor η0/Feldverluste,
+  PtH-Redundanz, Netzkosten, Gas- und CO₂-Preis. Reine Kostenparameter (Netz, Gas-Referenz) werden ohne
+  neuen Solverlauf auf dem Basisergebnis nachgerechnet. Zusätzliche Kennzahl `abstand_gas`.
