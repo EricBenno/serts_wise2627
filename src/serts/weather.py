@@ -56,10 +56,16 @@ def fetch_pvgis(cfg: Config) -> Path:
     else:
         jahr = int(cfg.get("zeit.wetterjahr"))
         data = get_pvgis_hourly(
-            latitude=lat, longitude=lon, start=jahr, end=jahr, raddatabase="PVGIS-SARAH3",
-            components=True, surface_tilt=cfg.get("kollektor.neigung"),
+            latitude=lat,
+            longitude=lon,
+            start=jahr,
+            end=jahr,
+            raddatabase="PVGIS-SARAH3",
+            components=True,
+            surface_tilt=cfg.get("kollektor.neigung"),
             surface_azimuth=cfg.get("kollektor.azimut"),  # pvlib-Konvention: 180 = Süd
-            usehorizon=True, map_variables=True,
+            usehorizon=True,
+            map_variables=True,
         )[0]
     out = pvgis_path(cfg)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -77,20 +83,26 @@ def tmy_auf_ebene(cfg: Config, tmy: pd.DataFrame) -> pd.Series:
     zeit = pd.date_range(f"{jahr}-01-01", periods=8760, freq="h", tz="UTC")
     # Sonnenstand zur Stundenmitte (Annahme: Werte gelten für die folgende Stunde)
     mitte = zeit + pd.Timedelta(minutes=30)
-    loc = pvlib.location.Location(cfg.get("standort.lat"), cfg.get("standort.lon"),
-                                  altitude=cfg.get("standort.hoehe"))
+    loc = pvlib.location.Location(
+        cfg.get("standort.lat"), cfg.get("standort.lon"), altitude=cfg.get("standort.hoehe")
+    )
     sp = loc.get_solarposition(mitte)
     irr = pvlib.irradiance.get_total_irradiance(
         surface_tilt=cfg.get("kollektor.neigung"),
         surface_azimuth=cfg.get("kollektor.azimut"),
         solar_zenith=sp["apparent_zenith"].to_numpy(),
         solar_azimuth=sp["azimuth"].to_numpy(),
-        dni=tmy["dni"].to_numpy(), ghi=tmy["ghi"].to_numpy(), dhi=tmy["dhi"].to_numpy(),
+        dni=tmy["dni"].to_numpy(),
+        ghi=tmy["ghi"].to_numpy(),
+        dhi=tmy["dhi"].to_numpy(),
         dni_extra=pvlib.irradiance.get_extra_radiation(mitte).to_numpy(),
-        model="perez", albedo=ALBEDO,
+        model="perez",
+        albedo=ALBEDO,
     )
-    poa = pd.Series(pd.Series(irr["poa_global"]).fillna(0.0).clip(lower=0).to_numpy(),
-                    index=zeit.tz_localize(None).rename("zeit"))
+    poa = pd.Series(
+        pd.Series(irr["poa_global"]).fillna(0.0).clip(lower=0).to_numpy(),
+        index=zeit.tz_localize(None).rename("zeit"),
+    )
     return poa
 
 

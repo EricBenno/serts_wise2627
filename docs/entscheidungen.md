@@ -157,3 +157,11 @@ die Luft-WP mit schlechterem COP ersetzt.
 - Strompreis-Bandbreite 20–40 ct/kWh (Annahme ±1/3).
 - `ptes.T_mitte` entfällt: die Grenze direkt/WP ist der Netz-Rücklauf `netz.T_RL` (ein Parameter weniger,
   Rücklauf-Sensitivität wirkt automatisch auf den Direktanteil).
+
+### E23 Normaljahr (PVGIS-TMY) als Basis für die Strahlung
+TEAM 09.11.2026. PVGIS-TMY (SARAH3, 2005–2023) liefert horizontale Werte; Umrechnung auf 35° Süd mit pvlib
+(Perez, Albedo 0,2, Sonnenstand zur Stundenmitte). Die TMY-Stunden werden der Reihe nach auf 2022 gelegt;
+Temperatur und Last bleiben 2022 (DWD bzw. Netzberechnung). Ergebnis: horizontal 1.090, Ebene 1.287 kWh/m²
+(2022: 1.394). Die frühere Schätzung „Normaljahr ≈ Faktor 0,78“ (aus DWD 1992–2010, 960 kWh/m²) war zu
+pessimistisch: Der TMY-Zeitraum 2005–2023 ist strahlungsreicher. Strahlungssensitivität jetzt ±10 %
+(Spanne der Einzeljahre); Jahr 2022 als Szenario `wetter_2022`.

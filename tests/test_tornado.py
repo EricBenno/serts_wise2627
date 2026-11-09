@@ -19,7 +19,7 @@ def test_variante_nur_fuer_parameter(cfg):
 def test_varianten_aus_sens(cfg):
     v = varianten(cfg)
     assert ("ptes.kosten_spez", 70) in v and ("ptes.kosten_spez", 140) in v
-    assert ("kollektor.strahlung_skalierung", 0.78) in v
+    assert ("kollektor.strahlung_skalierung", 0.9) in v
     for pfad in cfg.get("tornado.parameter"):
         cfg.node(pfad)  # existiert
 

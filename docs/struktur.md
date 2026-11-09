@@ -57,8 +57,8 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 
 | Thema | Stand |
 |---|---|
-| Daten Bad Lippspringe, Wetter 2022, PVGIS | ✅ |
-| Modell + Optimierung der Größen | ✅ (Basis: A ≈ 3.500 m², V ≈ 5.550 m³, WP ≈ 1,0 MW, LCOH ≈ 132 €/MWh vs. Gas ≈ 165 €/MWh) |
+| Daten Bad Lippspringe, Temperatur 2022, Strahlung Normaljahr (PVGIS-TMY) | ✅ |
+| Modell + Optimierung der Größen | ✅ (Basis Normaljahr: A ≈ 2.070 m², V ≈ 3.320 m³, WP ≈ 1,1 MW, LCOH ≈ 136 €/MWh vs. Gas ≈ 165 €/MWh; Details `docs/ergebnisse.md`) |
 | Tests (Bilanzen, Constraints, COP-Prüfwerte, Solites-Definitionen) | ✅ 43 |
 | Validierung Dronninglund | ⏭ ausgelassen (Referenzwerte liegen in `data/reference/`) |
 | Sensitivitäten (Tornado) | ✅ `serts tornado`, Ergebnisse in `docs/ergebnisse.md` |
@@ -68,7 +68,7 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 
 1. Weitere Sensitivität: Parameter in `tornado.parameter` aufnehmen und `sens`-Werte setzen, dann `serts tornado`.
 2. Keymark-Datenblatt HTHEATstore 35/10 → Kollektorkennwerte als `belegt`.
-3. **Normaljahr für die Strahlung** – der Tornado zeigt, dass der Solaranteil daran hängt (37 % → 12 %).
+3. Gaspreis-Pfade für die Referenz (der Gaspreis entscheidet, ob das System günstiger als Gas ist).
 4. Varianten: PV für die WP, Biomasse statt PtH, Day-Ahead-Strompreis.
 
 ## Konventionen

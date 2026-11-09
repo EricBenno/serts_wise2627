@@ -56,9 +56,9 @@ die Ränder angeschlossen (`dwd.fuelle_tagesgang`, Test `test_dwd.py`). Lastarme
 
 **Strahlung:** DWD-Messung Globalstrahlung 03028 (Jahre mit ≤ 48 h Lücke, 1992–2010): Median **≈ 960 kWh/(m²a)**
 horizontal (Spanne 850–1.056; 2006 = 718 vermutlich Messproblem). Diffusstrahlung erst ab 2010 vorhanden.
-Für 2022 Strahlung aus **PVGIS-SARAH3** (Satellit, 2005–2023) direkt auf Kollektorebene → `serts fetch-pvgis`,
-danach Jahressumme gegen diesen Klimawert halten (2022 gilt in DE als strahlungsreiches Jahr → prüfen, ggf.
-Sensitivität „Solarressource“ mit strahlungsarmem Jahr).
+**Basis = Normaljahr PVGIS-TMY** (SARAH3, 2005–2023): horizontal **1.090 kWh/m²**, auf 35° Süd (pvlib Perez)
+**1.287 kWh/m²**. Der TMY liegt ≈ 13 % über dem DWD-Median 1992–2010 (jüngerer, strahlungsreicherer Zeitraum,
+Satellit statt Boden). Jahr 2022 (PVGIS-SARAH3, direkt auf Ebene): 1.394 kWh/m² → Szenario `wetter_2022`.
 
 ## 3 Zusammenhang Last ↔ Wetter
 

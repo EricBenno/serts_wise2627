@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 19, vorgabe 34, annahme 36, offen 1
+Status: belegt 19, vorgabe 35, annahme 35, offen 1
 
 
 ## standort
@@ -73,8 +73,8 @@ Status: belegt 19, vorgabe 34, annahme 36, offen 1
 | `kollektor.neigung` | 35 | deg | annahme | TEAM: einfache Annahme; 35 deg = übliche Neigung großer Freiflächenfelder in DE/DK (Kompromiss Ertrag/Reihenabstand) | 25, 45 |  |
 | `kollektor.azimut` | 180 | deg | annahme | Südausrichtung (pvlib-Konvention 180 = Süd), Standard bei Freifeldanlagen |  |  |
 | `kollektor.flaechenfaktor` | 2.3 | m2 Grund / m2 Kollektor | belegt | BSW: 2- bis 2,3-fache Bruttokollektorfläche inkl. Reihenabstände und Heizzentrale (Berlin.de nennt ≈ 3) | 2, 3 |  |
-| `kollektor.strahlung_skalierung` | 1 | - | vorgabe | Faktor auf die PVGIS-Strahlung 2022 (Sensitivität Solarressource) | 0.78 | 0,78 ≈ Normaljahr: DWD-Klima 03028 ≈ 960 kWh/m2 horizontal x 1,13 Neigungsgewinn ≈ 1.085 kWh/m2 vs. PVGIS 2022 1.394 kWh/m2 (datenbasis §2) |
-| `kollektor.strahlungsquelle` | pvgis_sarah3 | - | annahme | DWD-Strahlung an Stn. 3028 endet 31.08.2011 -> 2022 fehlt. PVGIS-SARAH3 deckt 2005-2023 ab (JRC). |  |  |
+| `kollektor.strahlung_skalierung` | 1 | - | vorgabe | Faktor auf die Strahlung (Sensitivität Solarressource) | 0.9, 1.1 | ±10 % ≈ Spanne strahlungsarmer/-reicher Jahre: DWD 03028 1992-2010 meist 850-1.056 kWh/m2 um den Median ≈ 960 (datenbasis §2). Jahr 2022: Szenario wetter_2022. |
+| `kollektor.strahlungsquelle` | pvgis_tmy | - | vorgabe | TEAM 09.11.2026: Normaljahr als Basis. PVGIS-TMY (SARAH3, 2005-2023), auf 35 deg Süd umgerechnet (pvlib Perez). DWD-Strahlung 03028 endet 2011. | pvgis_sarah3 | pvgis_sarah3 = gemessenes, strahlungsreiches Jahr 2022 (Szenario wetter_2022). |
 | `kollektor.kosten_spez` | 450 | EUR/m2 | annahme | Bitterfeld-Wolfen (BBU 2024): Budget 2,25 Mio. EUR für 5.000 m2 -> 450 EUR/m2 (Planung 2020); DRL 2014: (5,856+0,321) Mio. EUR / 37.573 m2 = 164 EUR/m2 (sehr groß, DK) | 300, 550 | Feldgröße hier ≈ 2.000-5.000 m2 -> Bitterfeld-Größenordnung passender als DRL. |
 
 ## waermepumpe
