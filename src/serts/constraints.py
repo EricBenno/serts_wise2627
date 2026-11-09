@@ -5,8 +5,10 @@
 2. Temperatur-Regel des Speichers, vereinfacht über das Jahr:
             Σ Direktentladung <= f * (Σ Direktentladung + Σ Quellwärme an die WP)
             mit f = (T_oben - T_RL) / (T_oben - T_unten)  (≈ 53 %, SCH D3; DRL gemessen 52-63 %)
-   Begründung: Nur der Anteil oberhalb des Rücklaufs kann ohne WP genutzt werden; der Rest
-   (Rücklauf bis T_unten) ist nur als WP-Quelle nutzbar.
+   Begründung: Die Wärme zwischen T_oben und Rücklauf (40 K) kann direkt ins Netz, die zwischen
+   Rücklauf und T_unten (35 K) nur über die WP. Das Modell hat keine Temperaturen; die Regel wirkt nur
+   als JAHRESBILANZ (nicht je Stunde) und wirkt wie eine Untergrenze für die WP-Quellwärme:
+   Quelle >= 35/40 * Direktentladung. Siehe docs/entscheidungen.md E26.
 """
 
 from __future__ import annotations

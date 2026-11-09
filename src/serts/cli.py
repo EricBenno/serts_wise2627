@@ -111,6 +111,9 @@ def _cmd_tornado(a):
 
 
 def main(argv: list[str] | None = None) -> int:
+    import matplotlib
+
+    matplotlib.use("Agg")  # Kommandozeile/Prozesse ohne Fenster
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     ap = argparse.ArgumentParser(prog="serts")
     sub = ap.add_subparsers(dest="cmd", required=True)

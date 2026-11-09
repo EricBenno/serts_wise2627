@@ -193,3 +193,12 @@ größere Speicher kosten kaum mehr, bringen aber mehr Solaranteil (siehe docs/e
 - Tornado erweitert um Förderung (BEW 40 %), Strompreissteigerung, Kollektor η0/Feldverluste,
   PtH-Redundanz, Netzkosten, Gas- und CO₂-Preis. Reine Kostenparameter (Netz, Gas-Referenz) werden ohne
   neuen Solverlauf auf dem Basisergebnis nachgerechnet. Zusätzliche Kennzahl `abstand_gas`.
+
+### E26 Grenzen der Speicher-Regel „Direktanteil ≤ 53 %“; Matplotlib-Backend
+- Die Regel `Direktentladung ≤ (40/75) · (Direkt + Quellwärme der Speicher-WP)` ist eine **Jahresbilanz**. Sie
+  stellt sicher, dass der Speicher über das Jahr nicht nur direkt entladen wird (die unteren 35 K müssen
+  von der WP geholt werden, Quelle ≥ 35/40 · Direkt). Sie stellt **nicht** sicher, dass in einer einzelnen
+  Stunde warmes Wasser (≥ 80 °C) vorhanden ist oder dass die WP erst nach der Direktentladung läuft. Ein
+  Stundenmodell bräuchte Temperaturen/Schichten (das frühere 3-Pool-Modell, bewusst verworfen, E20).
+- Matplotlib: `use("Agg")` steht nicht mehr in den Modulen (zeigte im Notebook keine Grafiken), sondern nur in
+  `cli.main` und `tests/conftest.py`.
