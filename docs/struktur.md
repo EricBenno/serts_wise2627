@@ -68,11 +68,16 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 | Thema | Stand |
 |---|---|
 | Daten Bad Lippspringe, Temperatur 2022, Strahlung Normaljahr (PVGIS-TMY) | ✅ |
-| Modell + Optimierung der Größen | ✅ (Basis: LCOH ≈ 138 €/MWh, Wärmepreis inkl. Netz ≈ 219 vs. Gas-Fernwärme ≈ 252 €/MWh; Details `docs/ergebnisse.md`) |
+| Modell + Optimierung der Größen | ✅ (Basis: Kurzzeitspeicher ≈ 1.640 m³ + 2.540 m² Kollektor, LCOH ≈ 141 €/MWh, Wärmepreis inkl. Netz ≈ 229 vs. Gas-Fernwärme ≈ 257 €/MWh; Details docs/ergebnisse.md) |
 | Tests (Bilanzen, Constraints, COP-Prüfwerte, Solites-Definitionen) | ✅ 43 |
 | Validierung Dronninglund | ⏭ ausgelassen (Referenzwerte liegen in `data/reference/`) |
 | Sensitivitäten (Tornado) | ✅ `serts tornado`, Ergebnisse in `docs/ergebnisse.md` |
 | Varianten (PV für WP, Biomasse, Day-Ahead) / Bericht | ⬜ |
+
+## Weiterführend
+
+- Warum kein Saisonspeicher? [docs/saisonaler_speicher.md](saisonaler_speicher.md)
+- Strom als Zeitreihe: Szenarien strom_day_ahead_*, Ergebnisse in [docs/ergebnisse.md](ergebnisse.md)
 
 ## Weiterarbeiten
 

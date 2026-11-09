@@ -47,5 +47,5 @@ Das Modell hat dafür bereits den Tarif `day_ahead` (`prices.py`, Parameter `str
 **Wichtige Folgen:** (1) Der Wetter-/Preisjahr-Bezug muss passen: Day-Ahead 2022 war ein Krisenjahr (hohe
 Preise); ein ruhigeres Jahr oder ein Mittel ist realistischer. (2) Mit Leistungspreis wird die **PtH-Reserve
 (1,6 MW)** teuer, auch wenn sie kaum läuft – das spricht für Gas-/Biomasse-Reserve oder eine kleinere Reserve.
-(3) Der Preis-Hebel im Tornado (20 ct → Wärmepreis 186, 40 ct → 262 €/MWh; bei 20 ct entfällt Solar ganz) zeigt, dass diese Eingabe wichtiger ist
+(3) Der Preis-Hebel im Tornado (20 ct → Wärmepreis 186, 40 ct → 261 €/MWh; bei 20 ct entfällt Solar ganz) zeigt, dass diese Eingabe wichtiger ist
 als jede Anlagenannahme.

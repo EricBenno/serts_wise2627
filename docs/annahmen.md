@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 25, vorgabe 41, annahme 47, offen 1
+Status: belegt 27, vorgabe 43, annahme 50, offen 0
 
 
 ## standort
@@ -62,8 +62,12 @@ Status: belegt 25, vorgabe 41, annahme 47, offen 1
 | `ptes.T_oben` | 85 | degC | vorgabe | BRF §3.1; Liner-Grenze (Xiang et al. 2022) | 90 | Direktentladung braucht T_oben >= T_VL + 5 K = 85 degC -> bei VL 80 genau an der Grenze. |
 | `ptes.T_unten` | 10 | degC | vorgabe | BRF §3.1; DRL Tmin 9-12 degC |  |  |
 | `ptes.verlustrate` | 4e-05 | 1/h | annahme | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) | 1.5e-05, 8e-05 | PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10). |
-| `ptes.preisstufen` | [[0, 5000, 165], [5000, 12000, 124], [12000, 35000, 95]] | [m3 von, m3 bis, EUR/m3] | annahme | Kostenkurve c = 38,3 EUR/m3 * (V/60.000)^-0,31 * 1,5 aus DRL 60.000 m3 / 38,3 EUR/m3 (SIF, 2014) und Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019), x 1,5 Baupreissteigerung 2014->2025; je Stufe konservativ am unteren Rand ausgewertet: 5.000 m3 -> 124, 12.000 m3 -> 95 EUR/m3; Stufe 1 bei 2.000 m3 -> 165 EUR/m3 |  | Je Stufe ein LP-Lauf mit V in [von, bis]; die günstigste Stufe gewinnt (docs E24). Obergrenze 35.000 m3 ≈ ganze Fläche. |
-| `ptes.kosten_faktor` | 1 | - | vorgabe | Faktor auf alle Preisstufen (Sensitivität Speicherkosten) | 0.7, 1.3 |  |
+| `ptes.kosten_ref` | 38.3 | EUR/m3 | belegt | SIF Kap. 2: DRL 60.000 m3, Speicherkosten ≈ 2,3 Mio. EUR (38,3 EUR/m3), Preisstand 2014 (docs/saisonaler_speicher.md: weitere Stützpunkte Marstal 10.000 m3 = 67, Vojens 210.000 m3 = 24 EUR/m3) |  |  |
+| `ptes.V_ref` | 60000 | m3 | belegt | SIF / DRL |  |  |
+| `ptes.kosten_exponent` | -0.31 | - | annahme | eigene Anpassung c ~ V^b durch Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019 via IEA SHC) und DRL; Kontrolle Vojens 200.000 m3: Modell 26, real 24 EUR/m3 | -0.2, -0.4 |  |
+| `ptes.preisindex` | 1.5 | - | annahme | Preissteigerung Tiefbau/Bau 2014 -> 2025 grob +50 % (Größenordnung Destatis Baupreisindex; genauer Index noch einsetzen) | 1.3, 1.8 |  |
+| `ptes.segmente_m3` | [0, 1000, 2500, 6000, 12000, 35000] | m3 | vorgabe | Stützstellen der stückweise linearen Kostenfunktion C(V) = V * c(V) (stetig, konkav); je Segment ein LP-Lauf mit Grenzkosten und Fixkostenanteil (docs E30) |  | Obergrenze 35.000 m3 ≈ ganze Fläche. Mehr Stützstellen = genauer, aber ein Lauf mehr je Stelle. |
+| `ptes.kosten_faktor` | 1 | - | vorgabe | Faktor auf die gesamte Speicherkostenkurve (Sensitivität Speicherkosten) | 0.7, 1.3 |  |
 | `ptes.volumen_je_grundflaeche` | 2.65 | m3/m2 | annahme | DRL-Geometrie (Pyramidenstumpf 90/26 m, 16 m tief) ähnlich skaliert auf 8.700 m3: Oberkante 47 m, Tiefe 8 m; + 5 m Randstreifen -> 3.280 m2 Grund -> 8.700/3.280 | 2, 4 |  |
 
 ## kollektor
@@ -130,11 +134,13 @@ Status: belegt 25, vorgabe 41, annahme 47, offen 1
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `strom.tarif` | fest | - | vorgabe | BRF §3.5 / TEAM: zunächst fester Tarif; später Zeitreihe oder PV-Anteil | day_ahead |  |
+| `strom.tarif` | fest | - | vorgabe | BRF §3.5 / TEAM: Basis fester Tarif; Option day_ahead (Zeitreihe) über Szenarien strom_day_ahead_*.yaml | day_ahead |  |
 | `strom.preis_fest` | 300 | EUR/MWh | vorgabe | TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto) | 200, 400 | Gesamtpreis beim festen Tarif; Beschaffung+Vertrieb = Gesamt - Netzentgelt - Abgaben. Bandbreite ±1/3 als Annahme. BDEW-Strompreisanalyse nennt für Industrie 2025 ≈ 16-18 ct/kWh (ohne Gewerbeaufschläge) -> 30 ct ist eher hoch, 20 ct plausibel (docs/ausblick.md). |
 | `strom.netzentgelt` | 93 | EUR/MWh | annahme | Aufteilung der 30 ct nach BDEW-Komponenten (Jan 2026, Netzentgelt ≈ 9,3 ct/kWh; Kategorie nicht geklärt); Summe aus Beschaffung 15,4 + Netz 9,3 + Abgaben 5,7 ≈ 30,4 ct passt zu TEAM-Preis | 60, 110 | Arbeitspreis-Anteil. Ein Leistungspreis (EUR/kW und Jahr auf die höchste Netzbezugsleistung) ist NICHT modelliert; bei PtH-Reserve = Spitzenlast relevant. Netzbetreiber-Preisblatt (Bad Lippspringe) nachtragen. |
 | `strom.abgaben` | 57 | EUR/MWh | annahme | Stromsteuer 2,05 + Konzessionsabgabe 1,67 + KWKG-Umlage 0,45 + §19-Aufschlag 1,56 ct/kWh (BDEW/Versorger-Preisblätter 2026, uneinheitlich); Offshore-Umlage 0,94 ct nicht enthalten; evtl. Entlastungen für WP (§22 EnFG) ungeprüft | 40, 70 |  |
-| `strom.vertriebsmarge` | **offen** | EUR/MWh | offen |  |  | nur für tarif day_ahead: Preis(t) = Day-Ahead(t) + Marge + Netzentgelt + Abgaben |
+| `strom.vertriebsmarge` | 25 | EUR/MWh | annahme | Spot-Tarife leistungsgemessener Gewerbekunden: Aufschlag auf den Spotpreis inkl. Vertrieb und Ausgleichsenergie z. B. 2,50 ct/kWh (Stadtwerke Radolfzell, RLM Niederspannung), 5,80 ct/kWh (Mainova, RLM ab 100.000 kWh/a, Ersatzversorgung), 7,1 ct/kWh (Bad Belzig); Spanne 2,5-7 ct -> untere Spanne 2,5 ct angesetzt | 10, 60 | Nur für tarif day_ahead: Energie(t) = Day-Ahead(t) + Marge. Bei Großabnehmern (>1 GWh/a, Mittelspannung) verhandelbar und oft niedriger. |
+| `strom.preisjahr` | 2024 | a | annahme | Day-Ahead-Stundenpreise DE-LU, Bundesnetzagentur / SMARD.de (CC BY 4.0) über Energy-Charts-API. Jahresmittel: 2022 = 235 (Krise), 2023 = 95, 2024 = 78,5 EUR/MWh. 2024 als ruhiges, aktuelles Jahr | 2023, 2022 | Preisjahr ist unabhängig vom Wetterjahr 2022 (Stunde i -> Stunde i); Zusammenhang kalt <-> teuer nur statistisch. Daten laden: serts fetch-strompreise. |
+| `strom.day_ahead_normieren` | False | - | vorgabe | true = Day-Ahead-Profil auf den Energieanteil des festen Tarifs normiert (gleicher Jahresmittelwert) -> isoliert den Effekt der zeitlichen Preisstruktur |  |  |
 | `strom.emissionsfaktor` | 0.363 | t/MWh | belegt | UBA: CO2-Emissionen pro kWh Strom 2024 = 363 g/kWh (Themenseite; UBA-FAQ nennt 353 g) | 0.2 |  |
 | `strom.ee_anteil` | 0.544 | - | belegt | AGEE-Stat/UBA: Anteil EE am Bruttostromverbrauch 2024 = 54,4 % |  |  |
 
