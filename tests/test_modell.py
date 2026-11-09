@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 
 from serts import economics, kpi, network
-from serts.constraints import direktanteil_max
 from serts.run import loese
 
 pytestmark = pytest.mark.solver
@@ -23,6 +22,7 @@ def synth_ts(stunden: int = 48) -> pd.DataFrame:
             "last_gesamt": 0.5 + 0.2 * np.cos(2 * np.pi * idx.hour / 24),
             "last_netzverlust": 0.05,
             "COP_luft": 2.8,
+            "p_max_pu_luft": np.where(idx.hour < 12, 0.8, 1.0),
             "P_solar": 0.6 * sonne,
             "strompreis": 300.0,
         },
@@ -37,7 +37,7 @@ def ts():
 
 def _loese(cfg, ts, A=None, V=None):
     n = network.build_network(cfg, ts, A, V)
-    network.optimize(n, cfg)
+    network.optimize(n, cfg, ts)
     return n
 
 
@@ -55,22 +55,41 @@ def test_energiebilanz_waermeknoten(cfg, ts, netz_fest):
 
 def test_speicherbilanz_geschlossen(cfg, ts, netz_fest):
     p0 = netz_fest.links_t.p0
-    e = netz_fest.stores_t.e["ptes"]
+    e = netz_fest.stores_t.e
     zu = p0["laden"].sum()
     ab = p0["entladen_direkt"].sum() + p0["hp_speicher"].sum() * (
         cfg.get("waermepumpe.COP_ptes") - 1
     )
-    # PyPSA: Verlust je Stunde = standing_loss * Inhalt der Vorstunde (zyklisch)
-    verlust = (cfg.get("ptes.verlustrate") * e.shift(1, fill_value=e.iloc[-1])).sum()
+    # PyPSA: Verlust je Stunde = standing_loss * Inhalt der Vorstunde (zyklisch), je Speicherteil
+    lam = cfg.get("ptes.verlustrate")
+    verlust = sum(
+        (lam * e[n].shift(1, fill_value=e[n].iloc[-1])).sum() for n in ("ptes_heiss", "ptes_kalt")
+    )
     assert zu - ab - verlust == pytest.approx(0.0, abs=1e-3 * max(zu, 1.0))
 
 
-def test_direktanteil_eingehalten(cfg, ts, netz_fest):
+def test_laden_fuellt_heiss_und_kalt_im_festen_verhaeltnis(cfg, ts, netz_fest):
+    f = network.anteil_heiss(cfg)
     p0 = netz_fest.links_t.p0
-    direkt = p0["entladen_direkt"].sum()
-    quelle = p0["hp_speicher"].sum() * (cfg.get("waermepumpe.COP_ptes") - 1)
-    # absolut prüfen (Verhältnis ist bei fast leerem Speicher numerisch instabil)
-    assert direkt <= direktanteil_max(cfg) * (direkt + quelle) + 1e-4
+    # 1 MWh Solarwärme -> f in den heißen, (1-f) in den kalten Teil (Link-Ausgänge)
+    assert netz_fest.links.at["laden", "efficiency"] == pytest.approx(f)
+    assert netz_fest.links.at["laden", "efficiency2"] == pytest.approx(1.0 - f)
+    assert p0["laden"].sum() > 0  # der Test prüft nur sinnvoll, wenn geladen wird
+
+
+def test_speicherteile_wachsen_im_festen_verhaeltnis(cfg, ts):
+    n = network.build_network(cfg, ts, None, None, stufe=(0, 5000, 165))  # A und V optimiert
+    network.optimize(n, cfg, ts)
+    h = n.stores.at["ptes_heiss", "e_nom_opt"]
+    kalt = n.stores.at["ptes_kalt", "e_nom_opt"]
+    f = network.anteil_heiss(cfg)
+    assert kalt == pytest.approx((1 - f) / f * h, abs=1e-6)
+
+
+def test_luft_wp_leistung_sinkt_bei_kaelte(cfg, ts, netz_fest):
+    P = netz_fest.links.at["wp_out", "p_nom_opt"]
+    p0 = netz_fest.links_t.p0
+    assert (ts["COP_luft"] * p0["hp_luft"] <= ts["p_max_pu_luft"] * P + 1e-6).all()
 
 
 def test_luft_wp_aus_unter_tmin(cfg, ts, netz_fest):
@@ -101,12 +120,12 @@ def test_speicherpreis_stufen(cfg):
 
 def test_ohne_speicher(cfg, ts):
     n = _loese(cfg, ts, A=1000.0, V=0.0)
-    assert "ptes" not in n.stores.index
+    assert "ptes_heiss" not in n.stores.index
     k, _ = kpi.auswerten(n, cfg, ts)
     assert k["V_m3"] == 0.0
 
 
-def test_mwh_je_m3_und_direktanteil(cfg):
+def test_mwh_je_m3_und_anteil_heiss(cfg):
     # 1,163e-3 * (85 - 10) = 0,0872 MWh/m3 -> 60.000 m3 ≈ 5.234 MWh (BRF §3.2)
     assert network.mwh_je_m3(cfg) * 60_000 == pytest.approx(5233.5, abs=1)
-    assert direktanteil_max(cfg) == pytest.approx(40 / 75)
+    assert network.anteil_heiss(cfg) == pytest.approx(40 / 75)

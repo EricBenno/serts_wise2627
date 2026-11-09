@@ -15,11 +15,11 @@ def test_base_ist_gueltig(cfg):
 
 
 def test_offener_parameter_bricht_ab(cfg):
-    assert "strom.aufschlag_day_ahead" in cfg.offene()
+    assert "strom.vertriebsmarge" in cfg.offene()
     with pytest.raises(OffenerParameter):
-        cfg.get("strom.aufschlag_day_ahead")
-    with pytest.raises(OffenerParameter, match="strom.aufschlag_day_ahead"):
-        cfg.require(["netz.T_VL", "strom.aufschlag_day_ahead"])
+        cfg.get("strom.vertriebsmarge")
+    with pytest.raises(OffenerParameter, match="strom.vertriebsmarge"):
+        cfg.require(["netz.T_VL", "strom.vertriebsmarge"])
 
 
 def test_get_liefert_wert(cfg):

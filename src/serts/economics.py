@@ -65,10 +65,18 @@ def kapitalkosten_jahr(
     return kapital + betrieb
 
 
-def jahreskosten(cfg: Config, komponente: str, invest: float, gefoerdert: bool = True) -> float:
-    """VDI-2067-Jahreskosten einer Komponente aus oekonomie.* (Lebensdauer, O&M, Förderung, T)."""
+def jahreskosten(
+    cfg: Config, komponente: str, invest: float, gefoerdert: bool | None = None
+) -> float:
+    """VDI-2067-Jahreskosten einer Komponente aus oekonomie.* (Lebensdauer, O&M, Förderung, T).
+
+    ``invest`` ohne Nebenkosten; ``oekonomie.nebenkosten`` (Planung etc.) wird aufgeschlagen.
+    Förderquote gilt nur, wenn ``oekonomie.foerderfaehig.<komponente>`` (oder ``gefoerdert``) true ist.
+    """
+    if gefoerdert is None:
+        gefoerdert = bool(cfg.get(f"oekonomie.foerderfaehig.{komponente}"))
     return kapitalkosten_jahr(
-        invest=invest,
+        invest=invest * (1.0 + cfg.get("oekonomie.nebenkosten")),
         zins=cfg.get("oekonomie.zins"),
         lebensdauer=cfg.get(f"oekonomie.lebensdauer.{komponente}"),
         om_fix=cfg.get(f"oekonomie.om_fix.{komponente}"),
@@ -119,7 +127,8 @@ def co2_vermeidungskosten(
 def netzkosten(cfg: Config) -> dict:
     """Verteilnetz: Trasse (Straße / grüne Wiese) + Hausanschlüsse -> Invest und Jahreskosten.
 
-    Gleiche Kosten gelten für System und Gas-Referenz (Gas-Fernwärme mit demselben Netz).
+    Gleiche Investition für System und Gas-Referenz (Gas-Fernwärme mit demselben Netz); die Förderung
+    gilt nur für das System und nur für förderfähige Teile (oekonomie.foerderfaehig).
     """
     L = cfg.get("netz.trassenlaenge")
     s = cfg.get("netz.anteil_strasse")
@@ -127,11 +136,14 @@ def netzkosten(cfg: Config) -> dict:
         s * cfg.get("netz.kosten_trasse_strasse") + (1 - s) * cfg.get("netz.kosten_trasse_gruen")
     )
     ha = cfg.get("netz.hausanschluesse") * cfg.get("netz.kosten_hausanschluss")
+    k_trasse = jahreskosten(cfg, "netz", trasse)
+    k_ha = jahreskosten(cfg, "hausanschluss", ha)
     return {
         "netz_invest_trasse_EUR": trasse,
         "netz_invest_hausanschluss_EUR": ha,
-        "kosten_a_netz_system": jahreskosten(cfg, "netz", trasse)
-        + jahreskosten(cfg, "hausanschluss", ha),
+        "kosten_a_netz_trasse": k_trasse,
+        "kosten_a_netz_hausanschluss": k_ha,
+        "kosten_a_netz_system": k_trasse + k_ha,
         "kosten_a_netz_gasref": jahreskosten(cfg, "netz", trasse, gefoerdert=False)
         + jahreskosten(cfg, "hausanschluss", ha, gefoerdert=False),
     }

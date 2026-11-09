@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from serts.heatpump import cop_lorenz, cop_luft, tlog
+from serts.heatpump import cop_lorenz, cop_luft, p_max_pu_luft, tlog
 
 
 def test_tlog_handrechnung():
@@ -37,3 +37,10 @@ def test_cop_luft_mit_abtau(cfg):
     cop = cop_luft(cfg, T)
     ref = cop_lorenz(cfg.get("netz.T_RL"), cfg.get("netz.T_VL"), T, T - 5, eta_g=0.5, approach=3)
     np.testing.assert_allclose(cop.to_numpy(), ref * np.array([0.95, 0.95, 1.0, 1.0]))
+
+
+def test_p_max_pu_luft(cfg):
+    T = pd.Series([-20.0, -7.0, -4.0, -1.0, 10.0])
+    pu = p_max_pu_luft(cfg, T).to_numpy()
+    # 1,0 ab -1 degC, linear auf 0,8 bei -7 degC, darunter konstant 0,8 (Luft-WP dort ohnehin aus)
+    np.testing.assert_allclose(pu, [0.8, 0.8, 0.9, 1.0, 1.0])

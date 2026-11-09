@@ -361,12 +361,18 @@ waermepumpe:
     status: annahme
     quelle: "BRF §3.4: ökonomische Grenze; Referenzen nur bis ≈ -5 degC (SCH D7)"
     sens: [-15, 0]
-  speicher_monate:
-    wert: [11, 12, 1, 2, 3]
-    einheit: "Monat"
+  luft_leistung_voll_ab:
+    wert: -1
+    einheit: "degC"
     status: annahme
-    quelle: "SIF Kap. 2.1: Speicher-WP in DRL lief ab ≈ November bis Januar/Februar; März als Puffer für späte Kälte"
-    hinweis: "Nur in diesen Monaten darf die WP den Speicher als Quelle nutzen (verhindert Sommer-Artefakt der Jahresregel, docs E21)."
+    quelle: "BRF §3.4: DRL Luft-WP 6 MW bei -1 degC (EHPA Award); darüber konstant volle Leistung (konservativ)"
+  luft_leistung_bei_tmin:
+    wert: 0.8
+    einheit: "-"
+    status: annahme
+    quelle: "BRF §3.4: linear auf 80 % der Leistung bei T_min_luft (-7 degC); Rest Annahme, keine Referenz unter -5 degC"
+    sens: [0.6, 1.0]
+    hinweis: "Thermische Leistung der Luft-WP relativ zur gebauten WP-Leistung (docs E27); 1,0 = altes Verhalten (Leistung unabhängig von der Temperatur)."
   COP_ptes:
     wert: 4.5
     einheit: "-"
@@ -469,13 +475,26 @@ strom:
     status: vorgabe
     quelle: "TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto)"
     sens: [200, 400]
-    hinweis: "Bandbreite ±1/3 als Annahme für die Sensitivität"
-  aufschlag_day_ahead:
+    hinweis: "Gesamtpreis beim festen Tarif; Beschaffung+Vertrieb = Gesamt - Netzentgelt - Abgaben. Bandbreite ±1/3 als Annahme. BDEW-Strompreisanalyse nennt für Industrie 2025 ≈ 16-18 ct/kWh (ohne Gewerbeaufschläge) -> 30 ct ist eher hoch, 20 ct plausibel (docs/ausblick.md)."
+  netzentgelt:
+    wert: 93
+    einheit: "EUR/MWh"
+    status: annahme
+    quelle: "Aufteilung der 30 ct nach BDEW-Komponenten (Jan 2026, Netzentgelt ≈ 9,3 ct/kWh; Kategorie nicht geklärt); Summe aus Beschaffung 15,4 + Netz 9,3 + Abgaben 5,7 ≈ 30,4 ct passt zu TEAM-Preis"
+    sens: [60, 110]
+    hinweis: "Arbeitspreis-Anteil. Ein Leistungspreis (EUR/kW und Jahr auf die höchste Netzbezugsleistung) ist NICHT modelliert; bei PtH-Reserve = Spitzenlast relevant. Netzbetreiber-Preisblatt (Bad Lippspringe) nachtragen."
+  abgaben:
+    wert: 57
+    einheit: "EUR/MWh"
+    status: annahme
+    quelle: "Stromsteuer 2,05 + Konzessionsabgabe 1,67 + KWKG-Umlage 0,45 + §19-Aufschlag 1,56 ct/kWh (BDEW/Versorger-Preisblätter 2026, uneinheitlich); Offshore-Umlage 0,94 ct nicht enthalten; evtl. Entlastungen für WP (§22 EnFG) ungeprüft"
+    sens: [40, 70]
+  vertriebsmarge:
     wert: null
     einheit: "EUR/MWh"
     status: offen
     quelle: ""
-    hinweis: "erst für Day-Ahead-Variante nötig"
+    hinweis: "nur für tarif day_ahead: Preis(t) = Day-Ahead(t) + Marge + Netzentgelt + Abgaben"
   emissionsfaktor:
     wert: 0.363
     einheit: "t/MWh"
@@ -494,7 +513,7 @@ oekonomie:
     wert: 0.05
     einheit: "-"
     status: vorgabe
-    quelle: "TEAM: 5 %; als realer Kalkulationszins verwendet (Preise real konstant)"
+    quelle: "TEAM 09.11.2026: Zins bleibt REAL (5 %), damit alle Preise real konstant (Preisänderung 0 %/a); Preisänderungsfaktoren nur für Varianten"
     sens: [0.03, 0.07]
   betrachtungszeitraum:
     wert: 20
@@ -506,13 +525,56 @@ oekonomie:
     einheit: "a"
     status: vorgabe
     quelle: "TEAM: 2025/26"
+  nebenkosten:
+    wert: 0.10
+    einheit: "-"
+    status: vorgabe
+    quelle: "TEAM 09.11.2026: ca. 10 % Planungs-/Nebenkosten auf alle Investitionen (Kollektor, PTES, WP, PtH, Netz, Hausanschluss, Gaskessel)"
+    sens: [0.0, 0.2]
+    hinweis: "Wirkt auf Annuität und O&M. Planung (HOAI LPh 5-8) ist teilweise BEW-förderfähig; Modell wendet die Förderquote auf Invest inkl. Nebenkosten an."
+  foerderfaehig:
+    kollektor:
+      wert: true
+      einheit: "-"
+      status: belegt
+      quelle: "BEW Richtlinie 4.2 Nr. 1: Solarthermie (docs/foerderung_bew.md)"
+    ptes:
+      wert: true
+      einheit: "-"
+      status: belegt
+      quelle: "BEW Richtlinie 4.2: Wärmespeicher, saisonale Großspeicher genannt (docs/foerderung_bew.md)"
+    waermepumpe:
+      wert: true
+      einheit: "-"
+      status: belegt
+      quelle: "BEW Richtlinie 4.2 Nr. 2: Wärmepumpen (docs/foerderung_bew.md)"
+    pth:
+      wert: false
+      einheit: "-"
+      status: annahme
+      quelle: "Elektrodenkessel im gelesenen BEW-Text nicht aufgeführt -> konservativ nicht förderfähig; klären"
+    netz:
+      wert: true
+      einheit: "-"
+      status: belegt
+      quelle: "BEW Richtlinie 4.2: Rohrleitungssystem inkl. Verlegung und Dämmung"
+    hausanschluss:
+      wert: false
+      einheit: "-"
+      status: annahme
+      quelle: "Hausanschlussleitungen im gelesenen BEW-Text nicht ausdrücklich genannt -> konservativ nicht förderfähig; klären"
+    gaskessel:
+      wert: false
+      einheit: "-"
+      status: belegt
+      quelle: "BEW: fossile Wärmeerzeuger nicht förderfähig (Gas-Referenz)"
   foerderquote:
     wert: 0.0
     einheit: "-"
     status: vorgabe
     quelle: "AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss"
     sens: [0.4]
-    hinweis: "Variante 0,4 = BEW Modul 2 (BAFA, Investitionszuschuss 40 % der förderfähigen Ausgaben; Förderfähigkeit im Einzelfall prüfen). Gilt für alle Systemkomponenten inkl. Netz, nicht für die Gas-Referenz."
+    hinweis: "Variante 0,4 = BEW Modul 2 (BAFA, bis zu 40 % der förderfähigen Ausgaben). Gilt nur für Komponenten mit oekonomie.foerderfaehig = true (Kollektor, PTES, WP, Trasse); nicht für PtH, Hausanschluss (ungeklärt) und die Gas-Referenz."
   preisaenderung:
     invest:
       wert: 0.0
@@ -655,6 +717,8 @@ tornado:
       - waermepumpe.kosten_spez
       - oekonomie.zins
       - oekonomie.foerderquote
+      - oekonomie.nebenkosten
+      - waermepumpe.luft_leistung_bei_tmin
       - oekonomie.preisaenderung.strom
       - kollektor.eta0
       - kollektor.feldverluste

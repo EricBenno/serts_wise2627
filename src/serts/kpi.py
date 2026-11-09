@@ -66,7 +66,12 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     r["wp_quelle_speicher"] = r["wp_strom_speicher"] * (cop_s - 1.0)
     r["pth_waerme"] = p0["pth"] * cfg.get("pth.eta")
     r["strom_netz"] = g["netz_strom"]
-    r["speicherinhalt"] = n.stores_t.e["ptes"] if "ptes" in n.stores.index else leer
+    if "ptes_heiss" in n.stores.index:
+        e = n.stores_t.e
+        r["speicher_heiss"], r["speicher_kalt"] = e["ptes_heiss"], e["ptes_kalt"]
+        r["speicherinhalt"] = e["ptes_heiss"] + e["ptes_kalt"]
+    else:
+        r["speicher_heiss"] = r["speicher_kalt"] = r["speicherinhalt"] = leer
     r["abregelung"] = (
         n.generators.at["kollektor", "p_nom_opt"] * ts["P_solar"].clip(0, 1) - r["kollektor"]
     ).clip(lower=0)
@@ -78,8 +83,8 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
 
 def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     """KPI (Jahreswerte; kürzere Läufe werden auf 8760 h hochskaliert) + Zeitreihen."""
-    from serts import economics
-    from serts.network import M2_JE_MW, annualisiert, mwh_je_m3
+    from serts import economics, prices
+    from serts.network import M2_JE_MW, annualisiert, anteil_heiss, mwh_je_m3
 
     r = zeitreihen_ergebnis(n, cfg, ts)
     skal = 8760.0 / len(n.snapshots)
@@ -88,7 +93,12 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
 
     # Größen
     A = float(n.generators.at["kollektor", "p_nom_opt"]) * M2_JE_MW
-    E = float(n.stores.at["ptes", "e_nom_opt"]) if "ptes" in n.stores.index else 0.0
+    # Speicher-Energie gesamt = heißer Teil / Anteil heiß
+    E = (
+        float(n.stores.at["ptes_heiss", "e_nom_opt"]) / anteil_heiss(cfg)
+        if "ptes_heiss" in n.stores.index
+        else 0.0
+    )
     V = E / mwh_je_m3(cfg)
     speicher_preis = float((getattr(n, "meta", {}) or {}).get("speicher_preis", 0.0))
     k: dict = {
@@ -99,6 +109,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         "P_WP_MW": float(n.links.at["wp_out", "p_nom_opt"]),
         "P_PtH_MW": float(n.links.at["pth", "p_nom_opt"]) * cfg.get("pth.eta"),
         "stunden": len(n.snapshots),
+        "anteil_heiss": anteil_heiss(cfg),
     }
     k.update(
         {
@@ -133,9 +144,6 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
                 "speicher_wirkungsgrad": sb.wirkungsgrad,
                 "speicher_verluste_MWh": sb.verluste,
                 "speicher_zyklen": sb.q_out / E,
-                "speicher_direktanteil": (
-                    S["entladen_direkt"] / sb.q_out if sb.q_out > 1e-3 else float("nan")
-                ),
             }
         )
 
@@ -154,13 +162,25 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     strom = float((r["strom_netz"] * mc).sum()) * skal
     k.update({f"kosten_a_{x}": v for x, v in capex.items()})
     k["kosten_a_strom"] = strom
+    # Strompreis-Komponenten getrennt (Netzentgelt Arbeitspreis, Abgaben, Rest = Energie)
+    netz_e, abgaben = prices.netz_und_abgaben(cfg)
+    f_strom = economics.preisdynamik(
+        cfg.get("oekonomie.zins"),
+        cfg.get("oekonomie.betrachtungszeitraum"),
+        cfg.get("oekonomie.preisaenderung.strom"),
+    )
+    k["kosten_a_strom_netzentgelt"] = S["strom_netz"] * netz_e * f_strom
+    k["kosten_a_strom_abgaben"] = S["strom_netz"] * abgaben * f_strom
+    k["kosten_a_strom_energie"] = (
+        strom - k["kosten_a_strom_netzentgelt"] - k["kosten_a_strom_abgaben"]
+    )
     k["kosten_a_gesamt"] = sum(capex.values()) + strom
-    k["invest_EUR"] = (
+    k["invest_EUR"] = (1.0 + cfg.get("oekonomie.nebenkosten")) * (
         A * cfg.get("kollektor.kosten_spez")
         + V * speicher_preis
         + k["P_WP_MW"] * cfg.get("waermepumpe.kosten_spez")
         + k["P_PtH_MW"] * cfg.get("pth.kosten_spez")
-    )
+    )  # inkl. Nebenkosten, ohne Verteilnetz
     k["lcoh"] = economics.lcoh(sum(capex.values()), strom, Q)
     Q_geliefert = Q - float(ts["last_netzverlust"].sum()) * skal if "last_netzverlust" in ts else Q
     k["lcoh_geliefert"] = economics.lcoh(sum(capex.values()), strom, Q_geliefert)
@@ -178,6 +198,9 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     if cfg.get("netz.netzkosten_einbeziehen"):
         nk = economics.netzkosten(cfg)
         k.update(nk)
+        k["netzkosten_spez_trasse"] = nk["kosten_a_netz_trasse"] / Q_geliefert
+        k["netzkosten_spez_hausanschluss"] = nk["kosten_a_netz_hausanschluss"] / Q_geliefert
+        k["netzkosten_spez"] = nk["kosten_a_netz_system"] / Q_geliefert  # EUR/MWh geliefert
         k["lcoh_inkl_netz"] = (k["kosten_a_gesamt"] + nk["kosten_a_netz_system"]) / Q_geliefert
         k["gas_lcoh_inkl_netz"] = (ref["gas_lcoh"] * Q + nk["kosten_a_netz_gasref"]) / Q_geliefert
 

@@ -55,3 +55,16 @@ def cop_luft(cfg: Config, T_a: pd.Series) -> pd.Series:
         T_a < cfg.get("waermepumpe.abtau_grenze"), 1.0 - cfg.get("waermepumpe.abtau_abschlag"), 1.0
     )
     return pd.Series(cop * abtau, index=T_a.index, name="COP_luft")
+
+
+def p_max_pu_luft(cfg: Config, T_a: pd.Series) -> pd.Series:
+    """Thermische Leistung der Luft-WP relativ zur gebauten Leistung P_WP [-].
+
+    1,0 ab ``luft_leistung_voll_ab``, linear fallend auf ``luft_leistung_bei_tmin`` bei ``T_min_luft``.
+    (Oberhalb bleibt 1,0 - konservativ; unterhalb T_min läuft die Luft-WP ohnehin nicht, siehe network.py.)
+    """
+    t_voll = cfg.get("waermepumpe.luft_leistung_voll_ab")
+    t_min = cfg.get("waermepumpe.T_min_luft")
+    pu_min = cfg.get("waermepumpe.luft_leistung_bei_tmin")
+    pu = np.interp(np.asarray(T_a, dtype=float), [t_min, t_voll], [pu_min, 1.0])
+    return pd.Series(pu, index=T_a.index, name="p_max_pu_luft")

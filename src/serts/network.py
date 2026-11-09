@@ -1,19 +1,24 @@
-"""PyPSA-Netz – bewusst einfach gehalten (docs E20).
+"""PyPSA-Netz – bewusst einfach gehalten (docs E20, E27).
 
                  ┌──────────── solar_direkt ─────────────┐
     Kollektor ──>│ solar                                 ▼
-    (Generator)  └── laden ──> [Speicher (MWh)] ──> entladen_direkt ──> waerme ──> Last
-                                     │                                  ▲   ▲
-                                     └──(Quellwärme)──┐                 │   │
-    Netzstrom ──> elec ──> hp_luft ──> wp ──> wp_out ──┼─────────────────┘   │
-                     │ └──> hp_speicher ─┘ (bus2 = Speicher)                 │
-                     └──> pth ───────────────────────────────────────────────┘
+                 └── laden ──> [Speicher heiß | kalt] ──> entladen_direkt ──> waerme ──> Last
+                                  │  (53 % | 47 %)  └── Quellwärme ──┐          ▲   ▲
+    Netzstrom ──> hp_luft ───────────────────────────────> wp ───────┴> wp_out ─┘   │
+             └──> hp_speicher (holt Quellwärme aus dem kalten Teil) ┘               │
+             └──> pth ──────────────────────────────────────────────────────────────┘
 
 - Ein Wärmeknoten ``waerme`` (Erzeugung liegt am Netz, TEAM). Last = Gebäude + Netzverluste.
-- Speicher: ein Store in MWh (Inhalt bezogen auf T_unten), Verlust = verlustrate * Inhalt je Stunde.
+- Speicher in zwei Teilen (Energie in MWh, bezogen auf T_unten):
+    heiß  = Wärme zwischen T_oben und Netz-Rücklauf (40 K = 53 %)  -> kann direkt ins Netz
+    kalt  = Wärme zwischen Rücklauf und T_unten (35 K = 47 %)      -> nur über die Wärmepumpe
+  Beladen füllt beide Teile immer im Verhältnis 53 : 47 (Wasser wird von T_unten auf T_oben erwärmt).
+  Verlust = verlustrate * Inhalt je Stunde und Teil. Größe: nur das Volumen wird optimiert, die Teile
+  folgen dem festen Verhältnis (constraints.py).
 - Größen werden mitoptimiert (linear): Kollektorfläche, Speicher, WP- und PtH-Leistung.
   Kollektor-p_nom in MW bei 1 kW/m2 -> A [m2] = p_nom * 1000.
-- WP: zwei Quellen (Luft, Speicher) teilen sich die thermische Leistung ``wp_out``.
+- WP: zwei Quellen (Luft, Speicher) teilen sich die thermische Leistung ``wp_out``; die Luft-WP verliert
+  bei Kälte Leistung (constraints.py).
 """
 
 from __future__ import annotations
@@ -40,6 +45,12 @@ def mwh_je_m3(cfg: Config) -> float:
     return cfg.get("ptes.c_wasser") * (cfg.get("ptes.T_oben") - cfg.get("ptes.T_unten"))
 
 
+def anteil_heiss(cfg: Config) -> float:
+    """Anteil der Speicherenergie oberhalb des Netz-Rücklaufs: (T_oben - T_RL) / (T_oben - T_unten)."""
+    t_o, t_r, t_u = (cfg.get(k) for k in ("ptes.T_oben", "netz.T_RL", "ptes.T_unten"))
+    return (t_o - t_r) / (t_o - t_u)
+
+
 def build_network(
     cfg: Config,
     ts: pd.DataFrame,
@@ -62,7 +73,8 @@ def build_network(
     for bus, car in [
         ("elec", "strom"),
         ("solar", "waerme"),
-        ("speicher", "waerme"),
+        ("heiss", "waerme"),
+        ("kalt", "waerme"),
         ("wp", "waerme"),
         ("waerme", "waerme"),
     ]:
@@ -95,10 +107,11 @@ def build_network(
     )
     n.add("Link", "solar_direkt", bus0="solar", bus1="waerme", carrier="waerme", p_nom=1e3)
 
-    # Speicher (Kosten je m3 -> je MWh Kapazität)
+    # Speicher in zwei Teilen heiß/kalt (Kosten je m3 -> je MWh heiß, da V = E_heiß / (f * kap))
     mit_speicher = V_m3 is None or V_m3 > 0
     if mit_speicher:
         kap = mwh_je_m3(cfg)
+        f = anteil_heiss(cfg)
         if V_m3 is None:
             if stufe is None:
                 raise ValueError("Speicher optimieren braucht eine Preisstufe (stufe=...)")
@@ -108,32 +121,40 @@ def build_network(
             v_von = v_bis = V_m3
             preis = economics.speicherpreis(cfg, V_m3)
         n.meta = {**dict(getattr(n, "meta", {}) or {}), "speicher_preis": preis}
-        n.add(
-            "Store",
-            "ptes",
-            bus="speicher",
-            carrier="waerme",
-            e_cyclic=True,
-            standing_loss=cfg.get("ptes.verlustrate"),
-            e_nom=(V_m3 or 0.0) * kap,
-            e_nom_extendable=V_m3 is None,
-            e_nom_min=v_von * kap,
-            e_nom_max=v_bis * kap,
-            capital_cost=annualisiert(cfg, "ptes", preis) / kap,
-        )
+        v_fix = V_m3 or 0.0
+        verlust = cfg.get("ptes.verlustrate")
+        for name, bus, anteil, kosten in (
+            ("ptes_heiss", "heiss", f, annualisiert(cfg, "ptes", preis) / (kap * f)),
+            ("ptes_kalt", "kalt", 1.0 - f, 0.0),
+        ):
+            n.add(
+                "Store",
+                name,
+                bus=bus,
+                carrier="waerme",
+                e_cyclic=True,
+                standing_loss=verlust,
+                e_nom=v_fix * kap * anteil,
+                e_nom_extendable=V_m3 is None,
+                e_nom_min=v_von * kap * anteil,
+                e_nom_max=v_bis * kap * anteil,
+                capital_cost=kosten,  # Kosten nur am heißen Teil; kalter Teil folgt per Constraint
+            )
+        # Laden: 1 MWh Solarwärme füllt heiß und kalt im Verhältnis f : (1-f).
         # Tie-Breaker: Laden minimal teurer als Direktnutzung (docs E16)
         n.add(
             "Link",
             "laden",
             bus0="solar",
-            bus1="speicher",
+            bus1="heiss",
+            bus2="kalt",
             carrier="waerme",
             p_nom=1e3,
+            efficiency=f,
+            efficiency2=1.0 - f,
             marginal_cost=eps,
         )
-        n.add(
-            "Link", "entladen_direkt", bus0="speicher", bus1="waerme", carrier="waerme", p_nom=1e3
-        )
+        n.add("Link", "entladen_direkt", bus0="heiss", bus1="waerme", carrier="waerme", p_nom=1e3)
 
     # Wärmepumpe: Luft (COP je Stunde, aus unter T_min) und Speicher (COP konstant)
     luft_aus = ts["T_a"] < cfg.get("waermepumpe.T_min_luft")
@@ -154,13 +175,11 @@ def build_network(
             "hp_speicher",
             bus0="elec",
             bus1="wp",
-            bus2="speicher",
+            bus2="kalt",
             carrier="strom",
             p_nom=1e3,
             efficiency=cop,
             efficiency2=-(cop - 1.0),
-            # nur in der Heizperiode als Quelle (waermepumpe.speicher_monate, docs E21)
-            p_max_pu=ts.index.month.isin(cfg.get("waermepumpe.speicher_monate")).astype(float),
         )
     n.add(
         "Link",
@@ -192,8 +211,8 @@ def build_network(
     return n
 
 
-def optimize(n, cfg: Config, threads: int | None = None):
-    """Löst das LP (HiGHS) mit den zwei Zusatzbedingungen aus constraints.py.
+def optimize(n, cfg: Config, ts: pd.DataFrame, threads: int | None = None):
+    """Löst das LP (HiGHS) mit den Zusatzbedingungen aus constraints.py (``ts`` für die WP-Leistung).
 
     ``threads=1`` bei parallelen Läufen (sonst überbuchen mehrere HiGHS-Prozesse die Kerne).
     """
@@ -203,7 +222,7 @@ def optimize(n, cfg: Config, threads: int | None = None):
 
     status, cond = n.optimize(
         solver_name=cfg.get("solver.name"),
-        extra_functionality=partial(extra_functionality, cfg=cfg),
+        extra_functionality=partial(extra_functionality, cfg=cfg, ts=ts),
         include_objective_constant=False,
         log_to_console=False,
         progress=False,

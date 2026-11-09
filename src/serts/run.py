@@ -53,7 +53,7 @@ def loese(
     """
     if V_m3 is not None:
         n = network.build_network(cfg, ts, A_m2, V_m3)
-        network.optimize(n, cfg, threads=threads)
+        network.optimize(n, cfg, ts, threads=threads)
         k, r = kpi.auswerten(n, cfg, ts)
         return n, k, r
 
@@ -61,7 +61,7 @@ def loese(
     for stufe in cfg.get("ptes.preisstufen"):
         n = network.build_network(cfg, ts, A_m2, None, stufe=tuple(stufe))
         try:
-            network.optimize(n, cfg, threads=threads)
+            network.optimize(n, cfg, ts, threads=threads)
         except RuntimeError:  # z. B. Mindestvolumen passt nicht auf die Fläche
             stufen.append(f"{stufe[0]}-{stufe[1]} m3: unzulässig")
             continue

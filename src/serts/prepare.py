@@ -33,6 +33,7 @@ def build_zeitreihen(cfg: Config, vollstaendig: bool = True) -> tuple[pd.DataFra
     for c in last.columns:
         ts[f"last_{c}"] = last[c]
     ts["COP_luft"] = heatpump.cop_luft(cfg, T_a)
+    ts["p_max_pu_luft"] = heatpump.p_max_pu_luft(cfg, T_a)
     try:
         strahlung = weather.strahlung_kollektorebene(cfg)
         faktor = cfg.get("kollektor.strahlung_skalierung")

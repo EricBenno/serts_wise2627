@@ -2,7 +2,14 @@
 
 import pytest
 
-from serts.economics import annuitaetenfaktor, kapitalfaktor_vdi, kapitalkosten_jahr, netzkosten
+from serts.economics import (
+    annuitaetenfaktor,
+    jahreskosten,
+    kapitalfaktor_vdi,
+    kapitalkosten_jahr,
+    netzkosten,
+)
+from serts.prices import strompreis
 
 A20 = annuitaetenfaktor(0.05, 20)  # 0,080243
 
@@ -40,3 +47,32 @@ def test_netzkosten(cfg):
     )
     assert nk["netz_invest_trasse_EUR"] == pytest.approx(soll)
     assert nk["kosten_a_netz_system"] > 0
+
+
+def test_nebenkosten_schlagen_auf_jahreskosten_auf(cfg):
+    ohne = jahreskosten(cfg.variante("oekonomie.nebenkosten", 0.0), "waermepumpe", 1000.0)
+    mit = jahreskosten(cfg, "waermepumpe", 1000.0)
+    assert mit == pytest.approx(ohne * 1.10)
+
+
+def test_foerderung_nur_fuer_foerderfaehige_komponenten(cfg):
+    gef = cfg.variante("oekonomie.foerderquote", 0.4)
+    # WP förderfähig -> billiger; PtH (Annahme: nicht förderfähig) -> unverändert
+    assert jahreskosten(gef, "waermepumpe", 1000.0) < jahreskosten(cfg, "waermepumpe", 1000.0)
+    assert jahreskosten(gef, "pth", 1000.0) == pytest.approx(jahreskosten(cfg, "pth", 1000.0))
+
+
+def test_netzkosten_getrennt(cfg):
+    nk = netzkosten(cfg)
+    assert nk["kosten_a_netz_system"] == pytest.approx(
+        nk["kosten_a_netz_trasse"] + nk["kosten_a_netz_hausanschluss"]
+    )
+
+
+def test_strompreis_komponenten(cfg):
+    import pandas as pd
+
+    idx = pd.date_range("2022-01-01", periods=3, freq="h")
+    p = strompreis(cfg, idx)
+    assert (p == cfg.get("strom.preis_fest")).all()
+    assert cfg.get("strom.netzentgelt") + cfg.get("strom.abgaben") < cfg.get("strom.preis_fest")

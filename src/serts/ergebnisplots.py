@@ -189,22 +189,29 @@ def jahresbilanz(r: pd.DataFrame, k: dict, out: Path) -> Path:
         "Speicher": k["kosten_a_speicher"],
         "Wärmepumpe": k["kosten_a_waermepumpe"],
         "PtH": k["kosten_a_pth"],
-        "Strom": k["kosten_a_strom"],
-        "Netz": k.get("kosten_a_netz_system", 0.0),
+        "Strom Energie": k.get("kosten_a_strom_energie", k["kosten_a_strom"]),
+        "Strom Netzentgelt": k.get("kosten_a_strom_netzentgelt", 0.0),
+        "Strom Abgaben": k.get("kosten_a_strom_abgaben", 0.0),
+        "Wärmenetz Trasse": k.get("kosten_a_netz_trasse", 0.0),
+        "Hausanschlüsse": k.get("kosten_a_netz_hausanschluss", 0.0),
     }
     gas_teile = {
         "Kessel": k["gas_capex_a"],
         "Gas": k["gas_brennstoffkosten_a"],
         "CO₂": k["gas_co2_kosten_a"],
-        "Netz": k.get("kosten_a_netz_gasref", 0.0),
+        "Wärmenetz Trasse": k.get("kosten_a_netz_trasse", 0.0),
+        "Hausanschlüsse": k.get("kosten_a_netz_hausanschluss", 0.0),
     }
     farbe = {
         "Kollektor": "#f2c12e",
         "Speicher": "#f28e2b",
         "Wärmepumpe": "#4e79a7",
         "PtH": "#e15759",
-        "Strom": "#76b7b2",
-        "Netz": "#bab0ac",
+        "Strom Energie": "#76b7b2",
+        "Strom Netzentgelt": "#a3cfcb",
+        "Strom Abgaben": "#c9e3e1",
+        "Wärmenetz Trasse": "#bab0ac",
+        "Hausanschlüsse": "#d9d3cf",
         "Kessel": "#9c755f",
         "Gas": "#b07aa1",
         "CO₂": "#59595c",
@@ -222,7 +229,7 @@ def jahresbilanz(r: pd.DataFrame, k: dict, out: Path) -> Path:
             unten += h
         a2.text(x, unten + 2, f"{unten:.0f} €/MWh", ha="center", fontweight="bold")
     a2.set_ylim(0, a2.get_ylim()[1] * 1.12)
-    a2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=5)
+    a2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=4)
     a2.set_xticks([0, 1], ["Solar + PTES + WP + PtH", "Gas-Referenz"])
     a2.set_ylabel("€ je MWh geliefert (inkl. Netz)")
     a2.set_title("Was kostet die Wärme beim Kunden? (VDI 2067, real)")
