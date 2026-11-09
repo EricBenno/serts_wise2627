@@ -100,7 +100,13 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         else 0.0
     )
     V = E / mwh_je_m3(cfg)
-    speicher_preis = float((getattr(n, "meta", {}) or {}).get("speicher_preis", 0.0))
+    meta = getattr(n, "meta", {}) or {}
+    invest_speicher = (
+        float(meta.get("speicher_steigung", 0.0)) * V + float(meta.get("speicher_fix", 0.0))
+        if V > 1e-6
+        else 0.0
+    )
+    speicher_preis = invest_speicher / V if V > 1e-6 else 0.0
     k: dict = {
         "A_koll_m2": A,
         "V_m3": V,
@@ -147,6 +153,21 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             }
         )
 
+    # Speichercharakter: saisonal = wenige Zyklen und Entladung überwiegend im Winter (Nov-Mär)
+    if E > 0:
+        aus = r["entladen_direkt"] + r["wp_quelle_speicher"]
+        winter = aus[aus.index.month.isin([11, 12, 1, 2, 3])].sum()
+        k["speicher_winteranteil"] = float(winter / aus.sum()) if aus.sum() > 1e-6 else float("nan")
+        z = k.get("speicher_zyklen", float("nan"))
+        if z == z and k["speicher_winteranteil"] == k["speicher_winteranteil"]:
+            k["speicher_charakter"] = (
+                "saisonal"
+                if z < 2 and k["speicher_winteranteil"] >= 0.6
+                else "kurzzeit"
+                if z >= 4
+                else "gemischt"
+            )
+
     # Anteile
     k.update(solaranteil(S["solar_direkt"], S["entladen_direkt"], S["wp_quelle_speicher"], Q))
     k["ee_anteil"] = 1.0 - S["strom_netz"] * (1.0 - cfg.get("strom.ee_anteil")) / Q
@@ -154,7 +175,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     # Kosten (Jahreswerte, real)
     capex = {
         "kollektor": A * annualisiert(cfg, "kollektor", "kollektor.kosten_spez"),
-        "speicher": V * annualisiert(cfg, "ptes", speicher_preis) if V > 0 else 0.0,
+        "speicher": annualisiert(cfg, "ptes", invest_speicher) if V > 0 else 0.0,
         "waermepumpe": k["P_WP_MW"] * annualisiert(cfg, "waermepumpe", "waermepumpe.kosten_spez"),
         "pth": k["P_PtH_MW"] * annualisiert(cfg, "pth", "pth.kosten_spez"),
     }
@@ -174,10 +195,14 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     k["kosten_a_strom_energie"] = (
         strom - k["kosten_a_strom_netzentgelt"] - k["kosten_a_strom_abgaben"]
     )
+    k["strompreis_mittel_EUR_MWh"] = float(mc.mean()) / f_strom  # Jahresmittel (ungewichtet)
+    k["strompreis_gewichtet_EUR_MWh"] = (  # tatsächlich bezahlt: nach Strommenge gewichtet
+        strom / S["strom_netz"] / f_strom if S["strom_netz"] > 1e-9 else float("nan")
+    )
     k["kosten_a_gesamt"] = sum(capex.values()) + strom
     k["invest_EUR"] = (1.0 + cfg.get("oekonomie.nebenkosten")) * (
         A * cfg.get("kollektor.kosten_spez")
-        + V * speicher_preis
+        + invest_speicher
         + k["P_WP_MW"] * cfg.get("waermepumpe.kosten_spez")
         + k["P_PtH_MW"] * cfg.get("pth.kosten_spez")
     )  # inkl. Nebenkosten, ohne Verteilnetz

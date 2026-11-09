@@ -20,7 +20,7 @@ Als Mermaid-Diagramm (exakt wie gerechnet): [docs/systemskizze.md](systemskizze.
 - PyPSA minimiert die Jahreskosten (Annuitäten + Strom) über 8760 h und legt dabei die Größen von
   Kollektorfeld, Speicher, Wärmepumpe und PtH fest.
 - **Speicher in zwei Teilen** (heiß: direkt nutzbar, kalt: nur über die WP), Beladen im festen Verhältnis 53 : 47 (E27).
-- Speicherpreis in drei Größenstufen: je Stufe ein Lauf, die günstigste gewinnt (E24).
+- Speicherkosten als stetige, mit der Größe degressive Kurve (stückweise linear): je Kostensegment ein Lauf, das günstigste gewinnt (E30).
 - Drei Zusatzbedingungen (`constraints.py`): Fläche ≤ 13.000 m², Speicherteile im festen Größenverhältnis,
   Luft-WP-Leistung sinkt bei Kälte.
 - Kosten nach VDI 2067-1 inkl. 10 % Nebenkosten; Strom in Energie/Netzentgelt/Abgaben getrennt; Wärmenetz
@@ -31,15 +31,17 @@ Als Mermaid-Diagramm (exakt wie gerechnet): [docs/systemskizze.md](systemskizze.
 ## Befehle
 
 ```bash
-uv run serts run                         # Basis: Größen optimieren, 3 Preisstufen (≈ 2,5 min)
+uv run serts run                         # Basis: Größen optimieren, 5 Kostensegmente (≈ 2 min)
 uv run serts run --V 0                   # Variante ohne Speicher
 uv run serts run --A 4000 --V 6000       # feste Größen vorgeben
 uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis)
 uv run serts run --stunden 168           # Schnelltest
-uv run serts tornado                     # Sensitivitäten (41 Varianten, ≈ 20–25 min)
+uv run serts tornado                     # Sensitivitäten (≈ 45 Varianten, ≈ 20–25 min)
 uv run serts prepare                     # nur Zeitreihen + Plots
 uv run serts annahmen                    # docs/annahmen.md neu erzeugen
-uv run pytest                            # 62 Tests
+uv run serts fetch-strompreise 2022 2023 2024   # Day-Ahead-Preise laden (einmalig, Netzzugang)
+uv run serts run --szenario strom_day_ahead_2024  # Strom als Zeitreihe statt fester Tarif
+uv run pytest                            # 71 Tests
 ```
 
 Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennzahlen), `zeitreihen.csv`,

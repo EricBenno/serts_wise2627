@@ -78,7 +78,9 @@ def test_laden_fuellt_heiss_und_kalt_im_festen_verhaeltnis(cfg, ts, netz_fest):
 
 
 def test_speicherteile_wachsen_im_festen_verhaeltnis(cfg, ts):
-    n = network.build_network(cfg, ts, None, None, stufe=(0, 5000, 165))  # A und V optimiert
+    n = network.build_network(
+        cfg, ts, None, None, segment=(0.0, 5000.0, 150.0, 0.0)
+    )  # A und V optimiert
     network.optimize(n, cfg, ts)
     h = n.stores.at["ptes_heiss", "e_nom_opt"]
     kalt = n.stores.at["ptes_kalt", "e_nom_opt"]
@@ -112,19 +114,32 @@ def test_pth_redundanz(cfg, ts, netz_fest):
 
 
 def test_flaeche_begrenzt_optimierte_groessen(cfg, ts):
-    _, k, _ = loese(cfg, ts)  # A und V optimiert, je Preisstufe ein Lauf
+    _, k, _ = loese(cfg, ts)  # A und V optimiert, je Kostensegment ein Lauf
     assert k["flaeche_m2"] <= cfg.get("standort.flaeche_verfuegbar") * (1 + 1e-6)
-    assert len(k["preisstufen_vergleich"]) == len(cfg.get("ptes.preisstufen"))
-    # gewähltes Volumen liegt in der Stufe, deren Preis verwendet wurde
-    assert economics.speicherpreis(cfg, k["V_m3"]) == pytest.approx(k["speicher_preis_EUR_m3"])
+    assert len(k["segmente_vergleich"]) == len(cfg.get("ptes.segmente_m3")) - 1
+    # Kosten des gewählten Volumens liegen auf der (Sehnen-)Kostenkurve des Segments
+    if k["V_m3"] > 1.0:  # im 48-h-Test kann der Speicher unrentabel (V ≈ 0) sein
+        assert k["speicher_preis_EUR_m3"] * k["V_m3"] == pytest.approx(
+            economics.ptes_invest(cfg, k["V_m3"]), rel=0.06
+        )
 
 
-def test_speicherpreis_stufen(cfg):
-    assert economics.speicherpreis(cfg, 3000) == 165
-    assert economics.speicherpreis(cfg, 5000) == 124  # Grenze gehört zur nächsten Stufe
-    assert economics.speicherpreis(cfg, 20000) == 95
-    with pytest.raises(ValueError):
-        economics.speicherpreis(cfg, 50000)
+def test_speicherkosten_stetig_monoton_und_degressiv(cfg):
+    vs = [500, 2500, 5000, 5001, 11999, 12000, 12001, 35000]
+    invest = [economics.ptes_invest(cfg, v) for v in vs]
+    assert invest == sorted(invest)  # mehr Volumen kostet nie weniger (kein Sprung nach unten)
+    je_m3 = [economics.ptes_kosten_je_m3(cfg, v) for v in vs]
+    assert je_m3 == sorted(je_m3, reverse=True)  # Skaleneffekt: je m3 immer günstiger
+    # bei V_ref: c_ref * Preisindex (38,3 * 1,5)
+    assert economics.ptes_kosten_je_m3(cfg, 60_000) == pytest.approx(38.3 * 1.5)
+
+
+def test_segmente_sind_stetig(cfg):
+    seg = economics.ptes_segmente(cfg)
+    for (_, v1, s1, f1), (v0b, _, s2, f2) in zip(seg[:-1], seg[1:], strict=True):
+        assert v1 == v0b
+        assert s1 * v1 + f1 == pytest.approx(s2 * v0b + f2)  # gleiche Kosten an der Segmentgrenze
+        assert s1 > s2  # Grenzkosten sinken (konkav)
 
 
 def test_ohne_speicher(cfg, ts):

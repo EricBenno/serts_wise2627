@@ -40,7 +40,7 @@ Stand 09.11.2026. Richtung: ↑ = Modell unterschätzt die Kosten / ↓ = übers
 ## 4 Was ist bei Bad Lippspringe robust?
 
 - Wärmepumpe (Luft + Speicher) mit PtH-Reserve ist in fast allen Varianten günstiger als die Gas-Referenz.
-- Größe von Kollektorfeld und Speicher ist kostenseitig fast egal (flaches Optimum, Preisstufen ±2 €/MWh)
+- Größe von Kollektorfeld und Speicher ist kostenseitig fast egal (flaches Optimum: ±1–4 €/MWh zwischen 1.000 und 6.000 m³, siehe docs/ergebnisse.md)
   → Solaranteil und Speichergröße als Bandbreite berichten; Entscheidung über CO₂/Förderung/Fläche.
 - Netzkosten (≈ 50 €/MWh geliefert) sind ein großer Block im Wärmepreis, aber gleich für System und
   Gas-Fernwärme.

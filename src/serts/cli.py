@@ -97,6 +97,11 @@ def _cmd_run(a):
         ("Erneuerbaren-Anteil", "ee_anteil", "{:.1%}"),
         ("CO2 System [t/a]", "co2_t_a", "{:,.0f}"),
         ("Speicher-Wirkungsgrad", "speicher_wirkungsgrad", "{:.1%}"),
+        ("Speicher Zyklen pro Jahr", "speicher_zyklen", "{:.1f}"),
+        ("Speicher Entladung im Winter", "speicher_winteranteil", "{:.0%}"),
+        ("Speicher-Charakter", "speicher_charakter", "{}"),
+        ("Strompreis gewichtet [EUR/MWh]", "strompreis_gewichtet_EUR_MWh", "{:.0f}"),
+        ("Strompreis Jahresmittel [EUR/MWh]", "strompreis_mittel_EUR_MWh", "{:.0f}"),
         ("Flächenbedarf [m2]", "flaeche_m2", "{:,.0f}"),
     ]
     for text, key, fmt in zeilen:
@@ -104,9 +109,9 @@ def _cmd_run(a):
             print(f"{text:30s} {fmt.format(k[key])}")
     print(f"{'Gas-Referenz CO2 [t/a]':30s} {k['gas_co2_t_a']:,.0f}")
     if "speicher_preis_EUR_m3" in k:
-        print(f"{'Speicherpreis [EUR/m3]':30s} {k['speicher_preis_EUR_m3']:.0f}")
-    for zeile in k.get("preisstufen_vergleich", []):
-        print(f"  Preisstufe {zeile}")
+        print(f"{'Speicherpreis Durchschnitt [EUR/m3]':30s} {k['speicher_preis_EUR_m3']:.0f}")
+    for zeile in k.get("segmente_vergleich", []):
+        print(f"  Kostensegment {zeile}")
     print(f"\nErgebnis: {out}")
 
 

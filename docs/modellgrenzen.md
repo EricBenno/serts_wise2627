@@ -13,7 +13,7 @@
 | Konstanter COP aus dem Speicher (4,5) | Herbst unterschätzt, Frühjahr überschätzt; Jahresmittel ok |
 | Luft-WP-Leistung: 100 % ab -1 °C, linear 80 % bei -7 °C (Annahme), darüber konstant; keine Teillast-/Mindestlastgrenzen | Leistung bei Kälte evtl. überschätzt (real ggf. stärker fallend); Teillastverluste fehlen |
 | Lastgang aus Standardprofilen (NB, Wetter Münster 2022) | Spitzen geglättet; Kopplung Kälte ↔ Last nur statistisch |
-| Speicherpreis in 3 Stufen, je Stufe konservativ (Preis am unteren Rand) | Speicher innerhalb einer Stufe eher zu teuer → Speichergröße eher unterschätzt |
+| Speicherkosten als stückweise lineare Sehne einer konkaven Kostenkurve (E30) | Kosten zwischen den Stützstellen um ≤ 4–6 % unterschätzt (V > 1.000 m³) |
 | Netzverluste aus NB (80/50 °C), Modell 80/45 °C | vernachlässigbar |
 | Nebenkosten pauschal 10 % auf alle Investitionen | Spanne real 5–20 %; wirkt auf alle Varianten ähnlich |
 | Strom: nur Arbeitspreis, kein Leistungspreis; Aufteilung Energie/Netz/Abgaben aus Durchschnittswerten | Stromkosten der PtH-Reserve (Spitzenleistung) unterschätzt |

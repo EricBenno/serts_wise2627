@@ -56,12 +56,12 @@ def build_network(
     ts: pd.DataFrame,
     A_m2: float | None = None,
     V_m3: float | None = None,
-    stufe: tuple[float, float, float] | None = None,
+    segment: tuple[float, float, float, float] | None = None,
 ):
     """Netz bauen. A_m2 / V_m3 = None -> Größe wird optimiert, sonst fest vorgegeben.
 
-    Bei optimiertem Speicher gibt ``stufe`` = (V von, V bis, EUR/m3) die Preisstufe vor
-    (ptes.preisstufen); das Volumen bleibt in diesem Bereich (siehe run.loese).
+    Bei optimiertem Speicher gibt ``segment`` = (V von, V bis, Grenzkosten EUR/m3, Fixkosten EUR) das
+    Kostensegment vor (economics.ptes_segmente); das Volumen bleibt in diesem Bereich (siehe run.loese).
 
     ``ts`` braucht: last_gesamt [MW], T_a [degC], COP_luft, P_solar [kW/m2], strompreis [EUR/MWh].
     """
@@ -113,18 +113,21 @@ def build_network(
         kap = mwh_je_m3(cfg)
         f = anteil_heiss(cfg)
         if V_m3 is None:
-            if stufe is None:
-                raise ValueError("Speicher optimieren braucht eine Preisstufe (stufe=...)")
-            v_von, v_bis, preis = stufe
-            preis *= cfg.get("ptes.kosten_faktor")
+            if segment is None:
+                raise ValueError("Speicher optimieren braucht ein Kostensegment (segment=...)")
+            v_von, v_bis, steigung, fix = segment
         else:
             v_von = v_bis = V_m3
-            preis = economics.speicherpreis(cfg, V_m3)
-        n.meta = {**dict(getattr(n, "meta", {}) or {}), "speicher_preis": preis}
+            steigung, fix = economics.ptes_invest(cfg, V_m3) / V_m3, 0.0
+        n.meta = {
+            **dict(getattr(n, "meta", {}) or {}),
+            "speicher_steigung": steigung,
+            "speicher_fix": fix,
+        }
         v_fix = V_m3 or 0.0
         verlust = cfg.get("ptes.verlustrate")
         for name, bus, anteil, kosten in (
-            ("ptes_heiss", "heiss", f, annualisiert(cfg, "ptes", preis) / (kap * f)),
+            ("ptes_heiss", "heiss", f, annualisiert(cfg, "ptes", steigung) / (kap * f)),
             ("ptes_kalt", "kalt", 1.0 - f, 0.0),
         ):
             n.add(

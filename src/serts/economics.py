@@ -96,15 +96,34 @@ def preisdynamik(zins: float, jahre: float, r: float) -> float:
     return annuitaetenfaktor(zins, jahre) * b
 
 
-def speicherpreis(cfg: Config, V_m3: float) -> float:
-    """Spezifischer Speicherpreis [EUR/m3] der Preisstufe, in die V fällt (inkl. kosten_faktor)."""
-    f = cfg.get("ptes.kosten_faktor")
-    stufen = cfg.get("ptes.preisstufen")
-    for i, (von, bis, preis) in enumerate(stufen):
-        letzte = i == len(stufen) - 1
-        if von <= V_m3 < bis or (letzte and V_m3 == bis):  # Grenze zählt zur nächsten Stufe
-            return preis * f
-    raise ValueError(f"Speichervolumen {V_m3:.0f} m3 liegt außerhalb aller Preisstufen")
+def ptes_kosten_je_m3(cfg: Config, V_m3: float) -> float:
+    """Durchschnittlicher Speicherpreis [EUR/m3] bei Volumen V: c_ref * (V/V_ref)^b * Preisindex * Faktor."""
+    return (
+        cfg.get("ptes.kosten_ref")
+        * (V_m3 / cfg.get("ptes.V_ref")) ** cfg.get("ptes.kosten_exponent")
+        * cfg.get("ptes.preisindex")
+        * cfg.get("ptes.kosten_faktor")
+    )
+
+
+def ptes_invest(cfg: Config, V_m3: float) -> float:
+    """Investition PTES [EUR] = V * c(V): stetig, mit der Größe abnehmender Stückpreis (Skaleneffekt)."""
+    return V_m3 * ptes_kosten_je_m3(cfg, V_m3) if V_m3 > 0 else 0.0
+
+
+def ptes_segmente(cfg: Config) -> list[tuple[float, float, float, float]]:
+    """Stückweise lineare Näherung von C(V): (V von, V bis, Grenzkosten EUR/m3, Fixkosten EUR).
+
+    Je Segment gilt C(V) = Fix + Grenzkosten * V (Sehne durch die Stützstellen); die Kostenfunktion ist
+    damit stetig und monoton, Fixkosten und Grenzkosten sind im LP je Segment konstant.
+    """
+    pts = list(cfg.get("ptes.segmente_m3"))
+    out = []
+    for v0, v1 in zip(pts[:-1], pts[1:], strict=True):
+        c0, c1 = ptes_invest(cfg, v0), ptes_invest(cfg, v1)
+        steigung = (c1 - c0) / (v1 - v0)
+        out.append((float(v0), float(v1), steigung, c0 - steigung * v0))
+    return out
 
 
 def lcoh(annuitaeten_capex: float, opex_jahr: float, waerme_MWh: float) -> float:

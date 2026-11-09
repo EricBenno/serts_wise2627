@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from serts import ergebnisplots, kpi, network, plots
+from serts import economics, ergebnisplots, kpi, network, plots
 from serts.config import Config
 from serts.paths import RESULTS, ROOT
 from serts.prepare import build_zeitreihen
@@ -48,8 +48,8 @@ def loese(
 ):
     """Netz bauen, optimieren, auswerten. A/V = None -> Größe wird optimiert.
 
-    Speicher optimiert: ein Lauf je Preisstufe (ptes.preisstufen), V bleibt in der Stufe;
-    der Lauf mit den geringsten Jahreskosten gewinnt (docs E24).
+    Speicher optimiert: ein Lauf je Kostensegment (economics.ptes_segmente), V bleibt im Segment;
+    der Lauf mit den geringsten Jahreskosten gewinnt (docs E30).
     """
     if V_m3 is not None:
         n = network.build_network(cfg, ts, A_m2, V_m3)
@@ -57,25 +57,25 @@ def loese(
         k, r = kpi.auswerten(n, cfg, ts)
         return n, k, r
 
-    beste, stufen = None, []
-    for stufe in cfg.get("ptes.preisstufen"):
-        n = network.build_network(cfg, ts, A_m2, None, stufe=tuple(stufe))
+    beste, segmente = None, []
+    for seg in economics.ptes_segmente(cfg):
+        n = network.build_network(cfg, ts, A_m2, None, segment=seg)
         try:
             network.optimize(n, cfg, ts, threads=threads)
         except RuntimeError:  # z. B. Mindestvolumen passt nicht auf die Fläche
-            stufen.append(f"{stufe[0]}-{stufe[1]} m3: unzulässig")
+            segmente.append(f"{seg[0]:.0f}-{seg[1]:.0f} m3: unzulässig")
             continue
         k, r = kpi.auswerten(n, cfg, ts)
-        stufen.append(
-            f"{stufe[0]}-{stufe[1]} m3 ({stufe[2]} EUR/m3): LCOH {k['lcoh']:.1f}, "
-            f"V {k['V_m3']:.0f} m3, A {k['A_koll_m2']:.0f} m2, Solar {k['solar_gesamt']:.0%}"
+        segmente.append(
+            f"{seg[0]:.0f}-{seg[1]:.0f} m3: LCOH {k['lcoh']:.1f}, V {k['V_m3']:.0f} m3, "
+            f"A {k['A_koll_m2']:.0f} m2, Solar {k['solar_gesamt']:.0%}"
         )
         if beste is None or k["kosten_a_gesamt"] < beste[1]["kosten_a_gesamt"]:
             beste = (n, k, r)
     if beste is None:
-        raise RuntimeError("keine Preisstufe lösbar: " + "; ".join(stufen))
+        raise RuntimeError("kein Kostensegment lösbar: " + "; ".join(segmente))
     n, k, r = beste
-    k["preisstufen_vergleich"] = stufen
+    k["segmente_vergleich"] = segmente
     return n, k, r
 
 

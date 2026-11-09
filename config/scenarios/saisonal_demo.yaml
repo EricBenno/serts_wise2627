@@ -1,0 +1,6 @@
+# Demo: ab welchen Speicherkosten wird der Speicher saisonal? (Sweep 09.11.2026, docs/saisonaler_speicher.md)
+# Speicherpreise x0,35 (≈ Preisniveau Dronninglund/Vojens, 2025er Preisbasis); alles andere wie Basis.
+meta:
+  beschreibung: "Speicherkosten x0,35 -> saisonaler Speicher (≈ 12.000 m3, 1,3 Zyklen/a)"
+ptes:
+  kosten_faktor: 0.35

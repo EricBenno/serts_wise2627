@@ -72,7 +72,7 @@ flowchart LR
 - **Zeitlich variabel je Stunde:** Last, Außentemperatur → COP und Leistungsfaktor der Luft-WP, Kollektorleistung,
   (fester) Strompreis.
 - **Fest je Lauf:** alle Wirkungsgrade, Preise, T_oben/Rücklauf/T_unten, Verlustrate, Fläche.
-- **Optimiert (✱):** Kollektorfläche, Speichervolumen (innerhalb der gewählten Preisstufe), WP-Leistung,
+- **Optimiert (✱):** Kollektorfläche, Speichervolumen (innerhalb des gewählten Kostensegments), WP-Leistung,
   PtH-Leistung (mindestens Spitzenlast). Alle Verbindungen (Links) sind ansonsten nicht in der Leistung begrenzt.
 - **Speicher:** Beladen füllt immer beide Teile im Verhältnis 53 : 47 (Wasser von 10 auf 85 °C). Direkt ins Netz
   geht nur der heiße Teil, die Wärmepumpe holt ihre Quellwärme aus dem kalten Teil. Das ersetzt die frühere

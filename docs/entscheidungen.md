@@ -166,7 +166,7 @@ Temperatur und Last bleiben 2022 (DWD bzw. Netzberechnung). Ergebnis: horizontal
 pessimistisch: Der TMY-Zeitraum 2005–2023 ist strahlungsreicher. Strahlungssensitivität jetzt ±10 %
 (Spanne der Einzeljahre); Jahr 2022 als Szenario `wetter_2022`.
 
-### E24 Speicherpreis in drei Preisstufen (ersetzt den linearen Preis aus E20)
+### E24 Speicherpreis in drei Preisstufen (ersetzt den linearen Preis aus E20) – **ersetzt durch E30 (Fehler: nicht monoton)**
 Erdbeckenspeicher werden mit der Größe spezifisch billiger; ein LP kann das nicht direkt abbilden. Einfache
 Lösung: drei Größenklassen mit je einem Preis aus der Kostenkurve (DRL/Marstal, × 1,5 Baupreise), konservativ
 am **unteren Rand** jeder Stufe ausgewertet (sonst sitzt das Optimum am Stufenrand mit zu günstigem Preis):
@@ -239,3 +239,31 @@ Speicherverlust bei ≈ 3.500 h Haltedauer gegen Winter-COP ≈ 2,3) ≈ 25–35
 Strompreis rechnet sich das nicht; mit dynamischem Preis (Day-Ahead + Aufschläge) kann es sich ändern.
 Zusätzlicher Aufwand: Solaranteil müsste anders bilanziert werden (WP-Wärme im Speicher ist nicht solar).
 → Als Variante für den Day-Ahead-Fall vormerken (`docs/ausblick.md`).
+
+### E30 Stetige Speicher-Kostenkurve statt Preisstufen (ersetzt E24)
+**Fehler in E24:** Der Stufenpreis galt für das *gesamte* Volumen. Dadurch waren die Gesamtkosten an den
+Stufengrenzen nicht monoton: 12.000 m³ zu 95 €/m³ (1,14 Mio. €) waren billiger als 11.000 m³ zu 124 €/m³
+(1,36 Mio. €). Der Solver nutzte das aus – viele frühere Ergebnisse lagen exakt bei 5.000 oder 12.000 m³
+(z. B. der „flache Optimum“-Befund und das Raster vom 09.11.2026). Meine Antwort „kein Fehler“ auf die Frage
+„warum steigt die LCOH, wenn der Speicher billiger wird“ war daher unvollständig.
+**Lösung:** Die Investition ist eine stetige, konkave Funktion C(V) = V · c_ref · (V/V_ref)^b · Preisindex
+(c_ref = 38,3 €/m³ bei 60.000 m³, b = −0,31, Index 1,5; Kontrolle: Marstal 10.000 m³ = 67 €/m³, Vojens
+210.000 m³ = 24 €/m³ in 2014er Preisen). Im LP wird sie je Segment durch eine Sehne ersetzt
+(`ptes.segmente_m3` = 0, 1.000, 2.500, 6.000, 12.000, 35.000 m³): Grenzkosten je m³ + Fixkosten je Segment;
+je Segment ein Lauf, der günstigste gewinnt. Die Sehne unterschätzt die Kosten zwischen den Stützstellen um
+höchstens ≈ 4–6 % (bei V > 1.000 m³). Die Fixkosten stecken in `kosten_a_speicher`.
+**Folgen:** Das Basisergebnis ändert sich kaum (V ≈ 1.600 m³, vorher 1.140), aber die Segmentvergleiche
+(„flaches Optimum bei 5.000/12.000 m³“) und die Rasterläufe davor sind **nicht mehr gültig** und wurden neu
+gerechnet (docs/saisonaler_speicher.md).
+
+### E31 Strom als Zeitreihe (Option) und Kennzahlen zum Speichercharakter
+- Tarif `day_ahead` mit Day-Ahead-Stundenpreisen DE-LU (Bundesnetzagentur | SMARD.de, CC BY 4.0, Download über die
+  Energy-Charts-API, `serts fetch-strompreise 2022 2023 2024`): Preis(t) = Day-Ahead(t) + Vertriebsmarge 25 €/MWh
+  + Netzentgelt 93 + Abgaben 57 €/MWh. Marge nach Preisblättern leistungsgemessener Gewerbekunden (2,5–7 ct/kWh
+  inkl. Ausgleichsenergie; untere Spanne gewählt). Preisjahr 2024 (ruhig; 2022 = Krise 235, 2023 = 95 €/MWh Mittel);
+  Preis- und Wetterjahr müssen nicht übereinstimmen. Szenarien: `strom_day_ahead_2024`, `_2022`, `_normiert`
+  (gleicher Jahresmittelwert wie der feste Tarif). Leistungspreis weiterhin nicht modelliert.
+- Neue Kennzahlen: `speicher_winteranteil` (Anteil der Speicherentladung Nov–Mär), `speicher_charakter`
+  (saisonal: < 2 Zyklen und ≥ 60 % Winteranteil; kurzzeit: ≥ 4 Zyklen; sonst gemischt), `strompreis_mittel`
+  und `strompreis_gewichtet` (tatsächlich bezahlter Mittelwert nach Strommenge).
+
