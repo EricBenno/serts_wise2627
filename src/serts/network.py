@@ -26,10 +26,13 @@ from serts.config import Config
 M2_JE_MW = 1000.0  # Kollektor: 1 MW p_nom = 1000 m2 (p_max_pu in kW/m2)
 
 
-def annualisiert(cfg: Config, komponente: str, kosten_key: str) -> float:
-    """Jährliche Kapitalkosten inkl. fixer O&M je Einheit [EUR/(Einheit*a)]."""
+def annualisiert(cfg: Config, komponente: str, kosten: str | float) -> float:
+    """Jährliche Kapitalkosten inkl. fixer O&M je Einheit [EUR/(Einheit*a)].
+
+    ``kosten`` = Config-Schlüssel des spezifischen Invests oder direkt ein Wert.
+    """
     return economics.kapitalkosten_jahr(
-        invest=cfg.get(kosten_key),
+        invest=cfg.get(kosten) if isinstance(kosten, str) else kosten,
         zins=cfg.get("oekonomie.zins"),
         lebensdauer=cfg.get(f"oekonomie.lebensdauer.{komponente}"),
         om_fix=cfg.get(f"oekonomie.om_fix.{komponente}"),
@@ -43,9 +46,16 @@ def mwh_je_m3(cfg: Config) -> float:
 
 
 def build_network(
-    cfg: Config, ts: pd.DataFrame, A_m2: float | None = None, V_m3: float | None = None
+    cfg: Config,
+    ts: pd.DataFrame,
+    A_m2: float | None = None,
+    V_m3: float | None = None,
+    stufe: tuple[float, float, float] | None = None,
 ):
     """Netz bauen. A_m2 / V_m3 = None -> Größe wird optimiert, sonst fest vorgegeben.
+
+    Bei optimiertem Speicher gibt ``stufe`` = (V von, V bis, EUR/m3) die Preisstufe vor
+    (ptes.preisstufen); das Volumen bleibt in diesem Bereich (siehe run.loese).
 
     ``ts`` braucht: last_gesamt [MW], T_a [degC], COP_luft, P_solar [kW/m2], strompreis [EUR/MWh].
     """
@@ -94,6 +104,15 @@ def build_network(
     mit_speicher = V_m3 is None or V_m3 > 0
     if mit_speicher:
         kap = mwh_je_m3(cfg)
+        if V_m3 is None:
+            if stufe is None:
+                raise ValueError("Speicher optimieren braucht eine Preisstufe (stufe=...)")
+            v_von, v_bis, preis = stufe
+            preis *= cfg.get("ptes.kosten_faktor")
+        else:
+            v_von = v_bis = V_m3
+            preis = economics.speicherpreis(cfg, V_m3)
+        n.meta = {**dict(getattr(n, "meta", {}) or {}), "speicher_preis": preis}
         n.add(
             "Store",
             "ptes",
@@ -103,7 +122,9 @@ def build_network(
             standing_loss=cfg.get("ptes.verlustrate"),
             e_nom=(V_m3 or 0.0) * kap,
             e_nom_extendable=V_m3 is None,
-            capital_cost=annualisiert(cfg, "ptes", "ptes.kosten_spez") / kap,
+            e_nom_min=v_von * kap,
+            e_nom_max=v_bis * kap,
+            capital_cost=annualisiert(cfg, "ptes", preis) / kap,
         )
         # Tie-Breaker: Laden minimal teurer als Direktnutzung (docs E16)
         n.add(

@@ -6,9 +6,9 @@ from serts.tornado import varianten
 
 
 def test_variante_aendert_nur_kopie(cfg):
-    c2 = cfg.variante("ptes.kosten_spez", 140)
-    assert c2.get("ptes.kosten_spez") == 140
-    assert cfg.get("ptes.kosten_spez") == 105
+    c2 = cfg.variante("ptes.kosten_faktor", 1.3)
+    assert c2.get("ptes.kosten_faktor") == 1.3
+    assert cfg.get("ptes.kosten_faktor") == 1.0
 
 
 def test_variante_nur_fuer_parameter(cfg):
@@ -18,7 +18,7 @@ def test_variante_nur_fuer_parameter(cfg):
 
 def test_varianten_aus_sens(cfg):
     v = varianten(cfg)
-    assert ("ptes.kosten_spez", 70) in v and ("ptes.kosten_spez", 140) in v
+    assert ("ptes.kosten_faktor", 0.7) in v and ("ptes.kosten_faktor", 1.3) in v
     assert ("kollektor.strahlung_skalierung", 0.9) in v
     for pfad in cfg.get("tornado.parameter"):
         cfg.node(pfad)  # existiert

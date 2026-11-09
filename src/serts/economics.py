@@ -42,6 +42,17 @@ def preisdynamik(zins: float, jahre: float, r: float) -> float:
     return annuitaetenfaktor(zins, jahre) * b
 
 
+def speicherpreis(cfg: Config, V_m3: float) -> float:
+    """Spezifischer Speicherpreis [EUR/m3] der Preisstufe, in die V fällt (inkl. kosten_faktor)."""
+    f = cfg.get("ptes.kosten_faktor")
+    stufen = cfg.get("ptes.preisstufen")
+    for i, (von, bis, preis) in enumerate(stufen):
+        letzte = i == len(stufen) - 1
+        if von <= V_m3 < bis or (letzte and V_m3 == bis):  # Grenze zählt zur nächsten Stufe
+            return preis * f
+    raise ValueError(f"Speichervolumen {V_m3:.0f} m3 liegt außerhalb aller Preisstufen")
+
+
 def lcoh(annuitaeten_capex: float, opex_jahr: float, waerme_MWh: float) -> float:
     """Wärmegestehungskosten [EUR/MWh]. Bezug (erzeugt vs. geliefert) im Aufruf festlegen."""
     if waerme_MWh <= 0:

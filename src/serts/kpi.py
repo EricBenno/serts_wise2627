@@ -85,10 +85,12 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     A = float(n.generators.at["kollektor", "p_nom_opt"]) * M2_JE_MW
     E = float(n.stores.at["ptes", "e_nom_opt"]) if "ptes" in n.stores.index else 0.0
     V = E / mwh_je_m3(cfg)
+    speicher_preis = float((getattr(n, "meta", {}) or {}).get("speicher_preis", 0.0))
     k: dict = {
         "A_koll_m2": A,
         "V_m3": V,
         "E_speicher_MWh": E,
+        "speicher_preis_EUR_m3": speicher_preis,
         "P_WP_MW": float(n.links.at["wp_out", "p_nom_opt"]),
         "P_PtH_MW": float(n.links.at["pth", "p_nom_opt"]) * cfg.get("pth.eta"),
         "stunden": len(n.snapshots),
@@ -139,7 +141,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     # Kosten (Jahreswerte, real)
     capex = {
         "kollektor": A * annualisiert(cfg, "kollektor", "kollektor.kosten_spez"),
-        "speicher": V * annualisiert(cfg, "ptes", "ptes.kosten_spez"),
+        "speicher": V * annualisiert(cfg, "ptes", speicher_preis) if V > 0 else 0.0,
         "waermepumpe": k["P_WP_MW"] * annualisiert(cfg, "waermepumpe", "waermepumpe.kosten_spez"),
         "pth": k["P_PtH_MW"] * annualisiert(cfg, "pth", "pth.kosten_spez"),
     }
@@ -147,9 +149,10 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     strom = float((r["strom_netz"] * mc).sum()) * skal
     k.update({f"kosten_a_{x}": v for x, v in capex.items()})
     k["kosten_a_strom"] = strom
+    k["kosten_a_gesamt"] = sum(capex.values()) + strom
     k["invest_EUR"] = (
         A * cfg.get("kollektor.kosten_spez")
-        + V * cfg.get("ptes.kosten_spez")
+        + V * speicher_preis
         + k["P_WP_MW"] * cfg.get("waermepumpe.kosten_spez")
         + k["P_PtH_MW"] * cfg.get("pth.kosten_spez")
     )

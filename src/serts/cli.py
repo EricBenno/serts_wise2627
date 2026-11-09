@@ -89,6 +89,10 @@ def _cmd_run(a):
         if key in k:
             print(f"{text:30s} {fmt.format(k[key])}")
     print(f"{'Gas-Referenz CO2 [t/a]':30s} {k['gas_co2_t_a']:,.0f}")
+    if "speicher_preis_EUR_m3" in k:
+        print(f"{'Speicherpreis [EUR/m3]':30s} {k['speicher_preis_EUR_m3']:.0f}")
+    for zeile in k.get("preisstufen_vergleich", []):
+        print(f"  Preisstufe {zeile}")
     print(f"\nErgebnis: {out}")
 
 

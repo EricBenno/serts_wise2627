@@ -7,8 +7,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from serts import kpi, network
+from serts import economics, kpi, network
 from serts.constraints import direktanteil_max
+from serts.run import loese
 
 pytestmark = pytest.mark.solver
 
@@ -83,9 +84,19 @@ def test_pth_redundanz(cfg, ts, netz_fest):
 
 
 def test_flaeche_begrenzt_optimierte_groessen(cfg, ts):
-    n = _loese(cfg, ts)  # A und V optimiert
-    k, _ = kpi.auswerten(n, cfg, ts)
+    _, k, _ = loese(cfg, ts)  # A und V optimiert, je Preisstufe ein Lauf
     assert k["flaeche_m2"] <= cfg.get("standort.flaeche_verfuegbar") * (1 + 1e-6)
+    assert len(k["preisstufen_vergleich"]) == len(cfg.get("ptes.preisstufen"))
+    # gewähltes Volumen liegt in der Stufe, deren Preis verwendet wurde
+    assert economics.speicherpreis(cfg, k["V_m3"]) == pytest.approx(k["speicher_preis_EUR_m3"])
+
+
+def test_speicherpreis_stufen(cfg):
+    assert economics.speicherpreis(cfg, 3000) == 140
+    assert economics.speicherpreis(cfg, 8000) == 105
+    assert economics.speicherpreis(cfg, 20000) == 80
+    with pytest.raises(ValueError):
+        economics.speicherpreis(cfg, 50000)
 
 
 def test_ohne_speicher(cfg, ts):

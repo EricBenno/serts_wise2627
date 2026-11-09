@@ -46,10 +46,33 @@ def loese(
     V_m3: float | None = None,
     threads: int | None = None,
 ):
-    """Netz bauen, optimieren, auswerten. A/V = None -> Größe wird optimiert."""
-    n = network.build_network(cfg, ts, A_m2, V_m3)
-    network.optimize(n, cfg, threads=threads)
-    k, r = kpi.auswerten(n, cfg, ts)
+    """Netz bauen, optimieren, auswerten. A/V = None -> Größe wird optimiert.
+
+    Speicher optimiert: ein Lauf je Preisstufe (ptes.preisstufen), V bleibt in der Stufe;
+    der Lauf mit den geringsten Jahreskosten gewinnt (docs E24).
+    """
+    if V_m3 is not None:
+        n = network.build_network(cfg, ts, A_m2, V_m3)
+        network.optimize(n, cfg, threads=threads)
+        k, r = kpi.auswerten(n, cfg, ts)
+        return n, k, r
+
+    beste, stufen = None, []
+    for stufe in cfg.get("ptes.preisstufen"):
+        n = network.build_network(cfg, ts, A_m2, None, stufe=tuple(stufe))
+        try:
+            network.optimize(n, cfg, threads=threads)
+        except RuntimeError:  # z. B. Mindestvolumen passt nicht auf die Fläche
+            stufen.append(f"{stufe[0]}-{stufe[1]} m3: unzulässig")
+            continue
+        k, r = kpi.auswerten(n, cfg, ts)
+        stufen.append(f"{stufe[0]}-{stufe[1]} m3: LCOH {k['lcoh']:.1f}, V {k['V_m3']:.0f}")
+        if beste is None or k["kosten_a_gesamt"] < beste[1]["kosten_a_gesamt"]:
+            beste = (n, k, r)
+    if beste is None:
+        raise RuntimeError("keine Preisstufe lösbar: " + "; ".join(stufen))
+    n, k, r = beste
+    k["preisstufen_vergleich"] = stufen
     return n, k, r
 
 
