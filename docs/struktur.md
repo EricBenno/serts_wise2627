@@ -4,6 +4,9 @@ Leitlinie: **so simpel wie möglich, so komplex wie nötig** (docs/entscheidunge
 
 ## Das Modell auf einer Seite
 
+Als Mermaid-Diagramm (exakt wie gerechnet): [docs/systemskizze.md](systemskizze.md). Weiterführend:
+[PTES-Obergrenze](ptes_obergrenze.md), [BEW-Förderung](foerderung_bew.md), [Ausblick](ausblick.md).
+
 ```
                  ┌──────────── solar_direkt ─────────────┐
     Kollektor ──>│ solar                                 ▼
