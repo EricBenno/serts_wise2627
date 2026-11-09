@@ -3,6 +3,9 @@
 Vorgehen (bewusst einfach): Für jeden Parameter in ``tornado.parameter`` wird jeder Wert aus seinem
 ``sens``-Feld einzeln eingesetzt, alles andere bleibt auf Basis. Jeder Lauf optimiert die Größen neu –
 der Tornado zeigt also, wie sich die LCOH des jeweils *kostenoptimalen* Systems verschiebt.
+
+Parameter, die nur Kosten außerhalb der Optimierung betreffen (Verteilnetz, Gas-Referenz), werden ohne
+neuen Solverlauf auf dem Basis-Ergebnis nachgerechnet (``NUR_NACHRECHNUNG``).
 """
 
 from __future__ import annotations
@@ -13,7 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from serts import plots
+from serts import kpi, plots
 from serts.config import Config
 from serts.prepare import build_zeitreihen
 from serts.run import loese, new_run_dir
@@ -23,6 +26,9 @@ log = logging.getLogger(__name__)
 KENNZAHLEN = [
     "lcoh",
     "gas_lcoh",
+    "abstand_gas",
+    "lcoh_inkl_netz",
+    "gas_lcoh_inkl_netz",
     "solar_gesamt",
     "ee_anteil",
     "co2_t_a",
@@ -32,6 +38,12 @@ KENNZAHLEN = [
     "flaeche_m2",
     "speicher_wirkungsgrad",
 ]
+NUR_NACHRECHNUNG = (
+    "netz.anteil_strasse",
+    "netz.kosten_",
+    "netz.hausanschluesse",
+    "gas_referenz.",
+)
 
 
 def varianten(cfg: Config) -> list[tuple[str, object]]:
@@ -45,12 +57,7 @@ def varianten(cfg: Config) -> list[tuple[str, object]]:
     return out
 
 
-def _lauf(cfg: Config, pfad: str | None, wert, threads: int | None) -> dict:
-    logging.getLogger("linopy").setLevel(logging.WARNING)
-    logging.getLogger("pypsa").setLevel(logging.WARNING)
-    c = cfg if pfad is None else cfg.variante(pfad, wert)
-    ts, _ = build_zeitreihen(c, vollstaendig=True)
-    _, k, _ = loese(c, ts, threads=threads)
+def _zeile(cfg: Config, pfad: str | None, wert, k: dict) -> dict:
     basis = None if pfad is None else cfg.get(pfad)
     return {
         "parameter": pfad or "basis",
@@ -60,25 +67,55 @@ def _lauf(cfg: Config, pfad: str | None, wert, threads: int | None) -> dict:
     }
 
 
-def tornado(cfg: Config, jobs: int = 3) -> Path:
-    """Alle Varianten rechnen -> tornado.csv + tornado_lcoh.png + tornado_solaranteil.png."""
+def _lauf(cfg: Config, pfad: str, wert, threads: int | None) -> dict:
+    logging.getLogger("linopy").setLevel(logging.WARNING)
+    logging.getLogger("pypsa").setLevel(logging.WARNING)
+    c = cfg.variante(pfad, wert)
+    ts, _ = build_zeitreihen(c, vollstaendig=True)
+    _, k, _ = loese(c, ts, threads=threads)
+    return _zeile(cfg, pfad, wert, k)
+
+
+def tornado(cfg: Config, jobs: int = 4) -> Path:
+    """Alle Varianten rechnen -> tornado.csv + Tornado-Plots (LCOH, inkl. Netz, Abstand Gas, Solar)."""
     out = new_run_dir(cfg, "tornado")
-    laeufe = [(None, None), *varianten(cfg)]
+    ts, _ = build_zeitreihen(cfg, vollstaendig=True)
+    n_basis, k_basis, _ = loese(cfg, ts)
+    zeilen = [_zeile(cfg, None, None, k_basis)]
+
+    alle = varianten(cfg)
+    nach = [(p, w) for p, w in alle if p.startswith(NUR_NACHRECHNUNG)]
+    neu = [(p, w) for p, w in alle if not p.startswith(NUR_NACHRECHNUNG)]
+    for p, w in nach:  # gleiche Anlage, nur andere Kosten
+        k, _ = kpi.auswerten(n_basis, cfg.variante(p, w), ts)
+        zeilen.append(_zeile(cfg, p, w, k))
+
     threads = 1 if jobs > 1 else None
-    zeilen = []
     with ProcessPoolExecutor(max_workers=jobs) as pool:
-        futs = [pool.submit(_lauf, cfg, p, w, threads) for p, w in laeufe]
+        futs = [pool.submit(_lauf, cfg, p, w, threads) for p, w in neu]
         for f in as_completed(futs):
             zeilen.append(f.result())
             log.info(
                 "Tornado %d/%d: %s = %s",
                 len(zeilen),
-                len(laeufe),
+                len(alle) + 1,
                 zeilen[-1]["parameter"],
                 zeilen[-1]["wert"],
             )
     df = pd.DataFrame(zeilen)
     df.to_csv(out / "tornado.csv", index=False)
-    plots.tornado(df, "lcoh", "LCOH [€/MWh]", out / "tornado_lcoh.png")
+    plots.tornado(
+        df, "lcoh", "LCOH Erzeugung [€/MWh]", out / "tornado_lcoh.png", referenz="gas_lcoh"
+    )
+    plots.tornado(
+        df,
+        "lcoh_inkl_netz",
+        "Wärmepreis inkl. Netz [€/MWh geliefert]",
+        out / "tornado_lcoh_inkl_netz.png",
+        referenz="gas_lcoh_inkl_netz",
+    )
+    plots.tornado(
+        df, "abstand_gas", "Vorteil ggü. Gas-Referenz [€/MWh]", out / "tornado_abstand_gas.png"
+    )
     plots.tornado(df, "solar_gesamt", "Solaranteil [-]", out / "tornado_solaranteil.png")
     return out

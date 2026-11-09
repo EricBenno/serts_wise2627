@@ -70,7 +70,9 @@ def monatsbilanz(r: pd.DataFrame, out: Path) -> Path:
     return out
 
 
-def tornado(df: pd.DataFrame, spalte: str, titel: str, out: Path) -> Path:
+def tornado(
+    df: pd.DataFrame, spalte: str, titel: str, out: Path, referenz: str | None = None
+) -> Path:
     """Balken je Parameter von min bis max der Kennzahl, Basis als senkrechte Linie.
 
     ``df`` aus tornado.py: Zeile 'basis' + je Parameter/Wert eine Zeile.
@@ -78,6 +80,8 @@ def tornado(df: pd.DataFrame, spalte: str, titel: str, out: Path) -> Path:
     basis = float(df.loc[df["parameter"] == "basis", spalte].iloc[0])
     var = df[df["parameter"] != "basis"].copy()
     var["delta"] = var[spalte] - basis
+    # Parameter ohne Einfluss auf diese Kennzahl weglassen (z. B. Netzkosten beim Solaranteil)
+    var = var[var.groupby("parameter")["delta"].transform(lambda d: d.abs().max()) > 1e-9]
     gruppen = []
     for p, g in var.groupby("parameter"):
         g = g.sort_values("wert")
