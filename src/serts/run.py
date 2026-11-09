@@ -66,7 +66,10 @@ def loese(
             stufen.append(f"{stufe[0]}-{stufe[1]} m3: unzulässig")
             continue
         k, r = kpi.auswerten(n, cfg, ts)
-        stufen.append(f"{stufe[0]}-{stufe[1]} m3: LCOH {k['lcoh']:.1f}, V {k['V_m3']:.0f}")
+        stufen.append(
+            f"{stufe[0]}-{stufe[1]} m3 ({stufe[2]} EUR/m3): LCOH {k['lcoh']:.1f}, "
+            f"V {k['V_m3']:.0f} m3, A {k['A_koll_m2']:.0f} m2, Solar {k['solar_gesamt']:.0%}"
+        )
         if beste is None or k["kosten_a_gesamt"] < beste[1]["kosten_a_gesamt"]:
             beste = (n, k, r)
     if beste is None:

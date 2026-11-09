@@ -92,9 +92,9 @@ def test_flaeche_begrenzt_optimierte_groessen(cfg, ts):
 
 
 def test_speicherpreis_stufen(cfg):
-    assert economics.speicherpreis(cfg, 3000) == 140
-    assert economics.speicherpreis(cfg, 8000) == 105
-    assert economics.speicherpreis(cfg, 20000) == 80
+    assert economics.speicherpreis(cfg, 3000) == 165
+    assert economics.speicherpreis(cfg, 5000) == 124  # Grenze gehört zur nächsten Stufe
+    assert economics.speicherpreis(cfg, 20000) == 95
     with pytest.raises(ValueError):
         economics.speicherpreis(cfg, 50000)
 
