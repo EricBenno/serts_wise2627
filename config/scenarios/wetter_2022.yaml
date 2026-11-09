@@ -1,0 +1,5 @@
+# Strahlung des gemessenen Jahres 2022 (PVGIS-SARAH3) statt Normaljahr – 2022 war strahlungsreich
+meta:
+  beschreibung: "Strahlung 2022 statt PVGIS-TMY"
+kollektor:
+  strahlungsquelle: pvgis_sarah3

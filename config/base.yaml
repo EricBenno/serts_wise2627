@@ -267,14 +267,16 @@ kollektor:
     wert: 1.0
     einheit: "-"
     status: vorgabe
-    quelle: "Faktor auf die PVGIS-Strahlung 2022 (Sensitivität Solarressource)"
-    sens: [0.78]
-    hinweis: "0,78 ≈ Normaljahr: DWD-Klima 03028 ≈ 960 kWh/m2 horizontal x 1,13 Neigungsgewinn ≈ 1.085 kWh/m2 vs. PVGIS 2022 1.394 kWh/m2 (datenbasis §2)"
+    quelle: "Faktor auf die Strahlung (Sensitivität Solarressource)"
+    sens: [0.9, 1.1]
+    hinweis: "±10 % ≈ Spanne strahlungsarmer/-reicher Jahre: DWD 03028 1992-2010 meist 850-1.056 kWh/m2 um den Median ≈ 960 (datenbasis §2). Jahr 2022: Szenario wetter_2022."
   strahlungsquelle:
-    wert: pvgis_sarah3
+    wert: pvgis_tmy
     einheit: "-"
-    status: annahme
-    quelle: "DWD-Strahlung an Stn. 3028 endet 31.08.2011 -> 2022 fehlt. PVGIS-SARAH3 deckt 2005-2023 ab (JRC)."
+    status: vorgabe
+    quelle: "TEAM 09.11.2026: Normaljahr als Basis. PVGIS-TMY (SARAH3, 2005-2023), auf 35 deg Süd umgerechnet (pvlib Perez). DWD-Strahlung 03028 endet 2011."
+    sens: [pvgis_sarah3]
+    hinweis: "pvgis_sarah3 = gemessenes, strahlungsreiches Jahr 2022 (Szenario wetter_2022)."
   kosten_spez:
     wert: 450
     einheit: "EUR/m2"
