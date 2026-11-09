@@ -56,8 +56,11 @@ def jahresverlauf(r: pd.DataFrame, out: Path) -> Path:
         a3.plot(
             r["T_a"].resample("D").mean(), color="grey", lw=0.8, label="Außentemp. (Tagesmittel)"
         )
-        a3.set_ylabel("T_a [°C]")
+        a3.set_ylabel("Außentemperatur [°C] (nicht Speichertemperatur!)", color="grey")
+        a3.tick_params(axis="y", colors="grey")
         a3.legend(fontsize=8, loc="upper right")
+    a2.set_ylabel("Speicherinhalt [MWh] (Energie, bez. auf 10 °C)", color="#c06c00")
+    a2.tick_params(axis="y", colors="#c06c00")
     a2.legend(fontsize=8, loc="upper left")
     for a in (a1, a2):
         a.grid(alpha=0.3)
