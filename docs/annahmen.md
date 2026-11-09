@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 19, vorgabe 35, annahme 35, offen 1
+Status: belegt 19, vorgabe 36, annahme 35, offen 1
 
 
 ## standort
@@ -56,7 +56,8 @@ Status: belegt 19, vorgabe 35, annahme 35, offen 1
 | `ptes.T_oben` | 85 | degC | vorgabe | BRF §3.1; Liner-Grenze (Xiang et al. 2022) | 90 | Direktentladung braucht T_oben >= T_VL + 5 K = 85 degC -> bei VL 80 genau an der Grenze. |
 | `ptes.T_unten` | 10 | degC | vorgabe | BRF §3.1; DRL Tmin 9-12 degC |  |  |
 | `ptes.verlustrate` | 4e-05 | 1/h | annahme | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) | 1.5e-05, 8e-05 | PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10). |
-| `ptes.kosten_spez` | 105 | EUR/m3 | annahme | Kostenkurve aus DRL 60.000 m3 / 38,3 EUR/m3 (SIF, 2014) und Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019): c ~ V^-0,31; bei ≈ 8.700 m3 -> 70 EUR/m3, x 1,5 Baupreissteigerung 2014->2025 ≈ 105 EUR/m3 | 70, 140 | Linear im LP (konstant je m3). Gilt für ≈ 5.000-12.000 m3; bei ganz anderer optimaler Größe neu ableiten (docs E20). |
+| `ptes.preisstufen` | [[0, 5000, 165], [5000, 12000, 124], [12000, 35000, 95]] | [m3 von, m3 bis, EUR/m3] | annahme | Kostenkurve c = 38,3 EUR/m3 * (V/60.000)^-0,31 * 1,5 aus DRL 60.000 m3 / 38,3 EUR/m3 (SIF, 2014) und Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019), x 1,5 Baupreissteigerung 2014->2025; je Stufe konservativ am unteren Rand ausgewertet: 5.000 m3 -> 124, 12.000 m3 -> 95 EUR/m3; Stufe 1 bei 2.000 m3 -> 165 EUR/m3 |  | Je Stufe ein LP-Lauf mit V in [von, bis]; die günstigste Stufe gewinnt (docs E24). Obergrenze 35.000 m3 ≈ ganze Fläche. |
+| `ptes.kosten_faktor` | 1 | - | vorgabe | Faktor auf alle Preisstufen (Sensitivität Speicherkosten) | 0.7, 1.3 |  |
 | `ptes.volumen_je_grundflaeche` | 2.65 | m3/m2 | annahme | DRL-Geometrie (Pyramidenstumpf 90/26 m, 16 m tief) ähnlich skaliert auf 8.700 m3: Oberkante 47 m, Tiefe 8 m; + 5 m Randstreifen -> 3.280 m2 Grund -> 8.700/3.280 | 2, 4 |  |
 
 ## kollektor
@@ -163,4 +164,4 @@ Status: belegt 19, vorgabe 35, annahme 35, offen 1
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `tornado.parameter` | ['ptes.kosten_spez', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |
+| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

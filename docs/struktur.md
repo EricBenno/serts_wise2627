@@ -17,6 +17,7 @@ Leitlinie: **so simpel wie möglich, so komplex wie nötig** (docs/entscheidunge
 
 - PyPSA minimiert die Jahreskosten (Annuitäten + Strom) über 8760 h und legt dabei die Größen von
   Kollektorfeld, Speicher, Wärmepumpe und PtH fest.
+- Speicherpreis in drei Größenstufen: je Stufe ein Lauf, die günstigste gewinnt (E24).
 - Zwei Zusatzbedingungen (`constraints.py`): Fläche ≤ 13.000 m² und Direktanteil des Speichers ≤ 53 %.
   Die Speicher-WP darf nur Nov–Mär laufen (Parameter, E21).
 - Alle Zahlen stehen in `config/base.yaml` (mit Quelle/Status); Varianten als kleine YAML-Dateien in
@@ -25,12 +26,12 @@ Leitlinie: **so simpel wie möglich, so komplex wie nötig** (docs/entscheidunge
 ## Befehle
 
 ```bash
-uv run serts run                         # Basis: Größen optimieren (≈ 30 s)
+uv run serts run                         # Basis: Größen optimieren, 3 Preisstufen (≈ 2,5 min)
 uv run serts run --V 0                   # Variante ohne Speicher
 uv run serts run --A 4000 --V 6000       # feste Größen vorgeben
 uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis)
 uv run serts run --stunden 168           # Schnelltest
-uv run serts tornado                     # Sensitivitäten (24 Läufe, ≈ 3 min)
+uv run serts tornado --jobs 4            # Sensitivitäten (24 Varianten × 3 Stufen, ≈ 8–10 min)
 uv run serts prepare                     # nur Zeitreihen + Plots
 uv run serts annahmen                    # docs/annahmen.md neu erzeugen
 uv run pytest                            # 43 Tests
@@ -58,7 +59,7 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 | Thema | Stand |
 |---|---|
 | Daten Bad Lippspringe, Temperatur 2022, Strahlung Normaljahr (PVGIS-TMY) | ✅ |
-| Modell + Optimierung der Größen | ✅ (Basis Normaljahr: A ≈ 2.070 m², V ≈ 3.320 m³, WP ≈ 1,1 MW, LCOH ≈ 136 €/MWh vs. Gas ≈ 165 €/MWh; Details `docs/ergebnisse.md`) |
+| Modell + Optimierung der Größen | ✅ (Basis Normaljahr: A ≈ 2.650 m², V ≈ 5.000 m³, WP ≈ 1,0 MW, LCOH ≈ 137 €/MWh vs. Gas ≈ 165 €/MWh; Details `docs/ergebnisse.md`) |
 | Tests (Bilanzen, Constraints, COP-Prüfwerte, Solites-Definitionen) | ✅ 43 |
 | Validierung Dronninglund | ⏭ ausgelassen (Referenzwerte liegen in `data/reference/`) |
 | Sensitivitäten (Tornado) | ✅ `serts tornado`, Ergebnisse in `docs/ergebnisse.md` |

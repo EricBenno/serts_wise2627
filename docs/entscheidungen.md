@@ -165,3 +165,14 @@ Temperatur und Last bleiben 2022 (DWD bzw. Netzberechnung). Ergebnis: horizontal
 (2022: 1.394). Die frühere Schätzung „Normaljahr ≈ Faktor 0,78“ (aus DWD 1992–2010, 960 kWh/m²) war zu
 pessimistisch: Der TMY-Zeitraum 2005–2023 ist strahlungsreicher. Strahlungssensitivität jetzt ±10 %
 (Spanne der Einzeljahre); Jahr 2022 als Szenario `wetter_2022`.
+
+### E24 Speicherpreis in drei Preisstufen (ersetzt den linearen Preis aus E20)
+Erdbeckenspeicher werden mit der Größe spezifisch billiger; ein LP kann das nicht direkt abbilden. Einfache
+Lösung: drei Größenklassen mit je einem Preis aus der Kostenkurve (DRL/Marstal, × 1,5 Baupreise), konservativ
+am **unteren Rand** jeder Stufe ausgewertet (sonst sitzt das Optimum am Stufenrand mit zu günstigem Preis):
+< 5.000 m³: 165 €/m³ (bei 2.000 m³), 5.000–12.000 m³: 124 €/m³, 12.000–35.000 m³: 95 €/m³.
+`run.loese` rechnet je Stufe einen Lauf (V innerhalb der Stufe) und nimmt den mit den geringsten Jahreskosten;
+die Ausgabe zeigt alle drei Stufen. Laufzeit ≈ 2,5 min statt 30 s. Sensitivität über `ptes.kosten_faktor`
+(0,7 / 1,3 auf alle Stufen).
+Befund Basis: die drei Stufen liegen innerhalb ≈ 1 €/MWh (137,2–138,4) – das Kostenoptimum ist **flach**;
+größere Speicher kosten kaum mehr, bringen aber mehr Solaranteil (siehe docs/ergebnisse.md).
