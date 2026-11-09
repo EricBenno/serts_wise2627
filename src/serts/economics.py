@@ -1,10 +1,18 @@
-"""Wirtschaftlichkeit (AP 9): Annuitätenmethode nach VDI 2067-1, LCOH, CO2-Vermeidungskosten.
+"""Wirtschaftlichkeit (AP 9): Annuitätenmethode nach VDI 2067 Blatt 1, LCOH, CO2-Vermeidungskosten.
 
-Kapitalkosten: Annuität über die technische Lebensdauer (äquivalente Jahreskosten; bei Lebensdauer
-> Betrachtungszeitraum entspricht das einer Restwertgutschrift).
-Energiekosten mit Preisänderung r (VDI 2067-1, preisdynamischer Barwertfaktor):
-    b(r, i, T) = (1 - ((1+r)/(1+i))^T) / (i - r),   Faktor auf Jahr-1-Kosten = a(i, T) * b
-Bei r = 0 ist der Faktor genau 1 (reale Rechnung mit konstanten Preisen, TEAM-Vorgabe).
+Alle Kosten werden als Annuität über den Betrachtungszeitraum T (oekonomie.betrachtungszeitraum)
+ausgedrückt, Zinsfaktor q = 1 + i, Annuitätsfaktor a = (q - 1) / (1 - q^-T).
+
+Kapitalgebundene Kosten (VDI 2067-1, Gl. für A_N,K):
+    A_N,K = (A0 + A1 + ... + An - R_W) * a
+    Ersatzbeschaffung k im Jahr k*T_N:  A_k = A0 * r^(k*T_N) / q^(k*T_N),  n = ceil(T/T_N) - 1
+    Restwert (linear):                  R_W = A0 * r^(n*T_N) * ((n+1)*T_N - T) / T_N / q^T
+Betriebsgebundene Kosten: A0 * f_om * (a * b_B)   (Instandsetzung + Wartung, VDI: f_Inst + f_W+Insp)
+Bedarfsgebundene Kosten (Energie): Kosten im 1. Jahr * (a * b_V) mit dem preisdynamischen Barwertfaktor
+    b(r, i, T) = (1 - ((1+r)/(1+i))^T) / (i - r)
+Bei realer Rechnung ohne Preisänderung (r = 0, TEAM-Vorgabe) ist a * b = 1.
+Förderung (Investitionszuschuss) mindert A0 in den kapitalgebundenen Kosten.
+Nicht enthalten (VDI-Kostengruppe "sonstige Kosten", Bedienpersonal): siehe docs/entscheidungen.md E25.
 """
 
 from __future__ import annotations
@@ -26,11 +34,49 @@ def annuitaet(invest: float, zins: float, jahre: float, foerderquote: float = 0.
     return invest * (1.0 - foerderquote) * annuitaetenfaktor(zins, jahre)
 
 
+def kapitalfaktor_vdi(zins: float, T: float, T_N: float, r: float = 0.0) -> float:
+    """VDI 2067-1: (A0 + Ersatz - Restwert) * a, bezogen auf A0 = 1 [1/a]."""
+    import math
+
+    q, rr = 1.0 + zins, 1.0 + r
+    n = max(math.ceil(T / T_N) - 1, 0)
+    barwert = 1.0 + sum((rr / q) ** (k * T_N) for k in range(1, n + 1))
+    restwert = rr ** (n * T_N) * ((n + 1) * T_N - T) / T_N / q**T
+    return (barwert - restwert) * annuitaetenfaktor(zins, T)
+
+
 def kapitalkosten_jahr(
-    invest: float, zins: float, lebensdauer: float, om_fix: float, foerderquote: float = 0.0
+    invest: float,
+    zins: float,
+    lebensdauer: float,
+    om_fix: float,
+    foerderquote: float = 0.0,
+    T: float | None = None,
+    r_invest: float = 0.0,
+    r_betrieb: float = 0.0,
 ) -> float:
-    """Annuität + fixe O&M (Anteil vom Invest, ohne Förderabzug) [EUR/a]."""
-    return annuitaet(invest, zins, lebensdauer, foerderquote) + invest * om_fix
+    """Kapital- + betriebsgebundene Kosten nach VDI 2067-1 [EUR/a].
+
+    Ohne T (Betrachtungszeitraum) wird T = lebensdauer gesetzt (einfache Annuität).
+    """
+    T = lebensdauer if T is None else T
+    kapital = invest * (1.0 - foerderquote) * kapitalfaktor_vdi(zins, T, lebensdauer, r_invest)
+    betrieb = invest * om_fix * preisdynamik(zins, T, r_betrieb)
+    return kapital + betrieb
+
+
+def jahreskosten(cfg: Config, komponente: str, invest: float, gefoerdert: bool = True) -> float:
+    """VDI-2067-Jahreskosten einer Komponente aus oekonomie.* (Lebensdauer, O&M, Förderung, T)."""
+    return kapitalkosten_jahr(
+        invest=invest,
+        zins=cfg.get("oekonomie.zins"),
+        lebensdauer=cfg.get(f"oekonomie.lebensdauer.{komponente}"),
+        om_fix=cfg.get(f"oekonomie.om_fix.{komponente}"),
+        foerderquote=cfg.get("oekonomie.foerderquote") if gefoerdert else 0.0,
+        T=cfg.get("oekonomie.betrachtungszeitraum"),
+        r_invest=cfg.get("oekonomie.preisaenderung.invest"),
+        r_betrieb=cfg.get("oekonomie.preisaenderung.betrieb"),
+    )
 
 
 def preisdynamik(zins: float, jahre: float, r: float) -> float:
@@ -70,16 +116,34 @@ def co2_vermeidungskosten(
     return (lcoh_sys - lcoh_ref) / d_co2
 
 
+def netzkosten(cfg: Config) -> dict:
+    """Verteilnetz: Trasse (Straße / grüne Wiese) + Hausanschlüsse -> Invest und Jahreskosten.
+
+    Gleiche Kosten gelten für System und Gas-Referenz (Gas-Fernwärme mit demselben Netz).
+    """
+    L = cfg.get("netz.trassenlaenge")
+    s = cfg.get("netz.anteil_strasse")
+    trasse = L * (
+        s * cfg.get("netz.kosten_trasse_strasse") + (1 - s) * cfg.get("netz.kosten_trasse_gruen")
+    )
+    ha = cfg.get("netz.hausanschluesse") * cfg.get("netz.kosten_hausanschluss")
+    return {
+        "netz_invest_trasse_EUR": trasse,
+        "netz_invest_hausanschluss_EUR": ha,
+        "kosten_a_netz_system": jahreskosten(cfg, "netz", trasse)
+        + jahreskosten(cfg, "hausanschluss", ha),
+        "kosten_a_netz_gasref": jahreskosten(cfg, "netz", trasse, gefoerdert=False)
+        + jahreskosten(cfg, "hausanschluss", ha, gefoerdert=False),
+    }
+
+
 def gas_referenz(cfg: Config, Q_MWh_a: float, P_max_MW: float) -> dict:
     """Referenz: Gaskessel deckt die gesamte Einspeisung (AP 7 Einfach)."""
     zins = cfg.get("oekonomie.zins")
     T = cfg.get("oekonomie.betrachtungszeitraum")
     P = P_max_MW * cfg.get("gas_referenz.auslegung")
-    capex_a = kapitalkosten_jahr(
-        P * cfg.get("gas_referenz.kosten_spez"),
-        zins,
-        cfg.get("oekonomie.lebensdauer.gaskessel"),
-        cfg.get("oekonomie.om_fix.gaskessel"),
+    capex_a = jahreskosten(
+        cfg, "gaskessel", P * cfg.get("gas_referenz.kosten_spez"), gefoerdert=False
     )
     brennstoff_hi = Q_MWh_a / cfg.get("gas_referenz.eta")
     gas_kosten = (

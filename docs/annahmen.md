@@ -131,26 +131,26 @@ Status: belegt 19, vorgabe 36, annahme 35, offen 1
 
 ## oekonomie
 
-| Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
-|---|---|---|---|---|---|---|
-| `oekonomie.zins` | 0.05 | - | vorgabe | TEAM: 5 %; als realer Kalkulationszins verwendet (Preise real konstant) | 0.03, 0.07 |  |
-| `oekonomie.betrachtungszeitraum` | 20 | a | vorgabe | TEAM |  |  |
-| `oekonomie.preisbasisjahr` | 2025 | a | vorgabe | TEAM: 2025/26 |  |  |
-| `oekonomie.foerderquote` | 0 | - | vorgabe | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss |  |  |
-| `oekonomie.preisaenderung.strom` | 0 | 1/a | vorgabe | TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a | 0.02 |  |
-| `oekonomie.preisaenderung.gas` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend; Variante +2 %/a | 0.02 |  |
-| `oekonomie.preisaenderung.co2` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend | 0.05 |  |
-| `oekonomie.preisaenderung.biomasse` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend |  |  |
-| `oekonomie.lebensdauer.ptes` | 25 | a | annahme | Liner-Lebensdauer; Größenordnung DEA Technology Data Energy Storage (20-40 a) |  |  |
-| `oekonomie.lebensdauer.kollektor` | 25 | a | annahme | Größenordnung DEA/VDI 2067-1 (20-30 a) |  |  |
-| `oekonomie.lebensdauer.waermepumpe` | 20 | a | annahme | Größenordnung DEA/VDI 2067-1 (18-25 a) |  |  |
-| `oekonomie.lebensdauer.pth` | 20 | a | annahme | Größenordnung DEA (20 a) |  |  |
-| `oekonomie.lebensdauer.gaskessel` | 20 | a | annahme | Größenordnung VDI 2067-1 (18-20 a) |  |  |
-| `oekonomie.om_fix.ptes` | 0.005 | 1/a vom Invest | annahme | geringe Wartung (Pumpen/Deckel), Größenordnung VDI 2067-1 |  |  |
-| `oekonomie.om_fix.kollektor` | 0.01 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Solaranlagen 1-1,5 %/a) |  |  |
-| `oekonomie.om_fix.waermepumpe` | 0.025 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Wärmepumpen 2,5 %/a) |  |  |
-| `oekonomie.om_fix.pth` | 0.02 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 |  |  |
-| `oekonomie.om_fix.gaskessel` | 0.02 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 |  |  |
+| Parameter                           | Wert  | Einheit        | Status  | Quelle / Begründung                                                           | Sensitivität | Hinweis |
+| ----------------------------------- | ----- | -------------- | ------- | ----------------------------------------------------------------------------- | ------------ | ------- |
+| `oekonomie.zins`                    | 0.05  | -              | vorgabe | TEAM: 5 %; als realer Kalkulationszins verwendet (Preise real konstant)       | 0.03, 0.07   |         |
+| `oekonomie.betrachtungszeitraum`    | 20    | a              | vorgabe | TEAM                                                                          |              |         |
+| `oekonomie.preisbasisjahr`          | 2025  | a              | vorgabe | TEAM: 2025/26                                                                 |              |         |
+| ==`oekonomie.foerderquote`==        | 0     | -              | vorgabe | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss |              |         |
+| `oekonomie.preisaenderung.strom`    | 0     | 1/a            | vorgabe | TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a           | 0.02         |         |
+| `oekonomie.preisaenderung.gas`      | 0     | 1/a            | vorgabe | TEAM: real gleichbleibend; Variante +2 %/a                                    | 0.02         |         |
+| `oekonomie.preisaenderung.co2`      | 0     | 1/a            | vorgabe | TEAM: real gleichbleibend                                                     | 0.05         |         |
+| `oekonomie.preisaenderung.biomasse` | 0     | 1/a            | vorgabe | TEAM: real gleichbleibend                                                     |              |         |
+| `oekonomie.lebensdauer.ptes`        | 25    | a              | annahme | Liner-Lebensdauer; Größenordnung DEA Technology Data Energy Storage (20-40 a) |              |         |
+| `oekonomie.lebensdauer.kollektor`   | 25    | a              | annahme | Größenordnung DEA/VDI 2067-1 (20-30 a)                                        |              |         |
+| `oekonomie.lebensdauer.waermepumpe` | 20    | a              | annahme | Größenordnung DEA/VDI 2067-1 (18-25 a)                                        |              |         |
+| `oekonomie.lebensdauer.pth`         | 20    | a              | annahme | Größenordnung DEA (20 a)                                                      |              |         |
+| `oekonomie.lebensdauer.gaskessel`   | 20    | a              | annahme | Größenordnung VDI 2067-1 (18-20 a)                                            |              |         |
+| `oekonomie.om_fix.ptes`             | 0.005 | 1/a vom Invest | annahme | geringe Wartung (Pumpen/Deckel), Größenordnung VDI 2067-1                     |              |         |
+| `oekonomie.om_fix.kollektor`        | 0.01  | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Solaranlagen 1-1,5 %/a)                             |              |         |
+| `oekonomie.om_fix.waermepumpe`      | 0.025 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Wärmepumpen 2,5 %/a)                                |              |         |
+| `oekonomie.om_fix.pth`              | 0.02  | 1/a vom Invest | annahme | Größenordnung VDI 2067-1                                                      |              |         |
+| `oekonomie.om_fix.gaskessel`        | 0.02  | 1/a vom Invest | annahme | Größenordnung VDI 2067-1                                                      |              |         |
 
 ## solver
 

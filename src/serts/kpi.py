@@ -166,6 +166,14 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     k["co2_vermeidungskosten"] = economics.co2_vermeidungskosten(
         k["lcoh"], ref["gas_lcoh"], k["co2_t_a"] / Q, ref["gas_co2_t_a"] / Q
     )
+    k["abstand_gas"] = ref["gas_lcoh"] - k["lcoh"]  # > 0: System günstiger als Gas-Referenz
+
+    # Verteilnetz (gleich für System und Gas-Fernwärme) -> Wärmepreis beim Kunden
+    if cfg.get("netz.netzkosten_einbeziehen"):
+        nk = economics.netzkosten(cfg)
+        k.update(nk)
+        k["lcoh_inkl_netz"] = (k["kosten_a_gesamt"] + nk["kosten_a_netz_system"]) / Q_geliefert
+        k["gas_lcoh_inkl_netz"] = (ref["gas_lcoh"] * Q + nk["kosten_a_netz_gasref"]) / Q_geliefert
 
     # Fläche (Check)
     flaeche = A * cfg.get("kollektor.flaechenfaktor") + V / cfg.get("ptes.volumen_je_grundflaeche")

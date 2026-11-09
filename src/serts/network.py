@@ -31,13 +31,8 @@ def annualisiert(cfg: Config, komponente: str, kosten: str | float) -> float:
 
     ``kosten`` = Config-Schlüssel des spezifischen Invests oder direkt ein Wert.
     """
-    return economics.kapitalkosten_jahr(
-        invest=cfg.get(kosten) if isinstance(kosten, str) else kosten,
-        zins=cfg.get("oekonomie.zins"),
-        lebensdauer=cfg.get(f"oekonomie.lebensdauer.{komponente}"),
-        om_fix=cfg.get(f"oekonomie.om_fix.{komponente}"),
-        foerderquote=cfg.get("oekonomie.foerderquote"),
-    )
+    invest = cfg.get(kosten) if isinstance(kosten, str) else kosten
+    return economics.jahreskosten(cfg, komponente, invest)
 
 
 def mwh_je_m3(cfg: Config) -> float:

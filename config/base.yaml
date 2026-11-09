@@ -164,6 +164,42 @@ netz:
     einheit: "m"
     status: belegt
     quelle: "NB Zusammenfassung, Summe Trassenlänge (ohne Hausanschlüsse 3413 m)"
+  hausanschluesse:
+    wert: 159
+    einheit: "Stück"
+    status: belegt
+    quelle: "NB Zusammenfassung, Anzahl Hausanschlüsse (EFH 119, MFH 38, GHA 2); Hausanschlusslänge gesamt 3.413 m"
+  netzkosten_einbeziehen:
+    wert: true
+    einheit: "-"
+    status: vorgabe
+    quelle: "TEAM 09.11.2026: Netzkosten in die LCOH einbeziehen (zusätzlich zur LCOH der Erzeugung ausgewiesen)"
+  anteil_strasse:
+    wert: 0.8
+    einheit: "-"
+    status: vorgabe
+    quelle: "TEAM: Großteil der Trasse unter Straßen, Rest 'grüne Wiese' – Verhältnis nachsteuerbar"
+    sens: [0.5, 1.0]
+  kosten_trasse_strasse:
+    wert: 550
+    einheit: "EUR/m Trasse"
+    status: annahme
+    quelle: "Manderfeld (via Borderstep 2012): flexible Rohre unter Asphalt 220-440 EUR/m; CARMEN: 200-400 EUR/m; x ≈ 1,6 Baupreissteigerung 2012->2025 (grob) -> ≈ 350-700, Mitte 550 EUR/m (inkl. Tiefbau und Oberfläche)"
+    sens: [400, 800]
+    hinweis: "KEA-BW Technikkatalog Wärmeplanung (Netzkosten nach DN und Oberfläche) nachtragen"
+  kosten_trasse_gruen:
+    wert: 250
+    einheit: "EUR/m Trasse"
+    status: annahme
+    quelle: "Manderfeld (via Borderstep 2012): flexible Rohre unbefestigt 100-180 EUR/m; x ≈ 1,6 -> ≈ 160-290, gerundet 250 EUR/m"
+    sens: [150, 400]
+  kosten_hausanschluss:
+    wert: 10000
+    einheit: "EUR/Stück"
+    status: annahme
+    quelle: "Hausanschlussleitung + Übergabestation EFH: 5.000-15.000 EUR (co2online via Finanztip; 42watt), Mitte 10.000 EUR"
+    sens: [5000, 15000]
+    hinweis: "Wird in der Praxis oft über Baukostenzuschüsse/Hausanschlusskosten von den Kunden getragen."
 # -------------------------------------------------------------------------------------
 ptes:
   c_wasser:
@@ -475,7 +511,19 @@ oekonomie:
     einheit: "-"
     status: vorgabe
     quelle: "AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss"
+    sens: [0.4]
+    hinweis: "Variante 0,4 = BEW Modul 2 (BAFA, Investitionszuschuss 40 % der förderfähigen Ausgaben; Förderfähigkeit im Einzelfall prüfen). Gilt für alle Systemkomponenten inkl. Netz, nicht für die Gas-Referenz."
   preisaenderung:
+    invest:
+      wert: 0.0
+      einheit: "1/a"
+      status: vorgabe
+      quelle: "TEAM: reale Rechnung, Ersatzinvestitionen ohne reale Preisänderung (VDI 2067: r_K)"
+    betrieb:
+      wert: 0.0
+      einheit: "1/a"
+      status: vorgabe
+      quelle: "TEAM: reale Rechnung (VDI 2067: r_IN für Instandhaltung)"
     strom:
       wert: 0.0
       einheit: "1/a"
@@ -525,6 +573,16 @@ oekonomie:
       einheit: "a"
       status: annahme
       quelle: "Größenordnung VDI 2067-1 (18-20 a)"
+    netz:
+      wert: 40
+      einheit: "a"
+      status: annahme
+      quelle: "KMR/PEX-Fernwärmeleitungen: Größenordnung 40 a (DEA District heating distribution; VDI 2067-1)"
+    hausanschluss:
+      wert: 25
+      einheit: "a"
+      status: annahme
+      quelle: "Übergabestation dominiert die Kosten: Größenordnung 20-30 a"
   om_fix:
     ptes:
       wert: 0.005
@@ -551,6 +609,16 @@ oekonomie:
       einheit: "1/a vom Invest"
       status: annahme
       quelle: "Größenordnung VDI 2067-1"
+    netz:
+      wert: 0.01
+      einheit: "1/a vom Invest"
+      status: annahme
+      quelle: "Größenordnung VDI 2067-1 (Rohrleitungen ≈ 1 %/a)"
+    hausanschluss:
+      wert: 0.02
+      einheit: "1/a vom Invest"
+      status: annahme
+      quelle: "Übergabestation, Größenordnung VDI 2067-1"
 
 # -------------------------------------------------------------------------------------
 solver:
