@@ -202,3 +202,40 @@ größere Speicher kosten kaum mehr, bringen aber mehr Solaranteil (siehe docs/e
   Stundenmodell bräuchte Temperaturen/Schichten (das frühere 3-Pool-Modell, bewusst verworfen, E20).
 - Matplotlib: `use("Agg")` steht nicht mehr in den Modulen (zeigte im Notebook keine Grafiken), sondern nur in
   `cli.main` und `tests/conftest.py`.
+
+### E27 Speicher in zwei Teilen (heiß/kalt); Luft-WP-Leistung bei Kälte (ersetzt E21 und E26, Teile von E20)
+**Anlass:** TEAM-Rückfrage 09.11.2026: Warum die Monatsbeschränkung der Speicher-WP?
+**Befund:** Die Monatsregel (E21) war ein Pflaster für die Jahresregel „Direktentladung ≤ 53 %“ (E20): Diese
+Bilanz erlaubte es, im Sommer „Quellwärme“ zu verbuchen, um im Winter mehr direkt zu entladen. Die Folge war
+ein Verhalten, das **kurzfristige Speichernutzung blockierte** (direkte Sommerentladung verlangte
+Quellwärme im Winter) und damit Solar und Speicher im Basislauf unterschätzte.
+**Lösung (einfacher und physikalisch konsistent):** Der Speicher besteht aus zwei Energie-Speichern.
+*Heiß* = Wärme zwischen 85 °C und dem Netz-Rücklauf (40 K, f = 53 %), *kalt* = Rücklauf bis 10 °C (35 K,
+47 %). Beladen füllt beide immer im Verhältnis f : (1−f), direkt ins Netz geht nur der heiße Teil, die
+Speicher-WP holt ihre Quellwärme nur aus dem kalten Teil. Eine Nebenbedingung koppelt die Größen
+(kalt = (1−f)/f · heiß). Dadurch gilt die Aufteilung **in jeder Stunde**, die Jahresregel und die
+Monatsbeschränkung entfallen, und die Speicher-WP darf ganzjährig laufen.
+**Luft-WP bei Kälte:** Die thermische Leistung sinkt linear von 100 % (ab −1 °C) auf 80 % bei −7 °C
+(`luft_leistung_voll_ab`, `luft_leistung_bei_tmin`); vorher war sie temperaturunabhängig (E20 hatte das
+vereinfacht). Über −1 °C bleibt sie konstant 100 % (konservativ). Die PtH-Reserve deckt Spitzen unabhängig davon.
+**Nicht umgesetzt:** WP lädt den Speicher (E29 Begründung), Mischung/Zwischentemperaturen.
+
+### E28 Strompreis in Komponenten, Nebenkosten, Förderfähigkeit je Komponente
+- **Strompreis:** Gesamt 30 ct/kWh (TEAM) = Energie + Netzentgelt (Arbeitspreis) + Abgaben. Aufteilung nach
+  BDEW-Komponenten (Jan 2026, Kategorie nicht geklärt): Netzentgelt 93 €/MWh, Abgaben 57 €/MWh (Stromsteuer,
+  Konzessionsabgabe, KWKG, §19), Energie = Rest (150 €/MWh). Ausgewiesen als `kosten_a_strom_energie/_netzentgelt/
+  _abgaben`. Für Tarif `day_ahead`: Preis(t) = Day-Ahead(t) + Marge + Netzentgelt + Abgaben (Marge offen).
+  Nicht modelliert: Leistungspreis (EUR/kW·a auf die höchste Bezugsleistung).
+- **Wärmenetz** getrennt ausgewiesen: `netzkosten_spez_trasse`, `netzkosten_spez_hausanschluss` (EUR/MWh geliefert).
+- **Nebenkosten 10 %** (TEAM) auf alle Investitionen (auch Gaskessel und Netz): `oekonomie.nebenkosten`.
+- **Zins bleibt real** (TEAM); Preisänderungsfaktoren bleiben als Variante bestehen (Basis 0 %/a). Vorlauf bleibt 80 °C.
+- **Förderfähigkeit je Komponente** (`oekonomie.foerderfaehig`): Kollektor, PTES, WP, Trasse ja; PtH und
+  Hausanschluss konservativ nein (laut gelesenem BEW-Text nicht ausdrücklich genannt); Gaskessel nein.
+
+### E29 WP lädt den Speicher: bewusst nicht umgesetzt
+Idee (TEAM): im Sommer mit der Luft-WP (COP ≈ 3,3) den Speicher laden, im Winter direkt entladen statt Luft-WP
+(COP ≈ 2,1–2,5). Handrechnung: je MWh gelieferter Wärme spart das ≈ 0,08–0,12 MWh Strom (Sommer-COP ≈ 3,2 und ≈ 13 %
+Speicherverlust bei ≈ 3.500 h Haltedauer gegen Winter-COP ≈ 2,3) ≈ 25–35 €/MWh, das sind ≈ 2–3 €/m³ und Jahr gegenüber Speicherkosten von ≈ 10–11 €/m³ und Jahr (124 €/m³, 25 a, 5 %, O&M). Bei festem
+Strompreis rechnet sich das nicht; mit dynamischem Preis (Day-Ahead + Aufschläge) kann es sich ändern.
+Zusätzlicher Aufwand: Solaranteil müsste anders bilanziert werden (WP-Wärme im Speicher ist nicht solar).
+→ Als Variante für den Day-Ahead-Fall vormerken (`docs/ausblick.md`).

@@ -10,19 +10,21 @@ Als Mermaid-Diagramm (exakt wie gerechnet): [docs/systemskizze.md](systemskizze.
 ```
                  ┌──────────── solar_direkt ─────────────┐
     Kollektor ──>│ solar                                 ▼
-                 └── laden ──> [Speicher MWh] ──> entladen_direkt ──> waerme ──> Last
-                                     │   (≤ 53 % der Entladung direkt)    ▲   ▲   (Gebäude
-                                     └── Quellwärme ──┐                   │   │    + Netzverluste)
-    Netzstrom ──> hp_luft ──────────────────────> wp ─┴─> wp_out ─────────┘   │
-             └──> hp_speicher (holt Quellwärme aus dem Speicher) ─┘           │
-             └──> pth (Mindestleistung = Spitzenlast) ────────────────────────┘
+                 └── laden ──> [Speicher heiß | kalt] ──> entladen_direkt ──> waerme ──> Last
+                                  (53 % | 47 %)  └── Quellwärme ──┐              ▲   ▲
+    Netzstrom ──> hp_luft ─────────────────────────────────> wp ──┴> wp_out ─────┘   │
+             └──> hp_speicher (holt Quellwärme aus dem kalten Teil) ┘                 │
+             └──> pth (Mindestleistung = Spitzenlast) ──────────────────────────────┘
 ```
 
 - PyPSA minimiert die Jahreskosten (Annuitäten + Strom) über 8760 h und legt dabei die Größen von
   Kollektorfeld, Speicher, Wärmepumpe und PtH fest.
+- **Speicher in zwei Teilen** (heiß: direkt nutzbar, kalt: nur über die WP), Beladen im festen Verhältnis 53 : 47 (E27).
 - Speicherpreis in drei Größenstufen: je Stufe ein Lauf, die günstigste gewinnt (E24).
-- Zwei Zusatzbedingungen (`constraints.py`): Fläche ≤ 13.000 m² und Direktanteil des Speichers ≤ 53 %.
-  Die Speicher-WP darf nur Nov–Mär laufen (Parameter, E21).
+- Drei Zusatzbedingungen (`constraints.py`): Fläche ≤ 13.000 m², Speicherteile im festen Größenverhältnis,
+  Luft-WP-Leistung sinkt bei Kälte.
+- Kosten nach VDI 2067-1 inkl. 10 % Nebenkosten; Strom in Energie/Netzentgelt/Abgaben getrennt; Wärmenetz
+  (Trasse, Hausanschlüsse) getrennt ausgewiesen (E25, E28).
 - Alle Zahlen stehen in `config/base.yaml` (mit Quelle/Status); Varianten als kleine YAML-Dateien in
   `config/scenarios/`.
 
@@ -37,7 +39,7 @@ uv run serts run --stunden 168           # Schnelltest
 uv run serts tornado                     # Sensitivitäten (41 Varianten, ≈ 20–25 min)
 uv run serts prepare                     # nur Zeitreihen + Plots
 uv run serts annahmen                    # docs/annahmen.md neu erzeugen
-uv run pytest                            # 43 Tests
+uv run pytest                            # 62 Tests
 ```
 
 Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennzahlen), `zeitreihen.csv`,

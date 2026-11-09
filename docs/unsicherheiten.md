@@ -7,7 +7,7 @@ Stand 09.11.2026. Richtung: ↑ = Modell unterschätzt die Kosten / ↓ = übers
 
 | Position | Größenordnung (grob) | Wirkung | Vorschlag |
 |---|---|---|---|
-| Planung, Genehmigung, Bauherrenleistungen (Nebenkosten) | oft 10–20 % auf die Investition | ↑ LCOH um einige €/MWh | pauschaler Zuschlag `oekonomie.nebenkosten` (Quelle: HOAI/Projektbeispiele) |
+| Planung, Genehmigung, Bauherrenleistungen | **10 % pauschal im Modell enthalten (E28)**; Spanne real 5–20 % | – | Tornado `oekonomie.nebenkosten` |
 | Stromnetzanschluss (Mittelspannung, Trafo) für ≈ 2–3 MW elektrisch | mehrere 100 T€ | ↑ | einmaliger Posten in `pth`/`waermepumpe` oder eigener Parameter |
 | Grundstück (Kauf/Pacht 13.000 m²) | standortabhängig | ↑ (v. a. bei großem Kollektorfeld) | €/m² Fläche × Flächenbedarf |
 | Heizzentrale/Gebäude, Hydraulik, Leittechnik | DRL: 3,2 Mio. € „Technique building“ (SIF Tab. 1) | ↑ | Zuschlag oder eigener Posten |

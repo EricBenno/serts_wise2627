@@ -62,7 +62,8 @@ def extra_functionality(n, snapshots, *, cfg: Config, ts: pd.DataFrame) -> None:
         m.add_constraints(e_k - (1.0 - f) / f * e_h == 0, name="speicher_verhaeltnis")
 
     # 3 Luft-WP: Leistung sinkt bei Kälte
-    p_wp = _sel(m["Link-p_nom"], "wp_out")
+    wp_variabel = bool(n.links.at["wp_out", "p_nom_extendable"])
+    p_wp = _sel(m["Link-p_nom"], "wp_out") if wp_variabel else n.links.at["wp_out", "p_nom"]
     cop = _zeitreihe(ts["COP_luft"], ts.index)
     pu = _zeitreihe(ts["p_max_pu_luft"], ts.index)
     m.add_constraints(cop * _sel(m["Link-p"], "hp_luft") - pu * p_wp <= 0, name="wp_luft_leistung")

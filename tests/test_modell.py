@@ -92,6 +92,15 @@ def test_luft_wp_leistung_sinkt_bei_kaelte(cfg, ts, netz_fest):
     assert (ts["COP_luft"] * p0["hp_luft"] <= ts["p_max_pu_luft"] * P + 1e-6).all()
 
 
+def test_luft_wp_leistung_auch_bei_fester_wp(cfg, ts):
+    n = network.build_network(cfg, ts, A_m2=2000.0, V_m3=2000.0)
+    n.links.loc["wp_out", ["p_nom", "p_nom_extendable"]] = [0.6, False]
+    n.links.loc["pth", ["p_nom", "p_nom_extendable"]] = [1.6, False]
+    network.optimize(n, cfg, ts)
+    wp_waerme = ts["COP_luft"] * n.links_t.p0["hp_luft"]
+    assert (wp_waerme <= ts["p_max_pu_luft"] * 0.6 + 1e-6).all()
+
+
 def test_luft_wp_aus_unter_tmin(cfg, ts, netz_fest):
     kalt = ts["T_a"] < cfg.get("waermepumpe.T_min_luft")
     assert (netz_fest.links_t.p0["hp_luft"][kalt] <= 1e-6).all()

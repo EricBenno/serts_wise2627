@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 20, vorgabe 40, annahme 42, offen 1
+Status: belegt 25, vorgabe 41, annahme 47, offen 1
 
 
 ## standort
@@ -94,7 +94,8 @@ Status: belegt 20, vorgabe 40, annahme 42, offen 1
 | `waermepumpe.abtau_abschlag` | 0.05 | - | annahme | BRF §3.4 (x) | 0, 0.1 |  |
 | `waermepumpe.abtau_grenze` | 5 | degC | annahme | BRF §3.4: Abschlag für T_a < 5 degC |  |  |
 | `waermepumpe.T_min_luft` | -7 | degC | annahme | BRF §3.4: ökonomische Grenze; Referenzen nur bis ≈ -5 degC (SCH D7) | -15, 0 |  |
-| `waermepumpe.speicher_monate` | [11, 12, 1, 2, 3] | Monat | annahme | SIF Kap. 2.1: Speicher-WP in DRL lief ab ≈ November bis Januar/Februar; März als Puffer für späte Kälte |  | Nur in diesen Monaten darf die WP den Speicher als Quelle nutzen (verhindert Sommer-Artefakt der Jahresregel, docs E21). |
+| `waermepumpe.luft_leistung_voll_ab` | -1 | degC | annahme | BRF §3.4: DRL Luft-WP 6 MW bei -1 degC (EHPA Award); darüber konstant volle Leistung (konservativ) |  |  |
+| `waermepumpe.luft_leistung_bei_tmin` | 0.8 | - | annahme | BRF §3.4: linear auf 80 % der Leistung bei T_min_luft (-7 degC); Rest Annahme, keine Referenz unter -5 degC | 0.6, 1 | Thermische Leistung der Luft-WP relativ zur gebauten WP-Leistung (docs E27); 1,0 = altes Verhalten (Leistung unabhängig von der Temperatur). |
 | `waermepumpe.COP_ptes` | 4.5 | - | annahme | BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5 | 3.5, 5.5 | Bei VL 80 statt 75 degC eher etwas niedriger (≈ -5 %) -> in Sensitivität abgedeckt. |
 | `waermepumpe.kosten_spez` | 1000000 | EUR/MW_th | annahme | Frederikssund 2022: ≈ 6,4 Mio. DKK/MW Luft-WP ≈ 0,86 Mio. EUR/MW (SCH); kleine Leistung (1-2 MW) + NH3 + Luftkühler -> 1,0 Mio. EUR/MW | 700000, 1400000 | DEA Technology Data (District heating, 2025) nachtragen. |
 
@@ -130,8 +131,10 @@ Status: belegt 20, vorgabe 40, annahme 42, offen 1
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
 | `strom.tarif` | fest | - | vorgabe | BRF §3.5 / TEAM: zunächst fester Tarif; später Zeitreihe oder PV-Anteil | day_ahead |  |
-| `strom.preis_fest` | 300 | EUR/MWh | vorgabe | TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto) | 200, 400 | Bandbreite ±1/3 als Annahme für die Sensitivität |
-| `strom.aufschlag_day_ahead` | **offen** | EUR/MWh | offen |  |  | erst für Day-Ahead-Variante nötig |
+| `strom.preis_fest` | 300 | EUR/MWh | vorgabe | TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto) | 200, 400 | Gesamtpreis beim festen Tarif; Beschaffung+Vertrieb = Gesamt - Netzentgelt - Abgaben. Bandbreite ±1/3 als Annahme. BDEW-Strompreisanalyse nennt für Industrie 2025 ≈ 16-18 ct/kWh (ohne Gewerbeaufschläge) -> 30 ct ist eher hoch, 20 ct plausibel (docs/ausblick.md). |
+| `strom.netzentgelt` | 93 | EUR/MWh | annahme | Aufteilung der 30 ct nach BDEW-Komponenten (Jan 2026, Netzentgelt ≈ 9,3 ct/kWh; Kategorie nicht geklärt); Summe aus Beschaffung 15,4 + Netz 9,3 + Abgaben 5,7 ≈ 30,4 ct passt zu TEAM-Preis | 60, 110 | Arbeitspreis-Anteil. Ein Leistungspreis (EUR/kW und Jahr auf die höchste Netzbezugsleistung) ist NICHT modelliert; bei PtH-Reserve = Spitzenlast relevant. Netzbetreiber-Preisblatt (Bad Lippspringe) nachtragen. |
+| `strom.abgaben` | 57 | EUR/MWh | annahme | Stromsteuer 2,05 + Konzessionsabgabe 1,67 + KWKG-Umlage 0,45 + §19-Aufschlag 1,56 ct/kWh (BDEW/Versorger-Preisblätter 2026, uneinheitlich); Offshore-Umlage 0,94 ct nicht enthalten; evtl. Entlastungen für WP (§22 EnFG) ungeprüft | 40, 70 |  |
+| `strom.vertriebsmarge` | **offen** | EUR/MWh | offen |  |  | nur für tarif day_ahead: Preis(t) = Day-Ahead(t) + Marge + Netzentgelt + Abgaben |
 | `strom.emissionsfaktor` | 0.363 | t/MWh | belegt | UBA: CO2-Emissionen pro kWh Strom 2024 = 363 g/kWh (Themenseite; UBA-FAQ nennt 353 g) | 0.2 |  |
 | `strom.ee_anteil` | 0.544 | - | belegt | AGEE-Stat/UBA: Anteil EE am Bruttostromverbrauch 2024 = 54,4 % |  |  |
 
@@ -139,10 +142,18 @@ Status: belegt 20, vorgabe 40, annahme 42, offen 1
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `oekonomie.zins` | 0.05 | - | vorgabe | TEAM: 5 %; als realer Kalkulationszins verwendet (Preise real konstant) | 0.03, 0.07 |  |
+| `oekonomie.zins` | 0.05 | - | vorgabe | TEAM 09.11.2026: Zins bleibt REAL (5 %), damit alle Preise real konstant (Preisänderung 0 %/a); Preisänderungsfaktoren nur für Varianten | 0.03, 0.07 |  |
 | `oekonomie.betrachtungszeitraum` | 20 | a | vorgabe | TEAM |  |  |
 | `oekonomie.preisbasisjahr` | 2025 | a | vorgabe | TEAM: 2025/26 |  |  |
-| `oekonomie.foerderquote` | 0 | - | vorgabe | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss | 0.4 | Variante 0,4 = BEW Modul 2 (BAFA, Investitionszuschuss 40 % der förderfähigen Ausgaben; Förderfähigkeit im Einzelfall prüfen). Gilt für alle Systemkomponenten inkl. Netz, nicht für die Gas-Referenz. |
+| `oekonomie.nebenkosten` | 0.1 | - | vorgabe | TEAM 09.11.2026: ca. 10 % Planungs-/Nebenkosten auf alle Investitionen (Kollektor, PTES, WP, PtH, Netz, Hausanschluss, Gaskessel) | 0, 0.2 | Wirkt auf Annuität und O&M. Planung (HOAI LPh 5-8) ist teilweise BEW-förderfähig; Modell wendet die Förderquote auf Invest inkl. Nebenkosten an. |
+| `oekonomie.foerderfaehig.kollektor` | True | - | belegt | BEW Richtlinie 4.2 Nr. 1: Solarthermie (docs/foerderung_bew.md) |  |  |
+| `oekonomie.foerderfaehig.ptes` | True | - | belegt | BEW Richtlinie 4.2: Wärmespeicher, saisonale Großspeicher genannt (docs/foerderung_bew.md) |  |  |
+| `oekonomie.foerderfaehig.waermepumpe` | True | - | belegt | BEW Richtlinie 4.2 Nr. 2: Wärmepumpen (docs/foerderung_bew.md) |  |  |
+| `oekonomie.foerderfaehig.pth` | False | - | annahme | Elektrodenkessel im gelesenen BEW-Text nicht aufgeführt -> konservativ nicht förderfähig; klären |  |  |
+| `oekonomie.foerderfaehig.netz` | True | - | belegt | BEW Richtlinie 4.2: Rohrleitungssystem inkl. Verlegung und Dämmung |  |  |
+| `oekonomie.foerderfaehig.hausanschluss` | False | - | annahme | Hausanschlussleitungen im gelesenen BEW-Text nicht ausdrücklich genannt -> konservativ nicht förderfähig; klären |  |  |
+| `oekonomie.foerderfaehig.gaskessel` | False | - | belegt | BEW: fossile Wärmeerzeuger nicht förderfähig (Gas-Referenz) |  |  |
+| `oekonomie.foerderquote` | 0 | - | vorgabe | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss | 0.4 | Variante 0,4 = BEW Modul 2 (BAFA, bis zu 40 % der förderfähigen Ausgaben). Gilt nur für Komponenten mit oekonomie.foerderfaehig = true (Kollektor, PTES, WP, Trasse); nicht für PtH, Hausanschluss (ungeklärt) und die Gas-Referenz. |
 | `oekonomie.preisaenderung.invest` | 0 | 1/a | vorgabe | TEAM: reale Rechnung, Ersatzinvestitionen ohne reale Preisänderung (VDI 2067: r_K) |  |  |
 | `oekonomie.preisaenderung.betrieb` | 0 | 1/a | vorgabe | TEAM: reale Rechnung (VDI 2067: r_IN für Instandhaltung) |  |  |
 | `oekonomie.preisaenderung.strom` | 0 | 1/a | vorgabe | TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a | 0.02 |  |
@@ -176,4 +187,4 @@ Status: belegt 20, vorgabe 40, annahme 42, offen 1
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |
+| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

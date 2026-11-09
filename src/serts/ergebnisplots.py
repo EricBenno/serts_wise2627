@@ -48,18 +48,25 @@ def jahresverlauf(r: pd.DataFrame, out: Path) -> Path:
     a1.legend(ncol=6, fontsize=8, loc="upper center")
     a1.set_title("Wer deckt wann die Last?")
     a2.fill_between(
-        r.index, r["speicherinhalt"], color="#f28e2b", alpha=0.4, label="Speicherinhalt"
+        r.index,
+        r["speicherinhalt"],
+        color="#f28e2b",
+        alpha=0.4,
+        label="Speicherinhalt (Energie in MWh, bez. auf 10 °C)",
     )
     a2.set_ylabel("Speicherinhalt [MWh]")
     if "T_a" in r:
         a3 = a2.twinx()
         a3.plot(
-            r["T_a"].resample("D").mean(), color="grey", lw=0.8, label="Außentemp. (Tagesmittel)"
+            r["T_a"].resample("D").mean(),
+            color="grey",
+            lw=0.8,
+            label="Außentemperatur (Tagesmittel, nicht Speichertemp.)",
         )
-        a3.set_ylabel("Außentemperatur [°C] (nicht Speichertemperatur!)", color="grey")
+        a3.set_ylabel("Außentemperatur [°C]", color="grey")
         a3.tick_params(axis="y", colors="grey")
         a3.legend(fontsize=8, loc="upper right")
-    a2.set_ylabel("Speicherinhalt [MWh] (Energie, bez. auf 10 °C)", color="#c06c00")
+    a2.set_ylabel("Speicher [MWh]", color="#c06c00")
     a2.tick_params(axis="y", colors="#c06c00")
     a2.legend(fontsize=8, loc="upper left")
     for a in (a1, a2):

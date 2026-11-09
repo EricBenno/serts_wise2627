@@ -47,11 +47,12 @@ Gesamtkosten (≈ 1,2 Mio. €/a).
 
 1. **40 % ist eine Obergrenze.** Der Zuschuss richtet sich nach der Wirtschaftlichkeitslücke; die tatsächliche
    Quote kann niedriger sein (`oekonomie.foerderquote`: Variante 0,4 im Tornado).
-2. **Die 40 % gelten derzeit pauschal für alle Komponenten** (inkl. PtH und Hausanschlüsse). Genauer wäre eine
-   Quote je Komponente: Kollektor, PTES, WP, Trasse 40 %; PtH und Hausanschlüsse offen (0–40 %). Betroffen sind
-   PtH (≈ 0,16 Mio. € Invest) und vor allem die Hausanschlüsse (1,6 Mio. € Invest → bis ≈ 0,6 Mio. € Zuschuss
-   weniger, wenn nicht förderfähig). Das wirkt auf den Wärmepreis inkl. Netz; bei Bedarf eigene Parameter anlegen.
-3. **Planung** (≈ 10–20 % Nebenkosten, im Modell noch nicht enthalten) ist teilweise förderfähig.
+2. **Förderfähigkeit je Komponente ist jetzt im Modell** (`oekonomie.foerderfaehig`): Kollektor, PTES, WP und
+   Trasse ja; PtH und Hausanschluss konservativ nein (laut gelesenem Text nicht ausdrücklich genannt). Betroffen:
+   PtH ≈ 0,16 Mio. € Invest, Hausanschlüsse 1,6 Mio. € Invest (bis ≈ 0,6 Mio. € Zuschuss). Wird das geklärt,
+   nur die Flags umstellen.
+3. **Nebenkosten/Planung** (10 %) sind jetzt im Modell enthalten; die Förderquote wird auf Invest inkl. Nebenkosten
+   angewendet (Planung nur teilweise förderfähig, LPh 5–8) – leicht optimistisch.
 4. **Gas-Referenz** bekommt keine BEW-Förderung (fossile Erzeugung nicht förderfähig) – im Modell richtig umgesetzt.
 5. **EE-Anteil 75 %:** Die Richtlinie verlangt ≥ 75 % EE + Abwärme in der eingespeisten Wärme (✔). **Nicht
    geprüft** habe ich, wie der Strom der Wärmepumpe dabei angerechnet wird (Netzmix 2024: 54 % EE, Umweltwärme
