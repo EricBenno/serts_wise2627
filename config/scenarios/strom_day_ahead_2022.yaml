@@ -1,0 +1,6 @@
+# Strom als Zeitreihe: Day-Ahead 2022 (Energiekrise, Jahresmittel 235 EUR/MWh)
+meta:
+  beschreibung: "Strompreis dynamisch (Day-Ahead 2022, Krisenjahr)"
+strom:
+  tarif: day_ahead
+  preisjahr: 2022

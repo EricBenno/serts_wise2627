@@ -67,6 +67,13 @@ def _cmd_fetch_pvgis(a):
     print(f"gespeichert: {fetch_pvgis(load_config(a.szenario))}")
 
 
+def _cmd_fetch_strompreise(a):
+    from serts.prices import fetch_day_ahead
+
+    for jahr in a.jahre:
+        print(f"gespeichert: {fetch_day_ahead(jahr)}")
+
+
 def _cmd_run(a):
     from serts.run import run
 
@@ -152,6 +159,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--szenario", default=None)
     p.add_argument("--jobs", type=int, default=4, help="parallele Läufe (je 1 Thread)")
     p.set_defaults(func=_cmd_tornado)
+
+    p = sub.add_parser(
+        "fetch-strompreise", help="Day-Ahead-Preise DE-LU laden (Energy-Charts/SMARD)"
+    )
+    p.add_argument("jahre", type=int, nargs="+", help="z. B. 2022 2023 2024")
+    p.set_defaults(func=_cmd_fetch_strompreise)
 
     sub.add_parser("annahmen", help="docs/annahmen.md erzeugen").set_defaults(func=_cmd_annahmen)
     sub.add_parser(

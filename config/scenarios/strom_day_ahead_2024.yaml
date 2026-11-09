@@ -1,0 +1,6 @@
+# Strom als Zeitreihe: Day-Ahead 2024 (Jahresmittel 78,5 EUR/MWh) + Marge + Netzentgelt + Abgaben
+meta:
+  beschreibung: "Strompreis dynamisch (Day-Ahead 2024), absolutes Preisniveau"
+strom:
+  tarif: day_ahead
+  preisjahr: 2024

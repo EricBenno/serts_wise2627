@@ -467,7 +467,7 @@ strom:
     wert: fest
     einheit: "-"
     status: vorgabe
-    quelle: "BRF §3.5 / TEAM: zunächst fester Tarif; später Zeitreihe oder PV-Anteil"
+    quelle: "BRF §3.5 / TEAM: Basis fester Tarif; Option day_ahead (Zeitreihe) über Szenarien strom_day_ahead_*.yaml"
     sens: [day_ahead]
   preis_fest:
     wert: 300
@@ -490,11 +490,24 @@ strom:
     quelle: "Stromsteuer 2,05 + Konzessionsabgabe 1,67 + KWKG-Umlage 0,45 + §19-Aufschlag 1,56 ct/kWh (BDEW/Versorger-Preisblätter 2026, uneinheitlich); Offshore-Umlage 0,94 ct nicht enthalten; evtl. Entlastungen für WP (§22 EnFG) ungeprüft"
     sens: [40, 70]
   vertriebsmarge:
-    wert: null
+    wert: 25
     einheit: "EUR/MWh"
-    status: offen
-    quelle: ""
-    hinweis: "nur für tarif day_ahead: Preis(t) = Day-Ahead(t) + Marge + Netzentgelt + Abgaben"
+    status: annahme
+    quelle: "Spot-Tarife leistungsgemessener Gewerbekunden: Aufschlag auf den Spotpreis inkl. Vertrieb und Ausgleichsenergie z. B. 2,50 ct/kWh (Stadtwerke Radolfzell, RLM Niederspannung), 5,80 ct/kWh (Mainova, RLM ab 100.000 kWh/a, Ersatzversorgung), 7,1 ct/kWh (Bad Belzig); Spanne 2,5-7 ct -> untere Spanne 2,5 ct angesetzt"
+    sens: [10, 60]
+    hinweis: "Nur für tarif day_ahead: Energie(t) = Day-Ahead(t) + Marge. Bei Großabnehmern (>1 GWh/a, Mittelspannung) verhandelbar und oft niedriger."
+  preisjahr:
+    wert: 2024
+    einheit: "a"
+    status: annahme
+    quelle: "Day-Ahead-Stundenpreise DE-LU, Bundesnetzagentur | SMARD.de (CC BY 4.0) über Energy-Charts-API. Jahresmittel: 2022 = 235 (Krise), 2023 = 95, 2024 = 78,5 EUR/MWh. 2024 als ruhiges, aktuelles Jahr"
+    sens: [2023, 2022]
+    hinweis: "Preisjahr ist unabhängig vom Wetterjahr 2022 (Stunde i -> Stunde i); Zusammenhang kalt <-> teuer nur statistisch. Daten laden: serts fetch-strompreise."
+  day_ahead_normieren:
+    wert: false
+    einheit: "-"
+    status: vorgabe
+    quelle: "true = Day-Ahead-Profil auf den Energieanteil des festen Tarifs normiert (gleicher Jahresmittelwert) -> isoliert den Effekt der zeitlichen Preisstruktur"
   emissionsfaktor:
     wert: 0.363
     einheit: "t/MWh"

@@ -11,7 +11,7 @@ Werden mit `uv run serts import-raw` aus dem Team-Ordner `../Bad Lippspringe` ko
 | `dwd/st_03028/` | Global-/Diffusstrahlung stündlich 1982–08/2011 | DWD CDC `.../hourly/solar` | nein |
 | `dwd/eb_03028/` | Erdbodentemperatur 2–100 cm | DWD CDC `.../hourly/soil_temperature` | nein |
 | `pvgis/` | Strahlung auf Kollektorebene 2022 (PVGIS-SARAH3) | JRC PVGIS-API, `uv run serts fetch-pvgis` | nein |
-| `strompreise/` | `day_ahead_<jahr>.csv` (Spalten `zeit`, `preis`) | noch offen (SMARD/ENTSO-E) | nein |
+| `strompreise/` | `day_ahead_<jahr>.csv` (Spalten `zeit` = Stundenbeginn UTC, `preis` EUR/MWh), DE-LU | Bundesnetzagentur \| SMARD.de (CC BY 4.0) über Energy-Charts-API, `uv run serts fetch-strompreise 2022 2023 2024` | nein |
 
 Nicht importiert (bewusst): GIS-Daten (`*.gpkg`, KWP-NRW-Shapes, QGIS-Projekt), DWD-Sonnenscheindauer (SD).
 DWD-Nutzungsbedingungen: Datenlizenz Deutschland – Namensnennung 2.0, Quelle „Deutscher Wetterdienst“ angeben.

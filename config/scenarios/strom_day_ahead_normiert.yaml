@@ -1,0 +1,8 @@
+# Day-Ahead-Profil 2024, normiert auf den Energieanteil des festen Tarifs (gleicher Jahresmittelwert):
+# zeigt nur den Effekt der zeitlichen Preisstruktur, nicht des Preisniveaus
+meta:
+  beschreibung: "Strompreis dynamisch, aber gleicher Mittelwert wie der feste Tarif"
+strom:
+  tarif: day_ahead
+  preisjahr: 2024
+  day_ahead_normieren: true

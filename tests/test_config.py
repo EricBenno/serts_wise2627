@@ -15,11 +15,12 @@ def test_base_ist_gueltig(cfg):
 
 
 def test_offener_parameter_bricht_ab(cfg):
-    assert "strom.vertriebsmarge" in cfg.offene()
+    offen = cfg.variante("strom.vertriebsmarge", None)  # Wert fehlt -> wie "offen"
+    assert "strom.vertriebsmarge" in offen.offene()
     with pytest.raises(OffenerParameter):
-        cfg.get("strom.vertriebsmarge")
+        offen.get("strom.vertriebsmarge")
     with pytest.raises(OffenerParameter, match="strom.vertriebsmarge"):
-        cfg.require(["netz.T_VL", "strom.vertriebsmarge"])
+        offen.require(["netz.T_VL", "strom.vertriebsmarge"])
 
 
 def test_get_liefert_wert(cfg):
