@@ -34,7 +34,7 @@ Solar 32 %), > 12.000 m³ 145,8 €/MWh (3.700 m², Solar 33 %). Der saisonale G
 Haupttreiber: **Die Speichermodellierung (E27).** Die frühere Jahresregel mit Monatsbeschränkung verlangte, dass
 jede direkte Sommerentladung durch Quellwärme im Winter „ausgeglichen“ wird – das blockierte die kurzfristige
 Speichernutzung. Mit dem heiß/kalt-Modell wird der kleine Speicher als Puffer über Tage bis Wochen nutzbar, damit
-lohnt sich mehr Kollektorfläche. Gegenläufig wirken die **10 % Nebenkosten** (+≈ 3 €/MWh) und das **Förder-Flag**
+lohnt sich mehr Kollektorfläche. Gegenläufig wirken die **10 % Nebenkosten** (+≈ 4–5 €/MWh, Tornado: 0 % → 136,2) und das **Förder-Flag**
 (Basis ohne Förderung, keine Wirkung). Die temperaturabhängige Luft-WP-Leistung (80 % bei −7 °C) ändert kaum etwas
 (Tornado: 140,8 ↔ 140,7), weil die PtH-Reserve die Spitze ohnehin abdeckt.
 
@@ -63,7 +63,7 @@ Wärmepreis inkl. Netz (Basis 228 €/MWh) und Vorteil gegenüber Gas-Fernwärme
 
 **Lesart:** Ob das System günstiger ist als Gas-Fernwärme, entscheiden **Gas- und Strompreis** (CO₂-Preis,
 Förderung, Zins). Die Größe von Kollektorfeld und Speicher springt mit den Kosten (Solaranteil 10–42 %), ohne
-dass die Kosten stark reagieren. Der Wärmepreis beim Kunden wird zu ≈ 25–30 % vom Wärmenetz bestimmt (≈ 58 €/MWh,
+dass die Kosten stark reagieren. Der Wärmepreis beim Kunden wird zu ≈ 25 % vom Wärmenetz bestimmt (≈ 58 €/MWh,
 vor allem Hausanschlüsse).
 
 **Kernaussage (vorläufig):** Wärmepumpe (Luft + Speicher) mit PtH-Reserve ist unter den Basisannahmen günstiger als
