@@ -70,6 +70,9 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     r["abregelung"] = (
         n.generators.at["kollektor", "p_nom_opt"] * ts["P_solar"].clip(0, 1) - r["kollektor"]
     ).clip(lower=0)
+    # Lösungsrauschen des Innere-Punkte-Verfahrens (|x| < 1e-6 MW) auf 0 setzen
+    fluss = r.columns.difference(["T_a", "P_solar_spez"])
+    r[fluss] = r[fluss].where(r[fluss].abs() > 1e-6, 0.0)
     return r
 
 

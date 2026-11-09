@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 19, vorgabe 36, annahme 35, offen 1
+Status: belegt 20, vorgabe 40, annahme 42, offen 1
 
 
 ## standort
@@ -47,6 +47,12 @@ Status: belegt 19, vorgabe 36, annahme 35, offen 1
 | `netz.T_VL_netzberechnung` | 80 | degC | belegt | NB Zusammenfassung, Spalte Vorlauftemp |  |  |
 | `netz.T_RL_netzberechnung` | 50 | degC | belegt | NB Zusammenfassung, Spalte Ruecklauftemp |  |  |
 | `netz.trassenlaenge` | 2432 | m | belegt | NB Zusammenfassung, Summe Trassenlänge (ohne Hausanschlüsse 3413 m) |  |  |
+| `netz.hausanschluesse` | 159 | Stück | belegt | NB Zusammenfassung, Anzahl Hausanschlüsse (EFH 119, MFH 38, GHA 2); Hausanschlusslänge gesamt 3.413 m |  |  |
+| `netz.netzkosten_einbeziehen` | True | - | vorgabe | TEAM 09.11.2026: Netzkosten in die LCOH einbeziehen (zusätzlich zur LCOH der Erzeugung ausgewiesen) |  |  |
+| `netz.anteil_strasse` | 0.8 | - | vorgabe | TEAM: Großteil der Trasse unter Straßen, Rest 'grüne Wiese' – Verhältnis nachsteuerbar | 0.5, 1 |  |
+| `netz.kosten_trasse_strasse` | 550 | EUR/m Trasse | annahme | Manderfeld (via Borderstep 2012): flexible Rohre unter Asphalt 220-440 EUR/m; CARMEN: 200-400 EUR/m; x ≈ 1,6 Baupreissteigerung 2012->2025 (grob) -> ≈ 350-700, Mitte 550 EUR/m (inkl. Tiefbau und Oberfläche) | 400, 800 | KEA-BW Technikkatalog Wärmeplanung (Netzkosten nach DN und Oberfläche) nachtragen |
+| `netz.kosten_trasse_gruen` | 250 | EUR/m Trasse | annahme | Manderfeld (via Borderstep 2012): flexible Rohre unbefestigt 100-180 EUR/m; x ≈ 1,6 -> ≈ 160-290, gerundet 250 EUR/m | 150, 400 |  |
+| `netz.kosten_hausanschluss` | 10000 | EUR/Stück | annahme | Hausanschlussleitung + Übergabestation EFH: 5.000-15.000 EUR (co2online via Finanztip; 42watt), Mitte 10.000 EUR | 5000, 15000 | Wird in der Praxis oft über Baukostenzuschüsse/Hausanschlusskosten von den Kunden getragen. |
 
 ## ptes
 
@@ -131,26 +137,32 @@ Status: belegt 19, vorgabe 36, annahme 35, offen 1
 
 ## oekonomie
 
-| Parameter                           | Wert  | Einheit        | Status  | Quelle / Begründung                                                           | Sensitivität | Hinweis |
-| ----------------------------------- | ----- | -------------- | ------- | ----------------------------------------------------------------------------- | ------------ | ------- |
-| `oekonomie.zins`                    | 0.05  | -              | vorgabe | TEAM: 5 %; als realer Kalkulationszins verwendet (Preise real konstant)       | 0.03, 0.07   |         |
-| `oekonomie.betrachtungszeitraum`    | 20    | a              | vorgabe | TEAM                                                                          |              |         |
-| `oekonomie.preisbasisjahr`          | 2025  | a              | vorgabe | TEAM: 2025/26                                                                 |              |         |
-| ==`oekonomie.foerderquote`==        | 0     | -              | vorgabe | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss |              |         |
-| `oekonomie.preisaenderung.strom`    | 0     | 1/a            | vorgabe | TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a           | 0.02         |         |
-| `oekonomie.preisaenderung.gas`      | 0     | 1/a            | vorgabe | TEAM: real gleichbleibend; Variante +2 %/a                                    | 0.02         |         |
-| `oekonomie.preisaenderung.co2`      | 0     | 1/a            | vorgabe | TEAM: real gleichbleibend                                                     | 0.05         |         |
-| `oekonomie.preisaenderung.biomasse` | 0     | 1/a            | vorgabe | TEAM: real gleichbleibend                                                     |              |         |
-| `oekonomie.lebensdauer.ptes`        | 25    | a              | annahme | Liner-Lebensdauer; Größenordnung DEA Technology Data Energy Storage (20-40 a) |              |         |
-| `oekonomie.lebensdauer.kollektor`   | 25    | a              | annahme | Größenordnung DEA/VDI 2067-1 (20-30 a)                                        |              |         |
-| `oekonomie.lebensdauer.waermepumpe` | 20    | a              | annahme | Größenordnung DEA/VDI 2067-1 (18-25 a)                                        |              |         |
-| `oekonomie.lebensdauer.pth`         | 20    | a              | annahme | Größenordnung DEA (20 a)                                                      |              |         |
-| `oekonomie.lebensdauer.gaskessel`   | 20    | a              | annahme | Größenordnung VDI 2067-1 (18-20 a)                                            |              |         |
-| `oekonomie.om_fix.ptes`             | 0.005 | 1/a vom Invest | annahme | geringe Wartung (Pumpen/Deckel), Größenordnung VDI 2067-1                     |              |         |
-| `oekonomie.om_fix.kollektor`        | 0.01  | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Solaranlagen 1-1,5 %/a)                             |              |         |
-| `oekonomie.om_fix.waermepumpe`      | 0.025 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Wärmepumpen 2,5 %/a)                                |              |         |
-| `oekonomie.om_fix.pth`              | 0.02  | 1/a vom Invest | annahme | Größenordnung VDI 2067-1                                                      |              |         |
-| `oekonomie.om_fix.gaskessel`        | 0.02  | 1/a vom Invest | annahme | Größenordnung VDI 2067-1                                                      |              |         |
+| Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
+|---|---|---|---|---|---|---|
+| `oekonomie.zins` | 0.05 | - | vorgabe | TEAM: 5 %; als realer Kalkulationszins verwendet (Preise real konstant) | 0.03, 0.07 |  |
+| `oekonomie.betrachtungszeitraum` | 20 | a | vorgabe | TEAM |  |  |
+| `oekonomie.preisbasisjahr` | 2025 | a | vorgabe | TEAM: 2025/26 |  |  |
+| `oekonomie.foerderquote` | 0 | - | vorgabe | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss | 0.4 | Variante 0,4 = BEW Modul 2 (BAFA, Investitionszuschuss 40 % der förderfähigen Ausgaben; Förderfähigkeit im Einzelfall prüfen). Gilt für alle Systemkomponenten inkl. Netz, nicht für die Gas-Referenz. |
+| `oekonomie.preisaenderung.invest` | 0 | 1/a | vorgabe | TEAM: reale Rechnung, Ersatzinvestitionen ohne reale Preisänderung (VDI 2067: r_K) |  |  |
+| `oekonomie.preisaenderung.betrieb` | 0 | 1/a | vorgabe | TEAM: reale Rechnung (VDI 2067: r_IN für Instandhaltung) |  |  |
+| `oekonomie.preisaenderung.strom` | 0 | 1/a | vorgabe | TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a | 0.02 |  |
+| `oekonomie.preisaenderung.gas` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend; Variante +2 %/a | 0.02 |  |
+| `oekonomie.preisaenderung.co2` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend | 0.05 |  |
+| `oekonomie.preisaenderung.biomasse` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend |  |  |
+| `oekonomie.lebensdauer.ptes` | 25 | a | annahme | Liner-Lebensdauer; Größenordnung DEA Technology Data Energy Storage (20-40 a) |  |  |
+| `oekonomie.lebensdauer.kollektor` | 25 | a | annahme | Größenordnung DEA/VDI 2067-1 (20-30 a) |  |  |
+| `oekonomie.lebensdauer.waermepumpe` | 20 | a | annahme | Größenordnung DEA/VDI 2067-1 (18-25 a) |  |  |
+| `oekonomie.lebensdauer.pth` | 20 | a | annahme | Größenordnung DEA (20 a) |  |  |
+| `oekonomie.lebensdauer.gaskessel` | 20 | a | annahme | Größenordnung VDI 2067-1 (18-20 a) |  |  |
+| `oekonomie.lebensdauer.netz` | 40 | a | annahme | KMR/PEX-Fernwärmeleitungen: Größenordnung 40 a (DEA District heating distribution; VDI 2067-1) |  |  |
+| `oekonomie.lebensdauer.hausanschluss` | 25 | a | annahme | Übergabestation dominiert die Kosten: Größenordnung 20-30 a |  |  |
+| `oekonomie.om_fix.ptes` | 0.005 | 1/a vom Invest | annahme | geringe Wartung (Pumpen/Deckel), Größenordnung VDI 2067-1 |  |  |
+| `oekonomie.om_fix.kollektor` | 0.01 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Solaranlagen 1-1,5 %/a) |  |  |
+| `oekonomie.om_fix.waermepumpe` | 0.025 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Wärmepumpen 2,5 %/a) |  |  |
+| `oekonomie.om_fix.pth` | 0.02 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 |  |  |
+| `oekonomie.om_fix.gaskessel` | 0.02 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 |  |  |
+| `oekonomie.om_fix.netz` | 0.01 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Rohrleitungen ≈ 1 %/a) |  |  |
+| `oekonomie.om_fix.hausanschluss` | 0.02 | 1/a vom Invest | annahme | Übergabestation, Größenordnung VDI 2067-1 |  |  |
 
 ## solver
 
@@ -164,4 +176,4 @@ Status: belegt 19, vorgabe 36, annahme 35, offen 1
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |
+| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

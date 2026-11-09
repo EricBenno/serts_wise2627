@@ -31,7 +31,7 @@ uv run serts run --V 0                   # Variante ohne Speicher
 uv run serts run --A 4000 --V 6000       # feste Größen vorgeben
 uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis)
 uv run serts run --stunden 168           # Schnelltest
-uv run serts tornado --jobs 4            # Sensitivitäten (24 Varianten × 3 Stufen, ≈ 8–10 min)
+uv run serts tornado                     # Sensitivitäten (41 Varianten, ≈ 20–25 min)
 uv run serts prepare                     # nur Zeitreihen + Plots
 uv run serts annahmen                    # docs/annahmen.md neu erzeugen
 uv run pytest                            # 43 Tests
@@ -50,8 +50,10 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 | `prepare.py` | baut daraus eine Tabelle 8760 h |
 | `network.py` | das PyPSA-Netz (Bild oben) |
 | `constraints.py` | Fläche + Direktanteil |
-| `kpi.py` | Kennzahlen: Bilanzen, Solar-/EE-Anteil, Speicher-η, LCOH, CO₂, Gas-Referenz |
-| `economics.py` | Annuität, Preisdynamik (VDI 2067), Gas-Referenz |
+| `kpi.py` | Kennzahlen: Bilanzen, Solar-/EE-Anteil, Speicher-η, LCOH, Wärmepreis inkl. Netz, CO₂, Gas-Referenz |
+| `ergebnisplots.py` | Grafiken je Lauf: Jahresverlauf, Typwochen, Dauerlinie, Tag×Stunde, Jahresbilanz/Kosten |
+| `tornado.py` | Sensitivitäten (Parameterliste `tornado.parameter`, Werte aus `sens`) |
+| `economics.py` | VDI 2067-1 (Ersatz, Restwert, Preisdynamik), Netzkosten, Gas-Referenz |
 | `run.py`, `cli.py`, `plots.py` | Lauf speichern, Kommandozeile, Abbildungen |
 
 ## Stand
@@ -59,7 +61,7 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 | Thema | Stand |
 |---|---|
 | Daten Bad Lippspringe, Temperatur 2022, Strahlung Normaljahr (PVGIS-TMY) | ✅ |
-| Modell + Optimierung der Größen | ✅ (Basis Normaljahr: A ≈ 2.650 m², V ≈ 5.000 m³, WP ≈ 1,0 MW, LCOH ≈ 137 €/MWh vs. Gas ≈ 165 €/MWh; Details `docs/ergebnisse.md`) |
+| Modell + Optimierung der Größen | ✅ (Basis: LCOH ≈ 138 €/MWh, Wärmepreis inkl. Netz ≈ 219 vs. Gas-Fernwärme ≈ 252 €/MWh; Details `docs/ergebnisse.md`) |
 | Tests (Bilanzen, Constraints, COP-Prüfwerte, Solites-Definitionen) | ✅ 43 |
 | Validierung Dronninglund | ⏭ ausgelassen (Referenzwerte liegen in `data/reference/`) |
 | Sensitivitäten (Tornado) | ✅ `serts tornado`, Ergebnisse in `docs/ergebnisse.md` |
@@ -78,3 +80,9 @@ Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennz
 - Keine Zahl im Code – alles über `cfg.get()`. YAML-Zahlen ohne Kurzform wie `1e6` (wird Text; Validator meldet es).
 - Neuer Parameter → `base.yaml` mit einheit/status/quelle → `serts annahmen` → Commit.
 - Neue Komplexität nur, wenn sie eine Kernaussage ändert; Begründung in `docs/entscheidungen.md`.
+
+## Notebook
+
+`notebooks/01_modell_erklaert.ipynb` erklärt die Berechnung Schritt für Schritt (Zeitreihen → Netz →
+Zusatzbedingungen → Optimieren → VDI-2067-Kosten → Gesamtlauf mit Grafiken). In VS Code öffnen und als Kernel
+die `.venv` des Repos wählen; Laufzeit ≈ 2 min. Ausgaben vor dem Commit löschen.

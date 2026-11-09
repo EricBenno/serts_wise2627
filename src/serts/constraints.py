@@ -15,6 +15,11 @@ from serts.config import Config
 from serts.network import M2_JE_MW, mwh_je_m3
 
 
+def _sel(var, name: str):
+    """Eine Komponente auswählen und die Namens-Koordinate entfernen (linopy-v1-kompatibel)."""
+    return var.sel(name=[name]).sum("name")
+
+
 def direktanteil_max(cfg: Config) -> float:
     t_o, t_m, t_u = (cfg.get(k) for k in ("ptes.T_oben", "netz.T_RL", "ptes.T_unten"))
     return (t_o - t_m) / (t_o - t_u)
@@ -30,13 +35,13 @@ def extra_functionality(n, snapshots, *, cfg: Config) -> None:
     if a_var or v_var:
         kap = mwh_je_m3(cfg)
         a = (
-            m["Generator-p_nom"].sel(name="kollektor")
+            _sel(m["Generator-p_nom"], "kollektor")
             if a_var
             else n.generators.at["kollektor", "p_nom"]
         )
         lhs = a * M2_JE_MW * cfg.get("kollektor.flaechenfaktor")
         if hat_speicher:
-            e = m["Store-e_nom"].sel(name="ptes") if v_var else n.stores.at["ptes", "e_nom"]
+            e = _sel(m["Store-e_nom"], "ptes") if v_var else n.stores.at["ptes", "e_nom"]
             lhs = lhs + e / kap / cfg.get("ptes.volumen_je_grundflaeche")
         m.add_constraints(lhs <= cfg.get("standort.flaeche_verfuegbar"), name="flaeche")
 
@@ -45,6 +50,6 @@ def extra_functionality(n, snapshots, *, cfg: Config) -> None:
         p = m["Link-p"]
         f = direktanteil_max(cfg)
         cop = cfg.get("waermepumpe.COP_ptes")
-        direkt = p.sel(name="entladen_direkt").sum()
-        quelle = (cop - 1.0) * p.sel(name="hp_speicher").sum()
+        direkt = _sel(p, "entladen_direkt").sum()
+        quelle = (cop - 1.0) * _sel(p, "hp_speicher").sum()
         m.add_constraints((1 - f) * direkt - f * quelle <= 0, name="speicher_direktanteil")

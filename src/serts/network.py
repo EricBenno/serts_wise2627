@@ -186,6 +186,9 @@ def build_network(
         capital_cost=annualisiert(cfg, "pth", "pth.kosten_spez") * eta,
     )
     n.add("Load", "last", bus="waerme", carrier="waerme", p_set=ts["last_gesamt"])
+    # Links ohne dritten Anschluss: efficiency2 ist dort bedeutungslos (sonst NaN-Warnung)
+    if "efficiency2" in n.links:
+        n.links["efficiency2"] = n.links["efficiency2"].fillna(1.0)
     return n
 
 
@@ -203,6 +206,7 @@ def optimize(n, cfg: Config, threads: int | None = None):
         extra_functionality=partial(extra_functionality, cfg=cfg),
         include_objective_constant=False,
         log_to_console=False,
+        progress=False,
         **dict(cfg.get("solver.optionen")),
         **({"threads": threads} if threads else {}),
     )

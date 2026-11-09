@@ -1,48 +1,50 @@
 # Ergebnisse (Stand 09.11.2026)
 
-Vorläufig: Kollektorkennwerte und mehrere Kosten sind Annahmen (`docs/annahmen.md`).
-Basis: **Normaljahr** (PVGIS-TMY) für die Strahlung, Lastgang und Temperatur 2022, Speicherpreis in drei
-Preisstufen (E24).
+Vorläufig: Kollektorkennwerte und mehrere Kosten sind Annahmen (`docs/annahmen.md`, `docs/unsicherheiten.md`).
+Basis: Normaljahr (PVGIS-TMY), Lastgang/Temperatur 2022, Speicherpreis in drei Stufen (E24), Kosten nach
+VDI 2067-1 real, Preisbasis 2025, Netzkosten im Wärmepreis beim Kunden (E25).
 
-## Basislauf (`uv run serts run`)
+## Basislauf (`uv run serts run`) und Variante großer Speicher (`uv run serts run --V 12000`)
 
-| Kennzahl                              | Wert                                                         |
-| ------------------------------------- | ------------------------------------------------------------ |
-| Kollektorfläche / Speicher            | ≈ 2.650 m² / 5.000 m³ (Preisstufe 5.000–12.000 m³, 124 €/m³) |
-| Wärmepumpe / PtH (Reserve)            | ≈ 1,0 MW / 1,6 MW                                            |
-| LCOH (Gas-Referenz 165 €/MWh)         | **≈ 137 €/MWh**                                              |
-| Solaranteil / Erneuerbaren-Anteil     | **≈ 25 %** / ≈ 87 %                                          |
-| CO₂ System (Gas-Referenz ≈ 1.160 t/a) | ≈ 580 t/a                                                    |
-| Flächenbedarf (verfügbar 13.000 m²)   | ≈ 8.000 m²                                                   |
+| Kennzahl                                                    | Basis (Kostenoptimum)   | Großer saisonaler Speicher |
+| ----------------------------------------------------------- | ----------------------- | -------------------------- |
+| Kollektor / Speicher                                        | ≈ 1.230 m² / ≈ 1.200 m³ | ≈ 3.680 m² / 12.000 m³     |
+| Wärmepumpe / PtH (Reserve)                                  | 1,15 MW / 1,6 MW        | 0,83 MW / 1,6 MW           |
+| LCOH Erzeugung (Gas-Referenz 165)                           | **≈ 138 €/MWh**         | ≈ 140 €/MWh                |
+| Wärmepreis inkl. Netz, je MWh geliefert (Gas-Fernwärme 252) | **≈ 219 €/MWh**         | ≈ 222 €/MWh                |
+| Solaranteil / Erneuerbaren-Anteil                           | ≈ 12 % / ≈ 85 %         | ≈ 33 % / ≈ 88 %            |
+| CO₂ (Gas-Referenz ≈ 1.160 t/a)                              | ≈ 670 t/a               | ≈ 520 t/a                  |
+| Flächenbedarf (verfügbar 13.000 m²)                         | ≈ 3.300 m²              | 13.000 m² (voll)           |
 
-### Die drei Speichergrößen liegen fast gleichauf (flaches Optimum)
+Die drei Speicher-Preisstufen liegen nur ≈ 2 €/MWh auseinander (137,9 / 138,3 / 140,0) – das Optimum ist
+**flach**. Der große saisonale Speicher kostet ≈ 1,5 % mehr, spart aber ≈ 150 t CO₂/a
+(≈ 15–20 €/t Vermeidungskosten gegenüber der Basis).
 
-| Preisstufe | Ergebnis | LCOH |
-|---|---|---|
-| < 5.000 m³ (165 €/m³) | ≈ 1.400 m³ Speicher, kleines Kollektorfeld | 137,5 €/MWh |
-| 5.000–12.000 m³ (124 €/m³) | 5.000 m³, ≈ 2.650 m², Solar ≈ 25 % | **137,2 €/MWh** |
-| 12.000–35.000 m³ (95 €/m³) | 12.000 m³, Fläche voll ausgenutzt | 138,4 €/MWh |
+Grafiken je Lauf in `results/<lauf>/`: `1_jahresverlauf.png` (wer deckt wann die Last, Speicherinhalt),
+`2_typwochen.png` (Stundenbetrieb in kalter Woche, April, Juli), `3_dauerlinie.png`, `4_betrieb_tag_stunde.png`
+(Tag × Uhrzeit je Anlage), `5_jahresbilanz_kosten.png` (Mengen + Kostenaufteilung vs. Gas).
 
-→ Speichergröße und Solaranteil sind über einen weiten Bereich **fast kostenneutral** (±1 €/MWh). Ein großer
-saisonaler Speicher kostet kaum mehr als ein kleiner, bringt aber deutlich mehr Solarwärme und weniger CO₂.
-Die Wahl kann also nach anderen Kriterien fallen (CO₂, Unabhängigkeit vom Strompreis, Förderung).
+## Sensitivitäten (`uv run serts tornado`, 41 Varianten, Größen jeweils neu optimiert)
 
-## Sensitivitäten (`uv run serts tornado --jobs 4`, Größen jeweils neu optimiert)
+Wärmepreis inkl. Netz (Basis 219 €/MWh) und Vorteil gegenüber Gas-Fernwärme (Basis 27 €/MWh):
 
-1. **LCOH 103–164 €/MWh.** Größter Hebel ist der **Strompreis** (20/40 ct → 103/164 €/MWh), dann der Gütegrad der Luft-WP (121/146), WP-Kosten (131/145) und Zins (129/143). Speicher- und Kollektorparameter bewegen die LCOH nur um ≈ 1–7 €/MWh.
-2. **Solaranteil springt zwischen ≈ 12 % und ≈ 33–41 %.** Wegen des flachen Optimums kippt das Modell je nach Annahme zwischen „kleiner Speicher“ und „großer saisonaler Speicher“. Für den Bericht deshalb den Solaranteil als Bandbreite angeben, nicht als Punktwert.
-3. **Fläche:** bindet nur, wenn der große Speicher gewählt wird (12.000 m³ + ≈ 3.700 m² Kollektor).
-4. Alle Varianten bleiben unter der Gas-Referenz von 165 €/MWh (Strom 40 ct knapp: 164). Der **Gaspreis
-   selbst** ist nicht variiert: bei 8 ct/kWh läge die Gas-Referenz bei ≈ 118 €/MWh (System teurer), bei
-   16 ct/kWh bei ≈ 211 €/MWh.
+| Parameter (Variante)                                 | Wärmepreis inkl. Netz | Vorteil ggü. Gas                                   |
+| ---------------------------------------------------- | --------------------- | -------------------------------------------------- |
+| Gaspreis 8 / 16 ct/kWh                               | –                     | **−20 / +73**                                      |
+| Strompreis 20 / 40 ct/kWh                            | 177 / 253             | +62 / **−1**                                       |
+| CO₂-Preis 55 / 200 €/t                               | –                     | +17 / +48                                          |
+| Förderung BEW 40 %                                   | 178                   | +46 (und Optimum mit großem Speicher, Solar 41 %)  |
+| Gütegrad Luft-WP 0,45 / 0,6                          | 231 / 199             | +17 / +43                                          |
+| Strompreis +2 %/a real                               | 238                   | +11                                                |
+| Hausanschluss 5.000 / 15.000 €                       | 203 / 236             | unverändert (gleiches Netz)                        |
+| Trasse Straße 400 / 800 €/m; Anteil Straße 50/100 %  | 215–228               | unverändert                                        |
+| Kollektor-, Speicher-, Verlust-, COP-Parameter       | ± 1–9                 | ± 1–7                                              |
 
-**Kernaussage (vorläufig):** Wärmepumpe (Luft + Speicher) mit PtH-Reserve ist unter den Annahmen günstiger als
-Gas. Wie viel Solarthermie + Speicher dazukommt, ist kostenseitig nahezu egal – eine Abwägung zwischen gleich
-teuren Varianten mit 12 % bzw. ≈ 35 % Solaranteil.
+**Lesart:** Ob das System günstiger ist als Gas-Fernwärme, entscheiden vor allem **Gas- und Strompreis**
+(und CO₂-Preis, Förderung). Kollektor- und Speicherparameter verschieben vor allem die *Größe* von
+Kollektorfeld und Speicher (Solaranteil 4–41 %), kaum die Kosten. Netzkosten (≈ 50 €/MWh) sind ein großer
+Block im Wärmepreis, aber für beide Varianten gleich.
 
-## Offene Punkte mit Ergebnisrelevanz
-
-- Strompreis-Ansatz (fest vs. dynamisch/PV) – größter Hebel.
-- Kollektorkennwerte (Keymark), Kollektor- und WP-Kosten (DEA).
-- Gaspreis-Pfad für die Referenz (Punkt 4).
-- Optional: Variante „Speichergröße vorgeben“ (`serts run --V 12000`) als Szenario für den Bericht.
+**Kernaussage (vorläufig):** Wärmepumpe (Luft + Speicher) mit PtH-Reserve ist unter den Basisannahmen
+günstiger als Gas-Fernwärme (≈ −13 %). Solarthermie + Erdbeckenspeicher sind gegenüber dem Minimalausbau
+fast kostenneutral – mit Förderung (BEW) werden sie Teil des Optimums.

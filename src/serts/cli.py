@@ -79,6 +79,8 @@ def _cmd_run(a):
         ("PtH [MW]", "P_PtH_MW", "{:.2f}"),
         ("LCOH [EUR/MWh]", "lcoh", "{:.1f}"),
         ("LCOH Gas-Referenz [EUR/MWh]", "gas_lcoh", "{:.1f}"),
+        ("Wärmepreis inkl. Netz [EUR/MWh]", "lcoh_inkl_netz", "{:.1f}"),
+        ("  Gas-Fernwärme inkl. Netz", "gas_lcoh_inkl_netz", "{:.1f}"),
         ("Solaranteil", "solar_gesamt", "{:.1%}"),
         ("Erneuerbaren-Anteil", "ee_anteil", "{:.1%}"),
         ("CO2 System [t/a]", "co2_t_a", "{:,.0f}"),

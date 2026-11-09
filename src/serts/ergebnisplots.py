@@ -162,7 +162,7 @@ def teppich(r: pd.DataFrame, out: Path) -> Path:
 def jahresbilanz(r: pd.DataFrame, k: dict, out: Path) -> Path:
     """Links: Wärmeherkunft im Jahr. Rechts: Kosten je MWh geliefert, System vs. Gas-Referenz."""
     q = _quellen(r).sum()
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(13, 5))
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(13, 6))
     links = 0.0
     for c, v in q.items():
         a1.barh(0, v, left=links, color=QUELLEN[c][1], label=f"{QUELLEN[c][0]}: {v:,.0f} MWh")
@@ -180,7 +180,7 @@ def jahresbilanz(r: pd.DataFrame, k: dict, out: Path) -> Path:
     a1.set_yticks([0, 1, 2], ["Wärme ans Netz", "Solarthermie", "Strombezug"])
     a1.set_xlabel("MWh/a")
     a1.set_title("Was läuft wie viel?")
-    a1.legend(fontsize=8, loc="lower right")
+    a1.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
     a1.grid(axis="x", alpha=0.3)
 
     Qg = k.get("Q_geliefert_MWh", k["Q_last_MWh"])  # Wärme beim Kunden (ohne Netzverluste)
@@ -198,16 +198,31 @@ def jahresbilanz(r: pd.DataFrame, k: dict, out: Path) -> Path:
         "CO₂": k["gas_co2_kosten_a"],
         "Netz": k.get("kosten_a_netz_gasref", 0.0),
     }
-    farben = plt.get_cmap("tab20").colors
+    farbe = {
+        "Kollektor": "#f2c12e",
+        "Speicher": "#f28e2b",
+        "Wärmepumpe": "#4e79a7",
+        "PtH": "#e15759",
+        "Strom": "#76b7b2",
+        "Netz": "#bab0ac",
+        "Kessel": "#9c755f",
+        "Gas": "#b07aa1",
+        "CO₂": "#59595c",
+    }
+    gesehen = set()
     for x, teile in [(0, sys_teile), (1, gas_teile)]:
         unten = 0.0
-        for i, (name, v) in enumerate(teile.items()):
+        for name, v in teile.items():
             h = v / Qg
-            a2.bar(x, h, bottom=unten, color=farben[(i + 4 * x) % 20], edgecolor="w")
-            if h > 4:
-                a2.text(x, unten + h / 2, f"{name}\n{h:.0f}", ha="center", va="center", fontsize=8)
+            lab = f"{name}" if name not in gesehen else None
+            gesehen.add(name)
+            a2.bar(x, h, bottom=unten, color=farbe[name], edgecolor="w", label=lab, width=0.6)
+            if h > 6:
+                a2.text(x, unten + h / 2, f"{name} {h:.0f}", ha="center", va="center", fontsize=8)
             unten += h
         a2.text(x, unten + 2, f"{unten:.0f} €/MWh", ha="center", fontweight="bold")
+    a2.set_ylim(0, a2.get_ylim()[1] * 1.12)
+    a2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=5)
     a2.set_xticks([0, 1], ["Solar + PTES + WP + PtH", "Gas-Referenz"])
     a2.set_ylabel("€ je MWh geliefert (inkl. Netz)")
     a2.set_title("Was kostet die Wärme beim Kunden? (VDI 2067, real)")
