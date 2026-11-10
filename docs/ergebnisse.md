@@ -61,7 +61,7 @@ macht den Speicher kleiner, weil nur die heiße Schicht direkt nutzbar ist.
   40 % ist die Obergrenze; die BAFA begrenzt auf die Wirtschaftlichkeitslücke (E37).
 * `pareto.png` im Ergebnisordner zeigt EE-Anteil gegen Wärmepreis.
 
-> **Die folgenden Abschnitte (Strom, Sensitivitäten) sind Stand vor E32–E37** (alte Kosten, Luft-WP nach Lorenz, ohne Kennlinie) – Tornado wird neu gerechnet und hier ersetzt.
+> **Der folgende Abschnitt Strom ist Stand vor E32–E37** (alte Kosten, Luft-WP nach Lorenz, ohne Kennlinie); die Aussagen zur Wirkung des Preisniveaus gelten qualitativ weiter, die Zahlen nicht.
 
 ## Strom: fest gegen Day-Ahead (zwei Läufe, Szenarien `strom_day_ahead_*`)
 
@@ -83,32 +83,40 @@ Preis(t) = Day-Ahead(t) + Marge 25 + Netzentgelt 93 + Abgaben 57 €/MWh; Preisj
   Speicher nicht, E29). Im Krisenjahr 2022 mit starken Preisschwankungen zahlt das flexible System 17 % unter dem Mittel.
 * Nicht modelliert: Leistungspreis; Korrelation Preis↔Wetter (Preis- und Wetterjahr verschieden).
 
-## Sensitivitäten (`uv run serts tornado`, 45 Varianten, Größen jeweils neu optimiert)
+## Sensitivitäten (`uv run serts tornado`, 48 Varianten, Stand E37, Größen jeweils neu optimiert)
 
-Wärmepreis inkl. Netz (Basis 229 €/MWh) und Vorteil gegenüber Gas-Fernwärme (Basis +24 €/MWh):
+Wärmepreis inkl. Netz (Basis 247 €/MWh) und Vorteil gegenüber Gas-Fernwärme (Basis **+14,5 €/MWh**):
 
 | Parameter (Variante) | Wärmepreis inkl. Netz | Vorteil ggü. Gas |
 |---|---|---|
-| Gaspreis 8 / 16 ct/kWh | – | **−23 / +70** |
-| Strompreis 20 / 40 ct/kWh | 186 / 261 | +59 / **−3** (dann Solar 42 %, 7.170 m³) |
-| CO₂-Preis 55 / 200 €/t | – | +14 / +45 |
-| Förderung BEW 40 % (nur förderfähige Teile) | 196 | **+45** (Optimum: 4.480 m², 7.170 m³, Solar 42 %) |
-| Gütegrad Luft-WP 0,45 / 0,6 | 239 / 210 | +15 / +39 |
-| Zins 3 / 7 % (real) | 207 / 248 | +32 / +17 |
-| Nebenkosten 0 / 20 % | 218 / 239 | +28 / +20 |
-| WP-Kosten 0,7 / 1,4 Mio. €/MW | 220 / 240 | +31 / +15 |
-| Strompreis +2 %/a real | 247 | +9 |
-| Kollektor 300 / 550 €/m² | 217 / 232 | +33 / +21 |
-| Speicherkosten × 0,7 / × 1,3 | 226 / 230 | +26 / +23 |
-| Hausanschluss 5.000 / 15.000 € | 211 / 247 | unverändert (gleiches Netz) |
-| Trasse Straße 400 / 800 €/m; Anteil Straße 50/100 % | 223–238 | unverändert |
-| Luft-WP-Leistung bei −7 °C: 60 / 100 % | 229 / 229 | 24 / 24 |
+| Gaspreis 8 / 16 ct/kWh | – | **−42 / +71** |
+| Strompreis 20 / 40 ct/kWh | 203 / 284 | **+59 / −23** |
+| Gütegrad Luft-WP × 0,85 / × 1,15 | 262 / 233 | **−0,4 / +29** |
+| Förderung BEW 40 % (mit Förderung optimiert) | 214 | **+47** (4.440 m², 7.420 m³, Solar 41 %) |
+| CO₂-Preis 55 / 200 €/t | – | +3 / +40 |
+| Zins 3 / 7 % (real) | 224 / 268 | +26 / +6 |
+| Strompreis +2 %/a real | 267 | −5 |
+| WP-Kosten 0,7 / 1,4 Mio. €/MW | 239 / 257 | +23 / +5 |
+| Nebenkosten 0 / 20 % | 235 / 258 | +21 / +9 |
+| Kollektor 240 / 380 €/m² | 241 / 252 | +20 / +10 |
+| Übergangszone (Kennlinie) 0 / 0,15 / 0,5 | 236 / 245 / 248 | +25 / +17 / +13 |
+| Speicherkosten × 0,7 / × 1,3 | 242 / 249 | +19 / +12 |
+| COP Speicher-WP 3,5 / 5,5 | 250 / 244 | +11 / +18 |
+| Strahlung − / + 10 % | 251 / 243 | +11 / +19 |
+| Ankerkunde + 20 / 40 % | 226 / 211 | +19 / +23 |
+| Last × 0,8 / × 1,2 | 269 / 232 | +16 / +14 |
+| PtH-Reserve 0 (statt Spitzenlast) | 244 | +17 |
+| Hausanschluss 5.000 / 15.000 € | 229 / 265 | unverändert (gleiches Netz) |
+| Trasse Straße 370 / 940 €/m; Anteil Straße 50 / 100 % | 237–257 | unverändert |
+| Rücklauf 40 / 50 °C; Luft-WP-Leistung bei −7 °C 60 / 100 % | 246–248 | ±1 |
 
-**Lesart:** Ob das System günstiger ist als Gas-Fernwärme, entscheiden **Gas- und Strompreis** (CO₂-Preis,
-Förderung, Zins). Die Größe von Kollektorfeld und Speicher springt mit den Kosten (Solaranteil 10–42 %; Speicher
-90–7.300 m³), ohne dass die Kosten stark reagieren. Der Wärmepreis beim Kunden wird zu ≈ 25 % vom Wärmenetz
-bestimmt (≈ 58 €/MWh, vor allem Hausanschlüsse).
+**Lesart:** Ob das System günstiger ist als Gas-Fernwärme, entscheiden **Gas- und Strompreis**, danach die
+**Effizienz der Luft-WP** (bei 15 % schlechterem Gütegrad ist der Vorteil weg), Förderung, CO₂-Preis und Zins.
+Die Größen von Kollektorfeld und Speicher springen mit den Kosten (Speicher 540–8.840 m³, Solaranteil 20–40 %),
+ohne dass der Wärmepreis stark reagiert (flaches Optimum). Ohne Kennlinie (ideale Schichtung) wäre der Speicher
+größer (7.000 m³) und das System 11 €/MWh günstiger – die Kennlinie ist also ergebnisrelevant.
 
-**Kernaussage (vorläufig):** Wärmepumpe (Luft + Speicher) mit PtH-Reserve ist unter den Basisannahmen günstiger als
-Gas-Fernwärme (≈ −11 %). Ein kleiner Speicher (≈ 1.600 m³) mit ≈ 2.500 m² Kollektor ist kostenoptimal; ein saisonaler
-Großspeicher lohnt sich erst mit deutlich billigeren Speichern (≈ halbe Kosten), mehr Fläche oder BEW-Förderung.
+**Kernaussage (vorläufig, Netz klein):** Luft-WP + Speicher-WP mit Solarthermie, PTES und PtH-Reserve ist unter den
+Basisannahmen ≈ 6 % günstiger als Gas-Fernwärme, mit BEW Modul 2 (Obergrenze) ≈ 18 %. Der Vorteil ist knapp und hängt
+vor allem an Energiepreisen und WP-Effizienz. Der kostenoptimale Speicher ist ein Mischspeicher (≈ 4.600 m³,
+≈ 3 Zyklen), kein Saisonspeicher. Netz groß: `docs/ergebnisse_netz_gross.md`, Prüfung: `docs/kernfragen.md`.

@@ -14,7 +14,7 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 | 4 LCOH und CO₂; Pareto EE-Anteil vs. LCOH | ✔ / teilweise | LCOH, Wärmepreis inkl. Netz, CO₂; Pareto aus den Varianten (`pareto.png`), keine Kurve über alle Größen |
 | 5a ohne Speicher, 5b nur WP + PtH, 5d Gas-Referenz | ✔ | `serts varianten` (beide Netze) |
 | 5c PV für die WP | ✘ | nur Abschätzung (`docs/ausblick.md`) |
-| 6 Tornado: Speicherkosten, Solar, Strompreis, Last | ✔ (Netz klein) | `serts tornado`; Netz groß nicht gerechnet |
+| 6 Tornado: Speicherkosten, Solar, Strompreis, Last | ✔ (Netz klein, Stand E37) | `docs/ergebnisse.md`; Netz groß nicht gerechnet |
 | 6 Heatmap LCOH über Fläche × Volumen | ✘ | möglich mit festen Größen (`--A`, `--V`), nicht umgesetzt |
 | Förderung (TEAM) | ✔ | BEW Modul 2 in jedem Lauf ausgewiesen + Szenario `bew_modul2` (E37) |
 
@@ -33,7 +33,7 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 
 | Punkt | Richtung | Vorschlag |
 |---|---|---|
-| **Strompreis 30 ct/kWh fest**, kein Leistungspreis | größter Hebel überhaupt (Tornado vor E34: ±40 €/MWh); Leistungspreis würde die PtH-Reserve verteuern | Preisblatt des Netzbetreibers; Day-Ahead-Szenarien liegen vor |
+| **Strompreis 30 ct/kWh fest**, kein Leistungspreis | größter Hebel überhaupt (Tornado: 20 ct → 203, 40 ct → 284 €/MWh); Leistungspreis würde die PtH-Reserve verteuern | Preisblatt des Netzbetreibers; Day-Ahead-Szenarien liegen vor |
 | **PtH-Reserve = Spitzenlast als Stundensumme** (1,59 / 15,5 MW) | Kosten leicht überschätzt (Gleichzeitigkeit 0,45 laut Netzberechnung) | `pth.redundanz` oder P_max mit GLF |
 | **WP-Kosten 1.000 €/kW** (DK) statt KWW 1.400–1.730 €/kW | System zu günstig (+9 bis +20 €/MWh mit KWW) | Teamentscheidung: `kww_komplett(_gross)` als Basis? |
 | **Speicher-WP COP 4,5 konstant** | Herbst (warmer Speicher) unterschätzt, Frühjahr überschätzt | ok für Jahresmittel (Briefing §8) |
@@ -50,5 +50,6 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 * Kostenoptimal: **Solaranteil 31–35 %**, Speicher ≈ 1,2 m³ je m² Kollektor (klein 4.560 m³ / 3.680 m², groß
   36.700 m³ / 28.800 m²), **Mischspeicher** (≈ 3 Zyklen, ein Drittel der Entladung im Winter), kein Saisonspeicher.
 * **Gegen Gas-Fernwärme** liegt das System 6–7 % günstiger, mit BEW Modul 2 (Obergrenze) 17–18 %. Die Antwort hängt
-  am stärksten vom **Strom- und Gaspreis** ab, danach von WP-Kosten und Förderung; die Speicherkosten selbst wirken
+  am stärksten vom **Strom- und Gaspreis** ab, danach von der Effizienz der Luft-WP, Förderung, CO₂-Preis und Zins;
+  bei 15 % schlechterem WP-Gütegrad ist der Vorteil weg. Die Speicherkosten selbst wirken
   schwach (flaches Optimum).
