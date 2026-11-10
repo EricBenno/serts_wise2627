@@ -782,7 +782,7 @@ heatmap:
     status: vorgabe
     quelle: "Raster Kollektorfläche für serts heatmap (BRF §1 Pflicht 6), um das Optimum ≈ 3.700 m2 (Netz klein)"
   V_m3:
-    wert: [0, 2000, 4000, 7000, 10000]
+    wert: [0, 1000, 2000, 4000, 5500, 7000, 10000]
     einheit: "m3"
     status: vorgabe
     quelle: "Raster Speichervolumen für serts heatmap, um das Optimum ≈ 4.600 m3 (Netz klein); Punkte über der Fläche entfallen"

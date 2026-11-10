@@ -8,3 +8,6 @@
 *.nc binary
 *.ipynb text eol=lf
 *.pdf binary
+# Rohdaten byte-genau lassen (SHA-256 in MANIFEST.sha256)
+data/raw/**/*.txt -text
+data/raw/**/*.csv -text

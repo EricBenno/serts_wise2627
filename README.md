@@ -62,12 +62,11 @@ Beim Empfänger (Windows/macOS/Linux):
 ```bash
 # einmalig: uv installieren (https://docs.astral.sh/uv/), Git optional
 uv sync                      # Python 3.12 + exakt die Paketversionen aus uv.lock in eine neue .venv
-uv run serts import-raw --src "<Pfad zum Team-Ordner 'Bad Lippspringe'>"   # DWD-Dateien (nicht im Git, 60 MB)
 uv run serts verify-raw      # Prüfsummen der Rohdaten
 uv run pytest                # alle Tests grün? dann rechnet das Modell wie hier
 ```
 
-Was schiefgehen kann: DWD-Daten fehlen (nur im Team-Ordner, nicht im Git) → `import-raw`; anderer Ordneraufbau
-(`--src` angeben); alte `.venv`/Kernel aus einem Zip (löschen, `uv sync`); Notebook mit veraltetem Kernel-Stand
+Alle Rohdaten (Netzberechnungen, DWD, PVGIS, Strompreise, KWW) liegen im Repo; `import-raw` braucht man nur, wenn
+sich Dateien im Team-Ordner ändern. Was schiefgehen kann: alte `.venv`/Kernel aus einem Zip (löschen, `uv sync`); Notebook mit veraltetem Kernel-Stand
 („Restart Kernel“); Windows-Konsole und Umlaute (die CLI gibt UTF-8 aus); Ergebnisse in `results/` sind nicht
 im Git (aus `config.yaml` + Git-Hash in `meta.json` reproduzierbar); Commits enthalten Name/E-Mail des Autors.

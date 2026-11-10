@@ -21,6 +21,9 @@ data/raw/**
 !data/raw/pvgis/*.csv
 !data/raw/strompreise/
 !data/raw/strompreise/*.csv
+!data/raw/dwd/
+!data/raw/dwd/*/
+!data/raw/dwd/*/*.txt
 data/processed/**
 !data/processed/.gitkeep
 

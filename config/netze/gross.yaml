@@ -86,12 +86,12 @@ ptes:
 
 heatmap:
   A_m2:
-    wert: [10000, 15000, 20000, 25000, 30000]
+    wert: [5000, 10000, 15000, 20000, 25000, 30000]
     einheit: "m2"
     status: vorgabe
     quelle: "Raster Kollektorfläche Netz groß, um das Optimum ≈ 28.800 m2"
   V_m3:
-    wert: [0, 10000, 20000, 35000, 50000]
+    wert: [0, 5000, 10000, 20000, 35000, 50000]
     einheit: "m3"
     status: vorgabe
     quelle: "Raster Speichervolumen Netz groß, um das Optimum ≈ 36.700 m3; Punkte über 80.000 m2 Fläche entfallen"

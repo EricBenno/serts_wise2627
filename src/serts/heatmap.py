@@ -22,7 +22,34 @@ from serts.prepare import build_zeitreihen
 from serts.run import loese, new_run_dir
 
 log = logging.getLogger(__name__)
-WERTE = ["lcoh", "lcoh_inkl_netz", "lcoh_inkl_netz_bew", "solar_gesamt", "co2_t_a", "P_WP_MW"]
+WERTE = [
+    "lcoh",
+    "lcoh_inkl_netz",
+    "lcoh_inkl_netz_bew",
+    "gas_lcoh_inkl_netz",
+    "solar_gesamt",
+    "ee_anteil",
+    "co2_t_a",
+    "P_WP_MW",
+    "Q_pth_waerme_MWh",
+    "jaz_wp",
+    "speicher_zyklen",
+    "speicher_winteranteil",
+    "speicher_wirkungsgrad",
+]
+
+# Grafik "heatmap_alle.png": (Spalte, Titel, Farbskala, Format)
+FELDER = [
+    ("lcoh_inkl_netz", "Wärmepreis inkl. Netz [€/MWh]", "viridis_r", "{:.0f}"),
+    ("lcoh_inkl_netz_bew", "dito mit BEW Modul 2 (max. 40 %) [€/MWh]", "viridis_r", "{:.0f}"),
+    ("vorteil_gas", "Vorteil ggü. Gas-Fernwärme [€/MWh]", "RdYlGn", "{:+.0f}"),
+    ("solar_gesamt", "Solaranteil [-]", "YlOrRd", "{:.0%}"),
+    ("co2_t_a", "CO₂ [t/a]", "Greys", "{:,.0f}"),
+    ("speicher_zyklen", "Speicherzyklen [1/a]", "PuBu", "{:.1f}"),
+    ("speicher_winteranteil", "Speicherentladung Nov–Mär [-]", "PuBu", "{:.0%}"),
+    ("P_WP_MW", "WP-Leistung [MW]", "Blues", "{:.2f}"),
+    ("Q_pth_waerme_MWh", "PtH-Wärme [MWh/a]", "Reds", "{:,.0f}"),
+]
 
 
 def passt(cfg: Config, A: float, V: float) -> bool:
@@ -38,45 +65,64 @@ def _punkt(cfg: Config, A: float, V: float, threads) -> dict:
     return {"A_m2": A, "V_m3": V, **{w: k.get(w) for w in WERTE}}
 
 
+def _feld(ax, fig, df: pd.DataFrame, spalte: str, titel: str, cmap: str, fmt: str) -> None:
+    mat = df.pivot(index="V_m3", columns="A_m2", values=spalte).sort_index()
+    werte = mat.to_numpy(dtype=float)
+    kw = {}
+    if spalte == "vorteil_gas" and np.isfinite(werte).any():
+        g = float(np.nanmax(np.abs(werte)))
+        kw = {"vmin": -g, "vmax": g}  # 0 = gleich teuer wie Gas, in der Mitte der Farbskala
+    im = ax.imshow(werte, origin="lower", aspect="auto", cmap=cmap, **kw)
+    ax.set_xticks(range(len(mat.columns)), [f"{a / 1000:g}" for a in mat.columns])
+    ax.set_yticks(range(len(mat.index)), [f"{v / 1000:g}" for v in mat.index])
+    ax.set(xlabel="Kollektorfläche [1.000 m²]", ylabel="Speicher [1.000 m³]", title=titel)
+    ax.title.set_fontsize(10)
+    for (i, j), v in np.ndenumerate(werte):
+        if v == v:
+            ax.text(
+                j,
+                i,
+                fmt.format(v).replace(",", "."),
+                ha="center",
+                va="center",
+                fontsize=7,
+                color="k",
+                path_effects=[patheffects.withStroke(linewidth=2.5, foreground="w")],
+            )
+    fig.colorbar(im, ax=ax)
+    if spalte.startswith("lcoh") and np.isfinite(werte).any():
+        i, j = np.unravel_index(np.nanargmin(werte), werte.shape)
+        ax.scatter(j, i, s=250, facecolors="none", edgecolors="red", linewidths=2)
+
+
 def _bild(df: pd.DataFrame, out: Path, gas: float | None) -> Path:
+    """Kurzfassung: Wärmepreis und Solaranteil."""
     fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-    for ax, (spalte, titel, cmap) in zip(
-        axes,
-        [
-            ("lcoh_inkl_netz", "Wärmepreis inkl. Netz [€/MWh]", "viridis_r"),
-            ("solar_gesamt", "Solaranteil [-]", "YlOrRd"),
-        ],
-        strict=True,
-    ):
-        mat = df.pivot(index="V_m3", columns="A_m2", values=spalte).sort_index()
-        im = ax.imshow(mat.to_numpy(dtype=float), origin="lower", aspect="auto", cmap=cmap)
-        ax.set_xticks(range(len(mat.columns)), [f"{a:,.0f}".replace(",", ".") for a in mat.columns])
-        ax.set_yticks(range(len(mat.index)), [f"{v:,.0f}".replace(",", ".") for v in mat.index])
-        ax.set(xlabel="Kollektorfläche [m²]", ylabel="Speichervolumen [m³]", title=titel)
-        for (i, j), v in np.ndenumerate(mat.to_numpy(dtype=float)):
-            if v == v:
-                ax.text(
-                    j,
-                    i,
-                    f"{v:.0%}" if spalte == "solar_gesamt" else f"{v:.0f}",
-                    ha="center",
-                    va="center",
-                    fontsize=8,
-                    color="k",
-                    path_effects=[patheffects.withStroke(linewidth=2.5, foreground="w")],
-                )
-        fig.colorbar(im, ax=ax)
-        if spalte == "lcoh_inkl_netz" and df[spalte].notna().any():
-            best = df.loc[df[spalte].idxmin()]
-            j = list(mat.columns).index(best["A_m2"])
-            i = list(mat.index).index(best["V_m3"])
-            ax.scatter(j, i, s=250, facecolors="none", edgecolors="red", linewidths=2)
+    _feld(
+        axes[0], fig, df, "lcoh_inkl_netz", "Wärmepreis inkl. Netz [€/MWh]", "viridis_r", "{:.0f}"
+    )
+    _feld(axes[1], fig, df, "solar_gesamt", "Solaranteil [-]", "YlOrRd", "{:.0%}")
     if gas is not None:
         fig.suptitle(
             f"Raster mit festen Größen (WP, PtH je Punkt optimiert); Gas-Fernwärme {gas:.0f} €/MWh"
         )
     fig.tight_layout()
     fig.savefig(out, dpi=150)
+    plt.close(fig)
+    return out
+
+
+def _bild_alle(df: pd.DataFrame, out: Path, titel: str) -> Path:
+    """Alle Kennzahlen aus FELDER in einem 3 x 3-Raster."""
+    fig, axes = plt.subplots(3, 3, figsize=(17, 13))
+    for ax, (spalte, t, cmap, fmt) in zip(axes.flat, FELDER, strict=True):
+        if spalte in df and df[spalte].notna().any():
+            _feld(ax, fig, df, spalte, t, cmap, fmt)
+        else:
+            ax.set_axis_off()
+    fig.suptitle(titel)
+    fig.tight_layout()
+    fig.savefig(out, dpi=130)
     plt.close(fig)
     return out
 
@@ -112,5 +158,14 @@ def heatmap(cfg: Config, jobs: int = 3) -> Path:
         nk = economics.netzkosten(cfg)
         Qg = Q - float(ts["last_netzverlust"].sum())
         gas = (ref["gas_lcoh"] * Q + nk["kosten_a_netz_gasref"]) / Qg
+    if "gas_lcoh_inkl_netz" in df:
+        df["vorteil_gas"] = df["gas_lcoh_inkl_netz"] - df["lcoh_inkl_netz"]
+        df.to_csv(out / "heatmap.csv", index=False)
     _bild(df, out / "heatmap.png", gas)
+    _bild_alle(
+        df,
+        out / "heatmap_alle.png",
+        f"Netz {cfg.netz}: Raster mit festen Größen (WP, PtH je Punkt optimiert)"
+        + (f"; Gas-Fernwärme {gas:.0f} €/MWh" if gas is not None else ""),
+    )
     return out
