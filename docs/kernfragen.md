@@ -15,7 +15,7 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 | 5a ohne Speicher, 5b nur WP + PtH, 5d Gas-Referenz | ✔ | `serts varianten` (beide Netze) |
 | 5c PV für die WP | ✘ (zurückgestellt, TEAM) | nur Abschätzung (`docs/ausblick.md`) |
 | 6 Tornado: Speicherkosten, Solar, Strompreis, Last | ✔ (Netz klein, Stand E37) | `docs/ergebnisse.md`; Netz groß nicht gerechnet |
-| 6 Heatmap LCOH über Fläche × Volumen | ✔ (Netz klein) | `serts heatmap` (≈ 20 min), `docs/ergebnisse.md` |
+| 6 Heatmap LCOH über Fläche × Volumen | ✔ (beide Netze, 9 Kennzahlen) | `serts heatmap` (≈ 25/40 min), `docs/ergebnisse*.md` |
 | Förderung (TEAM) | ✔ | BEW Modul 2 in jedem Lauf ausgewiesen + Szenario `bew_modul2` (E37) |
 
 ## 2 Auslegung: was am 10.11. falsch oder zu optimistisch war und korrigiert ist
@@ -43,13 +43,14 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 | **BEW 40 % = Obergrenze**, Wirtschaftlichkeitslücke nicht geprüft; EE-Anteil ≥ 75 % (Modell 84–85 %) nur grob | Förderung eher überschätzt | BAFA-Berechnung im nächsten Schritt; Modul 4 ergänzen |
 | **Hausanschlüsse pauschal 10.000 €** | im großen Netz (54 % Nichtwohngebäude) eher zu niedrig | Kosten nach Anschlussleistung (KWW Tab. 40) |
 
-## 4 Antwort auf die Leitfrage (Stand jetzt, beide Netze)
+## 4 Antwort auf die Leitfrage (Stand 10.11. nachts, WP 1.340 €/kW, beide Netze)
 
-* **Kollektor und Speicher senken Kosten und CO₂** gegenüber reiner WP + PtH (klein −16 €/MWh, groß −20 €/MWh;
-  CO₂ −25 bis −28 %), ein Speicher lohnt sich gegenüber Solar ohne Speicher (−10 bzw. −15 €/MWh).
-* Kostenoptimal: **Solaranteil 31–35 %**, Speicher ≈ 1,2 m³ je m² Kollektor (klein 4.560 m³ / 3.680 m², groß
-  36.700 m³ / 28.800 m²), **Mischspeicher** (≈ 3 Zyklen, ein Drittel der Entladung im Winter), kein Saisonspeicher.
-* **Gegen Gas-Fernwärme** liegt das System 6–7 % günstiger, mit BEW Modul 2 (Obergrenze) 17–18 %. Die Antwort hängt
-  am stärksten vom **Strom- und Gaspreis** ab, danach von der Effizienz der Luft-WP, Förderung, CO₂-Preis und Zins;
-  bei 15 % schlechterem WP-Gütegrad ist der Vorteil weg. Die Speicherkosten selbst wirken
-  schwach (flaches Optimum).
+* **Kollektor und Speicher senken Kosten und CO₂** gegenüber reiner WP + PtH (klein −18 €/MWh, groß −21 €/MWh;
+  CO₂ −25 bis −32 %), ein Speicher lohnt sich gegenüber Solar ohne Speicher (−12 bzw. −15 €/MWh). Nur mit Solar und
+  Speicher ist das System überhaupt günstiger als Gas-Fernwärme.
+* Kostenoptimal: **Solaranteil 30–41 %**, Speicher ≈ 1,4–1,7 m³ je m² Kollektor (klein 7.400 m³ / 4.440 m², groß
+  38.900 m³ / 28.400 m²); die **Fläche bindet** in beiden Netzen. **Mischspeicher** (≈ 2,3–2,5 Zyklen, 41–46 % der
+  Entladung im Winter); saisonal wird er nur bei viel Speicher und wenig Kollektor – und dann teurer (Heatmaps).
+* **Gegen Gas-Fernwärme** liegt das System nur 2–3 % günstiger, mit BEW Modul 2 (Obergrenze) ≈ 15 %. Die Antwort hängt
+  am stärksten vom **Strom- und Gaspreis** ab (Day-Ahead 2024: −24 €/MWh ggü. Gas, Krise 2022: +13), danach von
+  Effizienz der Luft-WP, Förderung, CO₂-Preis und Zins. Die Speicherkosten selbst wirken schwach (flaches Optimum).
