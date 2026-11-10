@@ -142,6 +142,13 @@ def _cmd_varianten(a):
     print(f"Ergebnis: {out}")
 
 
+def _cmd_heatmap(a):
+    from serts.heatmap import heatmap
+
+    out = heatmap(_cfg(a), jobs=a.jobs)
+    print(f"Ergebnis: {out}")
+
+
 def _cmd_tornado(a):
     import pandas as pd
 
@@ -157,6 +164,10 @@ def _cmd_tornado(a):
 def main(argv: list[str] | None = None) -> int:
     import matplotlib
 
+    # Windows-Konsole (cp1252) kann z. B. "CO₂" nicht ausgeben -> Ausgabe immer UTF-8
+    for strom in (sys.stdout, sys.stderr):
+        if hasattr(strom, "reconfigure"):
+            strom.reconfigure(encoding="utf-8", errors="replace")
     matplotlib.use("Agg")  # Kommandozeile/Prozesse ohne Fenster
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     ap = argparse.ArgumentParser(prog="serts")
@@ -202,6 +213,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
     p.add_argument("--jobs", type=int, default=2, help="parallele Läufe")
     p.set_defaults(func=_cmd_varianten)
+
+    p = sub.add_parser("heatmap", help="Wärmepreis über Kollektorfläche x Speichervolumen (Raster)")
+    p.add_argument("--szenario", default=None)
+    p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
+    p.add_argument("--jobs", type=int, default=3, help="parallele Läufe")
+    p.set_defaults(func=_cmd_heatmap)
 
     p = sub.add_parser(
         "fetch-strompreise", help="Day-Ahead-Preise DE-LU laden (Energy-Charts/SMARD)"

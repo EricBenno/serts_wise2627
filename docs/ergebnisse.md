@@ -7,6 +7,12 @@ KWW Technikkatalog 2026** (E32), **Luft-WP nach KWW-Gütegrad** (E35), Speicher 
 konsistenter Schichtung (E34, E36). Großes Netz: **`docs/ergebnisse_netz_gross.md`**. Prüfung der Auslegung gegen die
 Leitfrage: **`docs/kernfragen.md`**.
 
+> **Neu (10.11. abends, E38): WP-Kosten 1.340 €/kW** (unteres Ende KWW) statt 1.000 €/kW. Basis damit:
+> Kollektor ≈ 4.440 m², Speicher ≈ 7.400 m³, Solaranteil 41 %, LCOH ≈ 160 €/MWh, **Wärmepreis inkl. Netz ≈ 255 €/MWh**
+> (Gas-Fernwärme 261, mit BEW ≈ 221). Teurere WP → mehr Solar und Speicher, der Vorteil gegenüber Gas schrumpft auf
+> ≈ 6 €/MWh. Die Tabellen „Basislauf“, „Varianten“ und „Sensitivitäten“ unten sind noch mit 1.000 €/kW gerechnet;
+> Strom-Vergleich und Heatmap schon mit 1.340 €/kW.
+
 ## Basislauf (`uv run serts run`)
 
 | Kennzahl | Wert |
@@ -61,27 +67,42 @@ macht den Speicher kleiner, weil nur die heiße Schicht direkt nutzbar ist.
   40 % ist die Obergrenze; die BAFA begrenzt auf die Wirtschaftlichkeitslücke (E37).
 * `pareto.png` im Ergebnisordner zeigt EE-Anteil gegen Wärmepreis.
 
-> **Der folgende Abschnitt Strom ist Stand vor E32–E37** (alte Kosten, Luft-WP nach Lorenz, ohne Kennlinie); die Aussagen zur Wirkung des Preisniveaus gelten qualitativ weiter, die Zahlen nicht.
-
-## Strom: fest gegen Day-Ahead (zwei Läufe, Szenarien `strom_day_ahead_*`)
+## Strom: fest gegen Day-Ahead (Szenarien `strom_day_ahead_*`, Stand E38: WP 1.340 €/kW)
 
 Preis(t) = Day-Ahead(t) + Marge 25 + Netzentgelt 93 + Abgaben 57 €/MWh; Preisjahr unabhängig vom Wetterjahr 2022.
 
 | | fest 30 ct | Day-Ahead 2024 | Day-Ahead 2024 normiert (Ø wie fest) | Day-Ahead 2022 (Krise) |
 |---|---|---|---|---|
-| Strompreis Ø / gewichtet bezahlt [€/MWh] | 300 / 300 | 254 / 253 | 300 / 293 | 410 / 341 |
-| Kollektor / Speicher | 2.540 m² / 1.640 m³ | 1.240 / 420 | 2.950 / 3.730 | 4.460 / 7.290 |
-| Speicher-Zyklen | 5,0 | 12,5 | 3,6 | 2,7 |
-| Solaranteil | 24 % | 12 % | 28 % | 42 % |
-| Strombezug [MWh/a] | 1.645 | 1.927 | 1.594 | 1.367 |
-| LCOH Erzeugung / inkl. Netz [€/MWh] | 141 / 229 | **127 / 211** | 142 / 229 | 157 / 247 |
+| Strompreis Ø / gewichtet bezahlt [€/MWh] | 300 / 300 | 254 / 252 | 300 / 294 | 410 / 345 |
+| Kollektor / Speicher | 4.440 m² / 7.400 m³ | 3.630 / 4.270 | 4.440 / 7.400 | 4.460 / 7.260 |
+| Speicher-Zyklen / Winteranteil | 2,3 / 46 % | 3,3 / 35 % | 2,4 / 46 % | 2,6 / 46 % |
+| Solaranteil | 41 % | 34 % | 41 % | 42 % |
+| Strombezug [MWh/a] | 1.720 | 1.850 | 1.710 | 1.690 |
+| LCOH Erzeugung / Wärmepreis inkl. Netz [€/MWh] | 160 / 255 | **144 / 237** | 159 / 254 | 176 / **274** |
+| Gas-Fernwärme inkl. Netz / mit BEW | 261 / 221 | 261 / 205 | 261 / 219 | 261 / 239 |
 
-* **Preisniveau** bestimmt das System: bei billigem Strom (2024) schrumpft Solar; bei teurem (2022) wächst es und der
-  Speicher wird größer.
-* **Zeitliche Struktur** allein (normiert) senkt den bezahlten Preis nur um 2 % (293 statt 300), die LCOH bleibt
-  gleich (141,5): Das Modell kann Preisspitzen kaum ausnutzen, weil der Speicher nur Solarwärme speichert (WP lädt den
-  Speicher nicht, E29). Im Krisenjahr 2022 mit starken Preisschwankungen zahlt das flexible System 17 % unter dem Mittel.
-* Nicht modelliert: Leistungspreis; Korrelation Preis↔Wetter (Preis- und Wetterjahr verschieden).
+* **Preisniveau** entscheidet: mit Day-Ahead 2024 (Ø 25 ct) ist das System 24 €/MWh günstiger als Gas-Fernwärme,
+  im Krisenjahr 2022 (Ø 41 ct) 13 €/MWh teurer.
+* **Zeitliche Struktur** allein (normiert) senkt den bezahlten Preis um 2 % und den Wärmepreis um ≈ 1 €/MWh: der
+  Speicher nimmt nur Solarwärme auf (die WP lädt ihn nicht, E29), Preisspitzen werden kaum ausgenutzt.
+* Die Auslegung reagiert kaum auf die Preisstruktur (Kollektor/Speicher fast gleich), nur auf das Preisniveau.
+* Nicht modelliert: Leistungspreis; Korrelation Preis ↔ Wetter (Preis- und Wetterjahr verschieden).
+
+## Heatmap Kollektorfläche × Speichervolumen (`uv run serts heatmap`, Stand E38)
+
+Feste Größen (WP, PtH je Punkt optimiert), Wärmepreis inkl. Netz [€/MWh]; Gas-Fernwärme 261:
+
+| V \ A [m²] | 1.000 | 2.000 | 3.000 | 4.000 | 5.000 |
+|---|---|---|---|---|---|
+| 0 m³ | 267 | 268 | 272 | 276 | 282 |
+| 2.000 m³ | 267 | 261 | 257 | 259 | 261 |
+| 4.000 m³ | 270 | 262 | 258 | 256 | – |
+| 7.000 m³ | 276 | 267 | 260 | **256** | – |
+| 10.000 m³ | 283 | 272 | 264 | 259 | – |
+
+(– = passt nicht auf 13.000 m²). Ohne Speicher wird mehr Kollektor teurer (der Sommerüberschuss bleibt ungenutzt); mit Speicher liegt ein
+breites Tal bei 3.000–4.000 m² und 2.000–7.000 m³ innerhalb von ≈ 3 €/MWh – das flache Optimum. Rechenzeit ≈ 20 min
+(21 Punkte, 3 parallel).
 
 ## Sensitivitäten (`uv run serts tornado`, 48 Varianten, Stand E37, Größen jeweils neu optimiert)
 

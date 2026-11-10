@@ -44,3 +44,30 @@ Details und Stand: [docs/struktur.md](docs/struktur.md). Ergebnisse: [docs/ergeb
 offene Kostenpunkte: [docs/unsicherheiten.md](docs/unsicherheiten.md), Systemskizze: [docs/systemskizze.md](docs/systemskizze.md),
 BEW-Förderung: [docs/foerderung_bew.md](docs/foerderung_bew.md), Vorschläge: [docs/ausblick.md](docs/ausblick.md).
 Wie die Berechnung funktioniert: [notebooks/01_modell_erklaert.ipynb](notebooks/01_modell_erklaert.ipynb).
+
+## Projekt weitergeben / auf einem neuen Rechner einrichten
+
+**Nie die `.venv` mitkopieren** (auch nicht im Zip): sie enthält absolute Pfade zum Python dieses Rechners und
+funktioniert woanders nicht oder nur scheinbar. Der Jupyter-Kernel „Python 3 (.venv)“ ist keine Datei im Projekt,
+sondern einfach diese Umgebung – er entsteht beim Empfänger neu durch `uv sync`.
+
+Sicherster Weg: **Git-Repository** (z. B. privates GitLab/GitHub der TU) oder ein Zip aus `git archive`:
+
+```bash
+git archive --format=zip -o serts.zip HEAD      # nur versionierte Dateien: ohne .venv, results, Caches
+```
+
+Beim Empfänger (Windows/macOS/Linux):
+
+```bash
+# einmalig: uv installieren (https://docs.astral.sh/uv/), Git optional
+uv sync                      # Python 3.12 + exakt die Paketversionen aus uv.lock in eine neue .venv
+uv run serts import-raw --src "<Pfad zum Team-Ordner 'Bad Lippspringe'>"   # DWD-Dateien (nicht im Git, 60 MB)
+uv run serts verify-raw      # Prüfsummen der Rohdaten
+uv run pytest                # alle Tests grün? dann rechnet das Modell wie hier
+```
+
+Was schiefgehen kann: DWD-Daten fehlen (nur im Team-Ordner, nicht im Git) → `import-raw`; anderer Ordneraufbau
+(`--src` angeben); alte `.venv`/Kernel aus einem Zip (löschen, `uv sync`); Notebook mit veraltetem Kernel-Stand
+(„Restart Kernel“); Windows-Konsole und Umlaute (die CLI gibt UTF-8 aus); Ergebnisse in `results/` sind nicht
+im Git (aus `config.yaml` + Git-Hash in `meta.json` reproduzierbar); Commits enthalten Name/E-Mail des Autors.

@@ -434,12 +434,12 @@ waermepumpe:
     sens: [3.5, 5.5]
     hinweis: "Bei VL 80 statt 75 degC eher etwas niedriger (≈ -5 %) -> in Sensitivität abgedeckt."
   kosten_spez:
-    wert: 1000000
+    wert: 1340000
     einheit: "EUR/MW_th"
-    status: annahme
-    quelle: "Frederikssund 2022: ≈ 6,4 Mio. DKK/MW Luft-WP ≈ 0,86 Mio. EUR/MW (SCH); kleine Leistung (1-2 MW) + NH3 + Luftkühler -> 1,0 Mio. EUR/MW"
-    sens: [700000, 1400000]
-    hinweis: "DEA Technology Data (District heating, 2025) nachtragen."
+    status: vorgabe
+    quelle: "TEAM 10.11.2026: unteres Ende des KWW Technikkatalogs (Tab. 24, Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto): 1.340 EUR/kW_th (10 MW); Spanne 1.970 (0,3 MW) / 1.730 (1 MW) / 1.600 (2 MW) / 1.440 (5 MW), Unsicherheit ±30 %"
+    sens: [1000000, 1730000]
+    hinweis: "Für das kleine Netz (≈ 1 MW) optimistisch (KWW-Größenklasse 1.730 EUR/kW, Szenario kww_komplett). Vorher 1,0 Mio. EUR/MW (Frederikssund 2022, DK). Lebensdauer/O&M weiter 20 a / 2,5 % (KWW: 28 a / 3 %). Gilt für Luft- und Speicher-WP (gemeinsame Leistung wp_out)."
 
 # -------------------------------------------------------------------------------------
 pth:
@@ -773,6 +773,19 @@ solver:
     einheit: "EUR/MWh"
     status: vorgabe
     quelle: "numerische Hilfsgröße (keine Kosten): Speicherladen minimal teurer als Direktnutzung; << Strompreis, LCOH-Einfluss < 0,01 EUR/MWh"
+
+# -------------------------------------------------------------------------------------
+heatmap:
+  A_m2:
+    wert: [1000, 2000, 3000, 4000, 5000]
+    einheit: "m2"
+    status: vorgabe
+    quelle: "Raster Kollektorfläche für serts heatmap (BRF §1 Pflicht 6), um das Optimum ≈ 3.700 m2 (Netz klein)"
+  V_m3:
+    wert: [0, 2000, 4000, 7000, 10000]
+    einheit: "m3"
+    status: vorgabe
+    quelle: "Raster Speichervolumen für serts heatmap, um das Optimum ≈ 4.600 m3 (Netz klein); Punkte über der Fläche entfallen"
 
 # -------------------------------------------------------------------------------------
 tornado:

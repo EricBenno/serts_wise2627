@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 36, vorgabe 47, annahme 42, offen 0
+Status: belegt 36, vorgabe 50, annahme 41, offen 0
 
 
 ## standort
@@ -105,7 +105,7 @@ Status: belegt 36, vorgabe 47, annahme 42, offen 0
 | `waermepumpe.luft_leistung_voll_ab` | -1 | degC | annahme | BRF §3.4: DRL Luft-WP 6 MW bei -1 degC (EHPA Award); darüber konstant volle Leistung (konservativ) |  |  |
 | `waermepumpe.luft_leistung_bei_tmin` | 0.8 | - | annahme | BRF §3.4: linear auf 80 % der Leistung bei T_min_luft (-7 degC); Rest Annahme, keine Referenz unter -5 degC | 0.6, 1 | Thermische Leistung der Luft-WP relativ zur gebauten WP-Leistung (docs E27); 1,0 = altes Verhalten (Leistung unabhängig von der Temperatur). |
 | `waermepumpe.COP_ptes` | 4.5 | - | annahme | BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5 | 3.5, 5.5 | Bei VL 80 statt 75 degC eher etwas niedriger (≈ -5 %) -> in Sensitivität abgedeckt. |
-| `waermepumpe.kosten_spez` | 1000000 | EUR/MW_th | annahme | Frederikssund 2022: ≈ 6,4 Mio. DKK/MW Luft-WP ≈ 0,86 Mio. EUR/MW (SCH); kleine Leistung (1-2 MW) + NH3 + Luftkühler -> 1,0 Mio. EUR/MW | 700000, 1400000 | DEA Technology Data (District heating, 2025) nachtragen. |
+| `waermepumpe.kosten_spez` | 1340000 | EUR/MW_th | vorgabe | TEAM 10.11.2026: unteres Ende des KWW Technikkatalogs (Tab. 24, Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto): 1.340 EUR/kW_th (10 MW); Spanne 1.970 (0,3 MW) / 1.730 (1 MW) / 1.600 (2 MW) / 1.440 (5 MW), Unsicherheit ±30 % | 1000000, 1730000 | Für das kleine Netz (≈ 1 MW) optimistisch (KWW-Größenklasse 1.730 EUR/kW, Szenario kww_komplett). Vorher 1,0 Mio. EUR/MW (Frederikssund 2022, DK). Lebensdauer/O&M weiter 20 a / 2,5 % (KWW: 28 a / 3 %). Gilt für Luft- und Speicher-WP (gemeinsame Leistung wp_out). |
 
 ## pth
 
@@ -193,6 +193,13 @@ Status: belegt 36, vorgabe 47, annahme 42, offen 0
 | `solver.name` | highs | - | vorgabe | BRF §2 |  |  |
 | `solver.optionen` | {'solver': 'ipm', 'run_crossover': 'off'} | - | vorgabe | Benchmark 09.11.2026 (A_spez 0,4, V/A 1,0, 8760 h, 1 Thread): Simplex 262 s, IPM ohne Crossover 56 s, identisches Optimum |  |  |
 | `solver.tie_breaker` | 0.1 | EUR/MWh | vorgabe | numerische Hilfsgröße (keine Kosten): Speicherladen minimal teurer als Direktnutzung; << Strompreis, LCOH-Einfluss < 0,01 EUR/MWh |  |  |
+
+## heatmap
+
+| Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
+|---|---|---|---|---|---|---|
+| `heatmap.A_m2` | [1000, 2000, 3000, 4000, 5000] | m2 | vorgabe | Raster Kollektorfläche für serts heatmap (BRF §1 Pflicht 6), um das Optimum ≈ 3.700 m2 (Netz klein) |  |  |
+| `heatmap.V_m3` | [0, 2000, 4000, 7000, 10000] | m3 | vorgabe | Raster Speichervolumen für serts heatmap, um das Optimum ≈ 4.600 m3 (Netz klein); Punkte über der Fläche entfallen |  |  |
 
 ## tornado
 

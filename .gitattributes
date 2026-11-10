@@ -6,3 +6,5 @@
 *.xlsx binary
 *.png binary
 *.nc binary
+*.ipynb text eol=lf
+*.pdf binary

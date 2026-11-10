@@ -13,9 +13,9 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 | 3 Kostenoptimale Größen (Kollektor, Speicher, WP) | ✔ (LP statt Raster) | je Lauf optimiert, Speicher über Kostensegmente (E30); Raster auf Teamwunsch entfallen |
 | 4 LCOH und CO₂; Pareto EE-Anteil vs. LCOH | ✔ / teilweise | LCOH, Wärmepreis inkl. Netz, CO₂; Pareto aus den Varianten (`pareto.png`), keine Kurve über alle Größen |
 | 5a ohne Speicher, 5b nur WP + PtH, 5d Gas-Referenz | ✔ | `serts varianten` (beide Netze) |
-| 5c PV für die WP | ✘ | nur Abschätzung (`docs/ausblick.md`) |
+| 5c PV für die WP | ✘ (zurückgestellt, TEAM) | nur Abschätzung (`docs/ausblick.md`) |
 | 6 Tornado: Speicherkosten, Solar, Strompreis, Last | ✔ (Netz klein, Stand E37) | `docs/ergebnisse.md`; Netz groß nicht gerechnet |
-| 6 Heatmap LCOH über Fläche × Volumen | ✘ | möglich mit festen Größen (`--A`, `--V`), nicht umgesetzt |
+| 6 Heatmap LCOH über Fläche × Volumen | ✔ (Netz klein) | `serts heatmap` (≈ 20 min), `docs/ergebnisse.md` |
 | Förderung (TEAM) | ✔ | BEW Modul 2 in jedem Lauf ausgewiesen + Szenario `bew_modul2` (E37) |
 
 ## 2 Auslegung: was am 10.11. falsch oder zu optimistisch war und korrigiert ist
@@ -35,7 +35,7 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 |---|---|---|
 | **Strompreis 30 ct/kWh fest**, kein Leistungspreis | größter Hebel überhaupt (Tornado: 20 ct → 203, 40 ct → 284 €/MWh); Leistungspreis würde die PtH-Reserve verteuern | Preisblatt des Netzbetreibers; Day-Ahead-Szenarien liegen vor |
 | **PtH-Reserve = Spitzenlast als Stundensumme** (1,59 / 15,5 MW) | Kosten leicht überschätzt (Gleichzeitigkeit 0,45 laut Netzberechnung) | `pth.redundanz` oder P_max mit GLF |
-| **WP-Kosten 1.000 €/kW** (DK) statt KWW 1.400–1.730 €/kW | System zu günstig (+9 bis +20 €/MWh mit KWW) | Teamentscheidung: `kww_komplett(_gross)` als Basis? |
+| **WP-Kosten** jetzt 1.340 €/kW (unteres Ende KWW, E38); kleines Netz laut KWW eher 1.730 €/kW | Vorteil ggü. Gas schrumpft auf ≈ 6 €/MWh (Netz klein) | Tornado/Varianten mit 1.340 €/kW neu rechnen, wenn Zeit ist |
 | **Speicher-WP COP 4,5 konstant** | Herbst (warmer Speicher) unterschätzt, Frühjahr überschätzt | ok für Jahresmittel (Briefing §8) |
 | **Kennlinie** (Übergangszone 30 %) ist abgeschätzt, nicht gemessen | Speichernutzen ±; Tornado 0/0,15/0,5 | Messdaten Dronninglund (DTU-Datensatz) |
 | **Perfekte Voraussicht**, ein Wetterjahr | Betrieb/Solaranteil eher überschätzt | als Modellgrenze benennen |

@@ -58,7 +58,7 @@ Szenario: **base**. "=" heißt: im großen Netz gleicher Wert wie im kleinen. St
 | PTES bei 60.000 m3 (Kostenkurve, siehe unten) | 67,77 | = | EUR/m3 | B | KWW Tab. 52 (Erdbeckenspeicher): Kostenkurve Invest = 1093,6 * V^0,7472 … |
 |   Größenexponent spez. Kosten | -0,2528 | = | - | B | KWW Tab. 52: Invest ~ V^0,7472 -> spezifisch ~ V^-0,2528 |
 |   Lebensdauer | 30 | = | a | B | KWW Tab. 52: 30 a (mittlere Lebensdauer, Unsicherheit ±40 %) … |
-| Wärmepumpe (Luft + Speicher) | 1.000 | = | EUR/kW_th | A | Frederikssund 2022: ≈ 6,4 Mio. DKK/MW Luft-WP ≈ 0,86 Mio. EUR/MW (SCH) … |
+| Wärmepumpe (Luft + Speicher) | 1.340 | = | EUR/kW_th | V | TEAM 10.11.2026: unteres Ende des KWW Technikkatalogs … |
 |   Lebensdauer | 20 | = | a | A | Größenordnung DEA/VDI 2067-1 (18-25 a) |
 | Power-to-Heat (Reserve) | 100 | = | EUR/kW_th | A | Frederikssund 2022: ≈ 0,5 Mio. DKK/MW ≈ 0,07 Mio. EUR/MW (SCH) … |
 |   Lebensdauer | 20 | = | a | A | Größenordnung DEA (20 a) |

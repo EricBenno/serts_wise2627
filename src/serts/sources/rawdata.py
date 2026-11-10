@@ -19,6 +19,7 @@ class RawFile:
     src: str  # relativ zum Team-Ordner "Bad Lippspringe"
     dst: str  # relativ zu data/raw
     beschreibung: str
+    pflicht: bool = True  # False = nur Dokumentation, Modell läuft ohne
 
 
 RAW_FILES: list[RawFile] = [
@@ -36,6 +37,7 @@ RAW_FILES: list[RawFile] = [
         "../Netzannahmen.pdf",
         "bad_lippspringe/Netzannahmen.pdf",
         "Karte und Kennzahlen beider Netze (klein/groß: Gebäude, Trasse, Verlust, Temperaturen)",
+        pflicht=False,
     ),
     RawFile(
         "../AP 0 und Annahmen/KWW-Technikkatalog-Waermeplanung_08-2026_Version_1.1.xlsx",
@@ -91,6 +93,13 @@ def import_raw(source: Path, target: Path = DATA_RAW, overwrite: bool = False) -
         src = source / rf.src
         dst = target / rf.dst
         if not src.exists():
+            if dst.exists():  # z. B. aus dem Git-Repository mitgeliefert (Netzberechnung, KWW)
+                lines.append(f"vorhanden {rf.dst} (Quelle fehlt, Datei aus dem Repo)")
+                manifest.append(f"{sha256(dst)}  {rf.dst}")
+                continue
+            if not rf.pflicht:
+                lines.append(f"fehlt    {rf.dst} (optional, nur Dokumentation)")
+                continue
             raise FileNotFoundError(f"Rohdatei fehlt: {src}")
         dst.parent.mkdir(parents=True, exist_ok=True)
         if dst.exists() and not overwrite:

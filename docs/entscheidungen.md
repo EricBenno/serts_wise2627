@@ -370,3 +370,16 @@ relativer Füllstand oder mehr im kalten Teil). Die WP kann Wärme aus dem heiß
 - **Vergleichsvarianten** (Briefing §1 Pflicht 5): `uv run serts varianten [--netz gross]` rechnet Basis, ohne Speicher,
   nur WP + PtH und mit BEW (optimiert), jeweils mit Gas-Fernwärme als Referenz → `varianten.md/.csv` und
   `pareto.png` (EE-Anteil gegen Wärmepreis). PV für die WP (5c) ist nicht modelliert (Abschätzung in `ausblick.md`).
+
+### E38 WP-Kosten: unteres Ende des KWW, Heatmap, Weitergabe (10.11.2026)
+- **WP-Kosten** (Team): 1.340 €/kW_th = unteres Ende des KWW (Tab. 24, 10-MW-Klasse) für Luft- und Speicher-WP,
+  statt 1.000 €/kW (Frederikssund, DK). Für das kleine Netz (≈ 1 MW, KWW-Klasse 1.730 €/kW) optimistisch;
+  Lebensdauer/O&M bleiben 20 a / 2,5 % (KWW 28 a / 3 %). Tornado-Spanne 1,0 / 1,73 Mio. €/MW.
+  **Tornado und Varianten in `docs/ergebnisse*.md` sind noch mit 1.000 €/kW gerechnet**; Strom-Vergleich und Heatmap
+  vom 10.11. abends bereits mit 1.340 €/kW.
+- **Heatmap** (Briefing Pflicht 6): `uv run serts heatmap [--netz gross]` rechnet 5 × 5 feste Größen (Raster in
+  `heatmap.*`, je Netz), WP und PtH je Punkt optimiert, Punkte über der Fläche entfallen; ≈ 50 s je Punkt.
+- **Weitergabe** (README): `.venv` nie mitgeben (absolute Pfade), `.python-version` = 3.12, `uv.lock` legt alle
+  Paketversionen fest; PVGIS- und Strompreisdateien jetzt im Git (klein), DWD weiter per `import-raw`; `import-raw`
+  übernimmt Dateien aus dem Repo, wenn die Quelle fehlt, und überspringt die (optionale) Netzkarte. Die CLI gibt UTF-8
+  aus (Windows-Konsole). Speichermodell für Einsteiger: `docs/speichermodell.md`.
