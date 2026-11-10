@@ -1,30 +1,67 @@
-# Ergebnisse (Stand 09.11.2026, nach E27–E31)
+# Ergebnisse Netz klein (Stand 10.11.2026, nach E32–E37)
 
-Vorläufig: Kollektorkennwerte und mehrere Kosten sind Annahmen (`docs/annahmen.md`, `docs/unsicherheiten.md`).
-Basis: Normaljahr (PVGIS-TMY), Lastgang/Temperatur 2022, Vorlauf 80 °C, **Zins real 5 %**, 10 % Nebenkosten,
-Speicher in zwei Teilen (heiß/kalt, E27) mit **stetiger, mit der Größe degressiver Kostenkurve** (E30),
-fester Strompreis 30 ct/kWh, Kosten nach VDI 2067-1 real, Preisbasis 2025, Netzkosten im Wärmepreis (E25).
+Vorläufig: Kollektorkennwerte und mehrere Kosten sind Annahmen (`docs/annahmen.md`, Übersicht:
+`docs/eingangsparameter.md`). Basis: Normaljahr (PVGIS-TMY), Lastgang/Temperatur 2022, Vorlauf 80 °C, **Zins real 5 %**,
+10 % Nebenkosten, fester Strompreis 30 ct/kWh, VDI 2067-1 real, **Kosten für Kollektor, Speicher und Trasse aus dem
+KWW Technikkatalog 2026** (E32), **Luft-WP nach KWW-Gütegrad** (E35), Speicher mit **Temperaturkennlinie** und
+konsistenter Schichtung (E34, E36). Großes Netz: **`docs/ergebnisse_netz_gross.md`**. Prüfung der Auslegung gegen die
+Leitfrage: **`docs/kernfragen.md`**.
 
 ## Basislauf (`uv run serts run`)
 
 | Kennzahl | Wert |
 |---|---|
-| Kollektor / Speicher | ≈ 2.540 m² / ≈ 1.640 m³ (≈ 140 MWh) |
-| Speichercharakter | **Kurzzeitspeicher**: ≈ 5 Zyklen/a, nur 28 % der Entladung im Winter (Nov–Mär) |
-| Wärmepumpe / PtH (Reserve) | 1,12 MW / 1,59 MW (PtH liefert nur ≈ 16 MWh/a) |
-| LCOH Erzeugung (Gas-Referenz 165) | **≈ 141 €/MWh** |
-| Wärmepreis beim Kunden inkl. Netz (Gas-Fernwärme 257) | **≈ 229 €/MWh** |
-| davon Wärmenetz | Trasse ≈ 22 €/MWh, Hausanschlüsse ≈ 36 €/MWh |
-| Solaranteil / Erneuerbaren-Anteil | ≈ 24 % / ≈ 86 % |
-| CO₂ (Gas-Referenz ≈ 1.160 t/a) | ≈ 600 t/a |
-| Flächenbedarf (verfügbar 13.000 m²) | ≈ 6.500 m² |
+| Kollektor / Speicher | **≈ 3.680 m² / ≈ 4.560 m³** (Fläche 10.200 von 13.000 m²) |
+| Wärmepumpe / PtH (Reserve) | 1,03 MW / 1,59 MW (PtH liefert ≈ 77 MWh/a, v. a. im Februar) |
+| Arbeitszahl WP gesamt (Luft + Speicher) | 2,53 |
+| Speicher | Wirkungsgrad 94 %, 2,9 Zyklen/a, 36 % der Entladung Nov–Mär, **gemischt** |
+| Wärmeherkunft (5.462 MWh/a) | Luft-WP 3.230, Speicher-WP 1.190, Speicher direkt 235, Solar direkt ≈ 720, PtH 77 MWh |
+| Solaranteil (direkt / Speicher direkt / WP-Quellwärme) | **35 %** (13 / 4 / 17 %) |
+| LCOH Erzeugung (Gas-Referenz 165) | **≈ 153 €/MWh** |
+| Wärmepreis beim Kunden inkl. Netz (Gas-Fernwärme 261) | **≈ 247 €/MWh** (−6 %) |
+| davon Wärmenetz | Trasse ≈ 26 €/MWh, Hausanschlüsse + Übergabestationen ≈ 36 €/MWh |
+| **mit BEW Modul 2** (40 %, gleiche Auslegung; Obergrenze) | LCOH ≈ 136, **inkl. Netz ≈ 218 €/MWh** (−17 % ggü. Gas), Zuschuss ≤ 1,8 Mio. € |
+| EE-Anteil / CO₂ (Gas-Referenz 1.160 t/a) | 85 % / ≈ 660 t/a |
 
-**Flaches Optimum:** je Kostensegment der Speicherkurve (LCOH, V): 0–1.000 m³ 141,5; 1.000–2.500 m³ **141,2**
-(1.640 m³); 2.500–6.000 m³ 141,4 (2.580 m³); 6.000–12.000 m³ 142,5 (6.000 m³); 12.000–35.000 m³ 145,7 €/MWh.
-Zwischen 1.000 und 6.000 m³ liegen die Kosten innerhalb von ≈ 1 €/MWh; ein Saisonspeicher von 12.000 m³ ist
-≈ 4,5 €/MWh teurer. *(Frühere Befunde „Optimum bei 5.000/12.000 m³“ waren ein Artefakt der Preisstufen, E30.)*
+**Kostensegmente** (LCOH, V, A): 0–1.000 m³ 154,4; 1.000–2.500 m³ 153,2; **2.500–6.000 m³ 152,9 (4.560 m³)**;
+6.000–12.000 m³ 153,0 (7.410 m³, 41 % Solar); 12.000–35.000 m³ 159,4 €/MWh – das Optimum ist flach (2.500–12.000 m³
+innerhalb 0,1 €/MWh).
 
-Warum der Speicher kein Saisonspeicher ist und was sich ändern müsste: **docs/saisonaler_speicher.md**.
+**Betrieb über das Jahr** (`1_jahresverlauf.png`): Der Speicher wird Juli–Oktober mit Solarwärme geladen (bis 85 °C),
+im November/Dezember gehalten und im Januar zuerst direkt (Oberschicht noch ≈ 83–85 °C), danach im Februar/März
+über die Speicher-WP bis 10 °C entladen; März–Juni ist er praktisch leer. Direktentladung gibt es nur bei dicker
+heißer Schicht (`kennlinie_rest_MWh` = 0). Die Speicher-WP läuft auch im Sommer: dort nutzt sie den kalten Teil
+(10–45 °C), der beim Laden zwangsläufig mitgefüllt wird.
+
+## Was die Änderungen vom 10.11. bewirkt haben (Netz klein)
+
+| Stand | Kollektor / Speicher | LCOH | Wärmepreis inkl. Netz / Gas | Solar | Winteranteil |
+|---|---|---|---|---|---|
+| vorher (E31) | 2.540 m² / 1.640 m³ | 141,2 | 229 / 257 | 24 % | 28 % |
+| + KWW-Kosten Kollektor, PTES, Trasse (E32) | 4.500 / 7.010 | 131,8 | 221 / 261 | 42 % | 47 % |
+| + Kennlinie, Schichtung, Luft-WP nach KWW (E34–E36) = **Basis** | 3.680 / 4.560 | 152,9 | 247 / 261 | 35 % | 36 % |
+| Varianten (`serts varianten`) | siehe unten | | | | |
+
+Der größte Sprung (+21 €/MWh) kommt von der realistischeren Luft-WP (Arbeitszahl 2,65 → 2,22, E35); die Kennlinie
+macht den Speicher kleiner, weil nur die heiße Schicht direkt nutzbar ist.
+
+## Vergleichsvarianten (`uv run serts varianten`, Briefing Pflicht 5)
+
+| | Basis | ohne Speicher | nur WP + PtH | mit BEW Modul 2 (optimiert) | Gas-Fernwärme |
+|---|---|---|---|---|---|
+| Kollektor / Speicher | 3.680 m² / 4.560 m³ | 1.240 m² / – | – | 4.440 m² / 7.420 m³ | – |
+| Solaranteil / EE-Anteil | 35 % / 85 % | 9 % / 81 % | 0 % / 79 % | 41 % / 86 % | 0 |
+| CO₂ [t/a] | 660 | 840 | 920 | 600 | 1.160 |
+| LCOH Erzeugung [€/MWh] | 152,9 | 161,3 | 166,3 | 133,3 | 164,9 |
+| Wärmepreis inkl. Netz [€/MWh] | **246,9** | 257,0 | 263,1 | **214,3** | **261,4** |
+| dito mit BEW, gleiche Auslegung | 217,8 | 236,4 | 245,1 | 214,3 | – |
+
+* **Solar + Speicher lohnt sich**: gegenüber reiner WP + PtH −16 €/MWh, gegenüber Solar ohne Speicher −10 €/MWh.
+* **Mit BEW Modul 2** wird optimal mehr gebaut (7.400 m³, 41 % Solar), Wärmepreis ≈ 214 €/MWh (−18 % ggü. Gas).
+  40 % ist die Obergrenze; die BAFA begrenzt auf die Wirtschaftlichkeitslücke (E37).
+* `pareto.png` im Ergebnisordner zeigt EE-Anteil gegen Wärmepreis.
+
+> **Die folgenden Abschnitte (Strom, Sensitivitäten) sind Stand vor E32–E37** (alte Kosten, Luft-WP nach Lorenz, ohne Kennlinie) – Tornado wird neu gerechnet und hier ersetzt.
 
 ## Strom: fest gegen Day-Ahead (zwei Läufe, Szenarien `strom_day_ahead_*`)
 

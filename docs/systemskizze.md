@@ -20,9 +20,9 @@ flowchart LR
 
     SOLD["solar_direkt<br/>η = 1"]
     LAD["laden<br/>1 MWh Solar = 0,53 heiß + 0,47 kalt<br/>0,1 EUR/MWh Hilfskosten"]
-    ENT["entladen_direkt<br/>heiß → Netz, η = 1<br/>nur bei Füllstand ≥ 37,5 %"]
+    ENT["entladen_direkt<br/>heiß → Netz, η = 1<br/>nur bei dicker heißer Schicht"]
     UML["umlagern<br/>heiß → kalt, η = 1<br/>(Wärme unter der Direkt-Grenze<br/>nur noch über die WP nutzbar)"]
-    HPL["hp_luft<br/>COP(T_a) 2,1 bis 3,3<br/>nur wenn T_a ≥ -7 °C"]
+    HPL["hp_luft<br/>COP = 0,452 · T_VL / (T_VL − T_a)<br/>(KWW), 1,9 bei −5 °C bis 2,9 bei 25 °C<br/>nur wenn T_a ≥ -7 °C"]
     HPS["hp_speicher<br/>COP 4,5, ganzjährig"]
     WPO["wp_out ✱<br/>gemeinsame WP-Leistung<br/>(Luft + Speicher)"]
     PTH["pth ✱<br/>η = 0,99<br/>Leistung ≥ Spitzenlast (n-1)"]
@@ -45,7 +45,8 @@ flowchart LR
     C1["Nebenbedingung 1: Fläche<br/>2,3 · A + V / 2,65 ≤ 13.000 m²"]
     C2["Nebenbedingung 2: Größe Speicher<br/>kalt = 0,875 × heiß<br/>(gilt in jeder Stunde)"]
     C3["Nebenbedingung 3: Luft-WP bei Kälte<br/>Wärmeleistung ≤ 100 % bis 80 % von P_WP<br/>(ab -1 bis -7 °C)"]
-    C4["Nebenbedingung 4: Temperaturkennlinie<br/>Direktleistung ≤ (Inhalt − 37,5 % · Kapazität) / 0,1 h<br/>Oberschicht 85 °C erst ab Füllstand 37,5 %"]
+    C4["Nebenbedingung 4: Temperaturkennlinie (2. Lauf)<br/>Direktentladung nur in Stunden mit heißer Schicht<br/>≥ 30 % des heißen Teils (Übergangszone)"]
+    C5["Nebenbedingung 5: Schichtung konsistent<br/>kalter Teil relativ ≥ heißer Teil<br/>(WP kühlt nur Wasser, das nicht mehr heiß ist)"]
     C1 -.- KOL
     C1 -.- SPH
     C2 -.- SPH
@@ -55,6 +56,9 @@ flowchart LR
     C4 -.- ENT
     C4 -.- SPH
     C4 -.- SPK
+    C5 -.- SPH
+    C5 -.- SPK
+    C5 -.- HPS
 
     NETZ["Verteilnetz - nicht optimiert<br/>Trasse 2.432 m + 159 Hausanschlüsse<br/>nur Kosten: Wärmepreis beim Kunden"]
     LAST -.- NETZ
@@ -69,7 +73,7 @@ flowchart LR
     class NS,KOL quelle
     class SPH,SPK speicher
     class SOLD,LAD,ENT,UML,HPL,HPS,WPO,PTH link
-    class C1,C2,C3,C4,NETZ regel
+    class C1,C2,C3,C4,C5,NETZ regel
     class LAST last
 ```
 
@@ -83,8 +87,9 @@ flowchart LR
 - **Speicher:** Beladen füllt immer beide Teile im Verhältnis 53 : 47 (Wasser von 10 auf 85 °C). Direkt ins Netz
   geht nur der heiße Teil (und nur bei hohem Füllstand, E34), die Wärmepumpe holt ihre Quellwärme aus dem kalten Teil. Das ersetzt die frühere
   Jahresregel („Direktanteil ≤ 53 %“) und die Monatsbeschränkung (E27).
-- **Temperaturkennlinie (E34):** Oberschichttemperatur und Mitteltemperatur folgen aus dem Füllstand (`ptes.fuellstand_voll` = 0,375,
-  0 = aus); sie steuern die Direktentladung und erscheinen in den Ergebnisplots.
+- **Temperaturkennlinie (E34):** Direkt ins Netz nur, wenn die heiße Schicht dicker als die Übergangszone ist
+  (`ptes.schicht_min` = 0,3; 0 = aus). Umgesetzt mit zwei Läufen (1. ohne, 2. Direktentladung nur in den Stunden mit
+  dicker Schicht aus Lauf 1, dort als Bedingung). Speichertemperaturen oben/Mittel folgen aus den Füllständen.
 - **Nicht im Modell:** Wärmeübertrager-Grenzen, Transmissionsleitung, zeitliche Mischung im Speicher (nur die Füllstands-Kennlinie),
   WP lädt den Speicher (rechnet sich bei festem Strompreis nicht, siehe `docs/ausblick.md`), Teillast der WP,
   Frostschutz des Kollektorfelds, Stagnation, Netzhydraulik, Leistungspreis für Strom.

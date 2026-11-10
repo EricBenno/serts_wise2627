@@ -230,23 +230,18 @@ ptes:
     quelle: "BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh)"
     sens: [1.5e-5, 8.0e-5]
     hinweis: "PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10)."
-  fuellstand_voll:
-    wert: 0.375
+  schicht_min:
+    wert: 0.3
     einheit: "-"
     status: annahme
-    quelle: "Temperaturkennlinie des Speichers (Abschätzung): Oberschicht hat T_oben ab diesem Füllstand (Energieinhalt / Kapazität), darunter fällt sie linear bis T_unten (bei Füllstand 0). Kalibriert an Dronninglund: Dezember Füllstand 12-24 % (684-1.323 MWh von ≈ 5.500 MWh, Solites 2019) bei ≈ 50 °C Oberschicht (TEAM) -> (50-10)/(85-10) = 0,53; 0,2/0,53 = 0,375"
-    sens: [0.0, 0.25, 0.5]
-    hinweis: "0 = keine Kennlinie (altes Verhalten: Direktentladung bei jedem Füllstand). Gleiche Kennlinie liefert die Temperaturen in den Ergebnisplots. Ein Messwert der Oberschichttemperatur (Solites/DTU-Datensatz 2014-2020) würde die Annahme belegen. docs/entscheidungen.md E34."
+    quelle: "Temperaturkennlinie (Abschätzung): Übergangszone (Thermokline) zwischen heißem und kaltem Wasser ≈ 5 m bei 16 m Tiefe in Dronninglund (Größenordnung aus einer Simulationsstudie zu DRL: Schichtung 85 °C oben / 40 °C unten, Übergang 70-10 °C über ≈ 5 m; per Websuche gefunden, Volltext nicht geprüft) -> ≈ 0,3 des Volumens. Erst eine heiße Schicht dicker als diese Zone liefert oben T_oben."
+    sens: [0.0, 0.15, 0.5]
+    hinweis: "Plausibilität Dronninglund Dezember (Füllstand gesamt 12-24 %, oben ≈ 50 °C, TEAM): z. B. kalt 25 % / heiß 5 % -> Kennlinie oben ≈ 46 °C. 0 = keine Kennlinie (ideale Schichtung). docs/entscheidungen.md E34."
   direkt_dT:
     wert: 5
     einheit: "K"
     status: vorgabe
     quelle: "BRF §3.1: Direktentladung braucht T_oben >= T_VL + 5 K (Wärmeübertrager/Übergabe)"
-  direkt_glaettung:
-    wert: 0.1
-    einheit: "h"
-    status: vorgabe
-    quelle: "numerische Hilfsgröße: Direktleistung <= (Energie oberhalb der Grenzfüllstand) / 0,1 h -> volle Leistung ab ≈ 1,5 MWh Überschuss (je Netz), danach fest 'an/aus'"
   kosten_ref:
     wert: 67.77
     einheit: "EUR/m3"
@@ -378,12 +373,25 @@ waermepumpe:
     einheit: "K"
     status: vorgabe
     quelle: "BRF §3.4 (je Seite 3 K)"
+  cop_ansatz_luft:
+    wert: kww
+    einheit: "-"
+    status: vorgabe
+    quelle: "KWW Tab. 24/25: COP = Gütegrad x T_VL / (T_VL - T_a) mit Gütegrad 46 % (70 °C) bzw. 44 % (95 °C), JAZ 2,5 bzw. 1,8 bei 7 °C Heizperiodenmittel; für 80 °C linear 45,2 % -> COP 2,19 bei 7 °C. Ersetzt den Lorenz-Ansatz des Briefings (der war ≈ 20 % optimistischer: Arbeitszahl 2022 2,65 statt 2,22)."
+    sens: [lorenz]
+    hinweis: "lorenz = Briefing-Ansatz (eta_G_luft, Abtauabschlag, logarithmische Mitteltemperaturen). Heizperiode 2022 (Okt-Apr) 6,4 °C, Mittel 1992-2021 5,5 °C (DWD 03028) -> Wetterjahr nur ≈ 1 % günstiger. docs/entscheidungen.md E35."
+  guetegrad_faktor:
+    wert: 1.0
+    einheit: "-"
+    status: vorgabe
+    quelle: "Faktor auf den KWW-Gütegrad (Sensitivität; KWW-Unsicherheit der JAZ ±30 %)"
+    sens: [0.85, 1.15]
   eta_G_luft:
     wert: 0.50
     einheit: "-"
     status: annahme
     quelle: "BRF §3.4: Rückrechnung GEA Swaffham (Luft, 55->75 degC, COP 2,5-3,5)"
-    sens: [0.45, 0.60]
+    hinweis: "Nur für cop_ansatz_luft = lorenz."
   luft_spreizung:
     wert: 5
     einheit: "K"
@@ -632,7 +640,13 @@ oekonomie:
     status: vorgabe
     quelle: "AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss"
     sens: [0.4]
-    hinweis: "Variante 0,4 = BEW Modul 2 (BAFA, bis zu 40 % der förderfähigen Ausgaben). Gilt nur für Komponenten mit oekonomie.foerderfaehig = true (Kollektor, PTES, WP, Trasse); nicht für PtH, Hausanschluss (ungeklärt) und die Gas-Referenz."
+    hinweis: "Variante 0,4 = BEW Modul 2 (BAFA, bis zu 40 % der förderfähigen Ausgaben). Gilt nur für Komponenten mit oekonomie.foerderfaehig = true (Kollektor, PTES, WP, Trasse); nicht für PtH, Hausanschluss (ungeklärt) und die Gas-Referenz. Wirkt auf die Optimierung (Szenario bew_modul2)."
+  bew_ausweis_quote:
+    wert: 0.4
+    einheit: "-"
+    status: belegt
+    quelle: "BEW Richtlinie 7.1.2: Modul 2 bis zu 40 % der förderfähigen Ausgaben (docs/foerderung_bew.md)"
+    hinweis: "Jeder Lauf weist zusätzlich die Kosten MIT BEW Modul 2 für dieselbe Auslegung aus (Kennzahlen *_bew). Obergrenze: der tatsächliche Zuschuss ist auf die Wirtschaftlichkeitslücke begrenzt (BAFA-Berechnung, hier nicht modelliert). 0 = kein Ausweis."
   preisaenderung:
     invest:
       wert: 0.0
@@ -770,9 +784,9 @@ tornado:
       - last.skalierung
       - last.ankerkunde_anteil
       - ptes.verlustrate
-      - ptes.fuellstand_voll
+      - ptes.schicht_min
       - waermepumpe.COP_ptes
-      - waermepumpe.eta_G_luft
+      - waermepumpe.guetegrad_faktor
       - netz.T_RL
       - kollektor.kosten_spez
       - waermepumpe.kosten_spez

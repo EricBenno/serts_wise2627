@@ -105,6 +105,10 @@ def _cmd_run(a):
         ("  Gas-Fernwärme inkl. Netz", "gas_lcoh_inkl_netz", "{:.1f}"),
         ("  davon Wärmenetz Trasse [EUR/MWh]", "netzkosten_spez_trasse", "{:.1f}"),
         ("  davon Hausanschl. + Übergabest. [EUR/MWh]", "netzkosten_spez_hausanschluss", "{:.1f}"),
+        ("Mit BEW Modul 2 (max. 40 %, gleiche Auslegung):", None, ""),
+        ("  LCOH [EUR/MWh]", "lcoh_bew", "{:.1f}"),
+        ("  Wärmepreis inkl. Netz [EUR/MWh]", "lcoh_inkl_netz_bew", "{:.1f}"),
+        ("  Zuschuss [Mio. EUR]", "zuschuss_bew_EUR", "{:.2f}"),
         ("Solaranteil", "solar_gesamt", "{:.1%}"),
         ("Erneuerbaren-Anteil", "ee_anteil", "{:.1%}"),
         ("CO2 System [t/a]", "co2_t_a", "{:,.0f}"),
@@ -117,14 +121,25 @@ def _cmd_run(a):
         ("Flächenbedarf [m2]", "flaeche_m2", "{:,.0f}"),
     ]
     for text, key, fmt in zeilen:
-        if key in k:
-            print(f"{text:30s} {fmt.format(k[key])}")
+        if key is None:
+            print(text)
+        elif key in k:
+            wert = k[key] / 1e6 if key == "zuschuss_bew_EUR" else k[key]
+            print(f"{text:30s} {fmt.format(wert)}")
     print(f"{'Gas-Referenz CO2 [t/a]':30s} {k['gas_co2_t_a']:,.0f}")
     if "speicher_preis_EUR_m3" in k:
         print(f"{'Speicherpreis Durchschnitt [EUR/m3]':30s} {k['speicher_preis_EUR_m3']:.0f}")
     for zeile in k.get("segmente_vergleich", []):
         print(f"  Kostensegment {zeile}")
     print(f"\nErgebnis: {out}")
+
+
+def _cmd_varianten(a):
+    from serts.varianten import varianten
+
+    out = varianten(_cfg(a), jobs=a.jobs)
+    print((out / "varianten.md").read_text("utf-8"))
+    print(f"Ergebnis: {out}")
 
 
 def _cmd_tornado(a):
@@ -179,6 +194,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
     p.add_argument("--jobs", type=int, default=4, help="parallele Läufe (je 1 Thread)")
     p.set_defaults(func=_cmd_tornado)
+
+    p = sub.add_parser(
+        "varianten", help="Vergleich: Basis, ohne Speicher, nur WP+PtH, mit BEW (+ Gas-Referenz)"
+    )
+    p.add_argument("--szenario", default=None)
+    p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
+    p.add_argument("--jobs", type=int, default=2, help="parallele Läufe")
+    p.set_defaults(func=_cmd_varianten)
 
     p = sub.add_parser(
         "fetch-strompreise", help="Day-Ahead-Preise DE-LU laden (Energy-Charts/SMARD)"

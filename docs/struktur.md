@@ -21,8 +21,11 @@ Als Mermaid-Diagramm (exakt wie gerechnet): [docs/systemskizze.md](systemskizze.
   Kollektorfeld, Speicher, Wärmepumpe und PtH fest.
 - **Speicher in zwei Teilen** (heiß: direkt nutzbar, kalt: nur über die WP), Beladen im festen Verhältnis 53 : 47 (E27).
 - Speicherkosten als stetige, mit der Größe degressive Kurve (stückweise linear): je Kostensegment ein Lauf, das günstigste gewinnt (E30).
-- Drei Zusatzbedingungen (`constraints.py`): Fläche ≤ 13.000 m², Speicherteile im festen Größenverhältnis,
-  Luft-WP-Leistung sinkt bei Kälte.
+- Zusatzbedingungen (`constraints.py`): Fläche (13.000 bzw. 80.000 m²), Speicherteile im festen Größenverhältnis,
+  Luft-WP-Leistung sinkt bei Kälte, Schichtung konsistent (E36); **Temperaturkennlinie**: Direktentladung nur bei
+  dicker heißer Schicht, umgesetzt mit zwei Läufen in `network.optimize` (E34).
+- Luft-WP: COP nach KWW-Gütegrad (≈ 45 % von Carnot auf den Vorlauf, E35); Speicher-WP COP 4,5.
+- BEW Modul 2 wird in jedem Lauf zusätzlich ausgewiesen (Obergrenze 40 %, E37).
 - Kosten nach VDI 2067-1 inkl. 10 % Nebenkosten; Strom in Energie/Netzentgelt/Abgaben getrennt; Wärmenetz
   (Trasse, Hausanschlüsse) getrennt ausgewiesen (E25, E28).
 - Alle Zahlen stehen in `config/base.yaml` (mit Quelle/Status); Varianten als kleine YAML-Dateien in
@@ -38,7 +41,8 @@ uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis); ko
 uv run serts run --netz gross            # größeres Netz (config/netze/gross.yaml), Ausgabe in results/gross/
 uv run serts uebersicht                  # docs/eingangsparameter.md (Netz klein + groß) neu erzeugen
 uv run serts run --stunden 168           # Schnelltest
-uv run serts tornado                     # Sensitivitäten (≈ 45 Varianten, ≈ 20–25 min)
+uv run serts varianten [--netz gross]    # Basis / ohne Speicher / nur WP+PtH / mit BEW (+ Gas-Referenz)
+uv run serts tornado                     # Sensitivitäten (≈ 45 Varianten, ≈ 1 h)
 uv run serts prepare                     # nur Zeitreihen + Plots
 uv run serts annahmen                    # docs/annahmen.md neu erzeugen
 uv run serts fetch-strompreise 2022 2023 2024   # Day-Ahead-Preise laden (einmalig, Netzzugang)
@@ -56,11 +60,12 @@ Zeitreihen in `data/processed/<netz>/<szenario>/`): `kpi.json` (alle Kennzahlen)
 |---|---|
 | `config.py` | YAML laden/prüfen (Basis → Netzfall → Szenario); `cfg.get("a.b")` bricht ab, wenn der Wert fehlt |
 | `uebersicht.py` | zentrale Parameterübersicht → `docs/eingangsparameter.md` |
+| `varianten.py` | Vergleichsvarianten der Leitfrage (Briefing Pflicht 5) + Pareto-Grafik |
 | `sources/` | Leser: Netzberechnung (Excel), DWD, Rohdaten-Import |
 | `demand.py`, `weather.py`, `solar.py`, `heatpump.py`, `prices.py` | Zeitreihen: Last, T_a, Strahlung, Kollektorleistung, COP, Strompreis |
 | `prepare.py` | baut daraus eine Tabelle 8760 h |
 | `network.py` | das PyPSA-Netz (Bild oben) |
-| `constraints.py` | Fläche + Direktanteil |
+| `constraints.py` | Fläche, Speicherverhältnis, Luft-WP bei Kälte, Schichtung, Kennlinie (2. Lauf) |
 | `kpi.py` | Kennzahlen: Bilanzen, Solar-/EE-Anteil, Speicher-η, LCOH, Wärmepreis inkl. Netz, CO₂, Gas-Referenz |
 | `ergebnisplots.py` | Grafiken je Lauf: Jahresverlauf, Typwochen, Dauerlinie, Tag×Stunde, Jahresbilanz/Kosten |
 | `tornado.py` | Sensitivitäten (Parameterliste `tornado.parameter`, Werte aus `sens`) |

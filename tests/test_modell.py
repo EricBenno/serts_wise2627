@@ -89,35 +89,81 @@ def test_speicherteile_wachsen_im_festen_verhaeltnis(cfg, ts):
 
 
 def test_temperaturkennlinie_werte(cfg):
-    # Kalibrierung Dronninglund: Füllstand 0,2 -> Oberschicht ≈ 50 °C; voll ab 0,375; leer = T_unten
-    f = pd.Series([0.0, 0.2, 0.375, 0.5, 1.0])
-    oben, mittel = network.temperaturen_speicher(cfg, f)
-    np.testing.assert_allclose(oben, [10.0, 50.0, 85.0, 85.0, 85.0], atol=0.01)
-    np.testing.assert_allclose(mittel, [10.0, 25.0, 38.125, 47.5, 85.0], atol=0.01)
-    # T_VL 80 + 5 K = T_oben -> Direktentladung erst ab "voll"
-    assert network.fuellstand_direkt(cfg) == pytest.approx(0.375)
-    # kälteres Netz (VL 60): Oberschicht 65 °C genügt -> niedrigerer Mindestfüllstand
-    assert network.fuellstand_direkt(cfg.variante("netz.T_VL", 60)) == pytest.approx(
-        0.375 * 55 / 75
+    # Füllstände (heiß, kalt) -> Temperatur oben / Mittel; Übergangszone 0,3
+    s_h = pd.Series([0.0, 0.0, 0.05, 0.3, 1.0])
+    s_k = pd.Series([0.0, 1.0, 0.25, 1.0, 1.0])
+    oben, mittel = network.temperaturen_speicher(cfg, s_h, s_k)
+    # leer 10 °C; nur kalter Teil voll -> 45 °C (kein heißes Wasser!); Dronninglund-Dezember ≈ 46 °C
+    np.testing.assert_allclose(
+        oben, [10.0, 45.0, 10 + 35 * 0.25 / 0.3 + 40 * 0.05 / 0.3, 85.0, 85.0]
     )
+    np.testing.assert_allclose(mittel, [10.0, 45.0, 10 + 35 * 0.25 + 40 * 0.05, 57.0, 85.0])
+    # T_VL 80 + 5 K = T_oben -> heiße Schicht muss die volle Übergangszone überdecken
+    assert network.fuellstand_direkt(cfg) == pytest.approx(0.3)
+    # kälteres Netz (VL 60): oben 65 °C genügt -> dünnere heiße Schicht reicht
+    assert network.fuellstand_direkt(cfg.variante("netz.T_VL", 60)) == pytest.approx(0.3 * 20 / 40)
 
 
-def test_direktentladung_nur_bei_hohem_fuellstand(cfg, ts, netz_fest):
+def test_direktentladung_nur_bei_dicker_heisser_schicht(cfg, ts, netz_fest):
     s_min = network.fuellstand_direkt(cfg)
-    e = netz_fest.stores_t.e
-    E = netz_fest.stores.loc[["ptes_heiss", "ptes_kalt"], "e_nom"].sum()
-    ueberschuss = e["ptes_heiss"] + e["ptes_kalt"] - s_min * E
+    e_h = netz_fest.stores_t.e["ptes_heiss"]
+    start = e_h.shift(1, fill_value=float(e_h.iloc[-1]))
+    duenn = start < s_min * netz_fest.stores.at["ptes_heiss", "e_nom"] * (1 - 1e-6)
     p = netz_fest.links_t.p0["entladen_direkt"]
-    assert (p <= ueberschuss / cfg.get("ptes.direkt_glaettung") + 1e-6).all()
-    assert (p[ueberschuss < -1e-6] <= 1e-6).all()
+    assert (p[duenn] <= 1e-6).all()
+    # der Speicher darf trotzdem unter die Grenze entladen werden (über die WP) - kein Mindestinhalt
+    assert netz_fest.meta["kennlinie_rest_MWh"] == pytest.approx(0.0, abs=1e-3)
+
+
+def test_kalter_teil_hebt_direktentladung_nicht(cfg, ts):
+    """Voller kalter Teil + fast leerer heißer Teil: keine Direktentladung (früherer 'Ballast'-Fehler)."""
+    n = network.build_network(cfg, ts, A_m2=0.0, V_m3=3000.0)
+    E_h = n.stores.at["ptes_heiss", "e_nom"]
+    E_k = n.stores.at["ptes_kalt", "e_nom"]
+    # Startinhalt erzwingen: kalt voll, heiß 10 % (unter der Grenze 30 %); nicht zyklisch
+    n.stores.loc[["ptes_heiss", "ptes_kalt"], "e_cyclic"] = False
+    n.stores.loc["ptes_heiss", "e_initial"] = 0.1 * E_h
+    n.stores.loc["ptes_kalt", "e_initial"] = E_k
+    network.optimize(n, cfg, ts)
+    assert n.links_t.p0["entladen_direkt"].sum() <= 1e-6
+    # die Wärme ist trotzdem nutzbar: über die Speicher-WP (umlagern -> kalt -> WP)
+    assert n.links_t.p0["hp_speicher"].sum() > 0
+
+
+def test_schichtung_konsistent(cfg, ts, netz_fest):
+    """Kalter Teil relativ mindestens so voll wie der heiße (heißes Wasser enthält seinen 10-45-°C-Anteil)."""
+    e = netz_fest.stores_t.e
+    E = netz_fest.stores.e_nom
+    s_h = e["ptes_heiss"] / E["ptes_heiss"]
+    s_k = e["ptes_kalt"] / E["ptes_kalt"]
+    assert (s_k >= s_h - 1e-6).all()
 
 
 def test_kennlinie_aus_ist_altes_verhalten(cfg, ts):
-    c = cfg.variante("ptes.fuellstand_voll", 0.0)
+    c = cfg.variante("ptes.schicht_min", 0.0)
     n = network.build_network(c, ts, A_m2=3000.0, V_m3=3000.0)
     assert "umlagern" not in n.links.index
     network.optimize(n, c, ts)
-    assert "speicher_direkt_kennlinie" not in n.model.constraints
+    assert n.meta["kennlinie_aktiv"] is False
+
+
+def test_bew_ausweis(cfg, ts):
+    n, k, _ = loese(cfg, ts, A_m2=2000.0, V_m3=2000.0)
+    assert k["lcoh_bew"] < k["lcoh"]
+    assert k["lcoh_inkl_netz_bew"] < k["lcoh_inkl_netz"]
+    # Zuschuss = 40 % x (1 + Nebenkosten) x förderfähige Invests (Kollektor, PTES, WP, Trasse)
+    q, nk = 0.4, 1.0 + cfg.get("oekonomie.nebenkosten")
+    soll = (
+        q
+        * nk
+        * (
+            2000.0 * cfg.get("kollektor.kosten_spez")
+            + economics.ptes_invest(cfg, 2000.0)
+            + k["P_WP_MW"] * cfg.get("waermepumpe.kosten_spez")
+            + k["netz_invest_trasse_EUR"]
+        )
+    )
+    assert k["zuschuss_bew_EUR"] == pytest.approx(soll, rel=1e-6)
 
 
 def test_luft_wp_leistung_sinkt_bei_kaelte(cfg, ts, netz_fest):

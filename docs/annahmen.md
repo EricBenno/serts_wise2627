@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 35, vorgabe 46, annahme 42, offen 0
+Status: belegt 36, vorgabe 47, annahme 42, offen 0
 
 
 ## standort
@@ -62,9 +62,8 @@ Status: belegt 35, vorgabe 46, annahme 42, offen 0
 | `ptes.T_oben` | 85 | degC | vorgabe | BRF §3.1; Liner-Grenze (Xiang et al. 2022) | 90 | Direktentladung braucht T_oben >= T_VL + 5 K = 85 degC -> bei VL 80 genau an der Grenze. |
 | `ptes.T_unten` | 10 | degC | vorgabe | BRF §3.1; DRL Tmin 9-12 degC |  |  |
 | `ptes.verlustrate` | 4e-05 | 1/h | annahme | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) | 1.5e-05, 8e-05 | PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10). |
-| `ptes.fuellstand_voll` | 0.375 | - | annahme | Temperaturkennlinie des Speichers (Abschätzung): Oberschicht hat T_oben ab diesem Füllstand (Energieinhalt / Kapazität), darunter fällt sie linear bis T_unten (bei Füllstand 0). Kalibriert an Dronninglund: Dezember Füllstand 12-24 % (684-1.323 MWh von ≈ 5.500 MWh, Solites 2019) bei ≈ 50 °C Oberschicht (TEAM) -> (50-10)/(85-10) = 0,53; 0,2/0,53 = 0,375 | 0, 0.25, 0.5 | 0 = keine Kennlinie (altes Verhalten: Direktentladung bei jedem Füllstand). Gleiche Kennlinie liefert die Temperaturen in den Ergebnisplots. Ein Messwert der Oberschichttemperatur (Solites/DTU-Datensatz 2014-2020) würde die Annahme belegen. docs/entscheidungen.md E34. |
+| `ptes.schicht_min` | 0.3 | - | annahme | Temperaturkennlinie (Abschätzung): Übergangszone (Thermokline) zwischen heißem und kaltem Wasser ≈ 5 m bei 16 m Tiefe in Dronninglund (Größenordnung aus einer Simulationsstudie zu DRL: Schichtung 85 °C oben / 40 °C unten, Übergang 70-10 °C über ≈ 5 m; per Websuche gefunden, Volltext nicht geprüft) -> ≈ 0,3 des Volumens. Erst eine heiße Schicht dicker als diese Zone liefert oben T_oben. | 0, 0.15, 0.5 | Plausibilität Dronninglund Dezember (Füllstand gesamt 12-24 %, oben ≈ 50 °C, TEAM): z. B. kalt 25 % / heiß 5 % -> Kennlinie oben ≈ 46 °C. 0 = keine Kennlinie (ideale Schichtung). docs/entscheidungen.md E34. |
 | `ptes.direkt_dT` | 5 | K | vorgabe | BRF §3.1: Direktentladung braucht T_oben >= T_VL + 5 K (Wärmeübertrager/Übergabe) |  |  |
-| `ptes.direkt_glaettung` | 0.1 | h | vorgabe | numerische Hilfsgröße: Direktleistung <= (Energie oberhalb der Grenzfüllstand) / 0,1 h -> volle Leistung ab ≈ 1,5 MWh Überschuss (je Netz), danach fest 'an/aus' |  |  |
 | `ptes.kosten_ref` | 67.77 | EUR/m3 | belegt | KWW Tab. 52 (Erdbeckenspeicher): Kostenkurve Invest = 1093,6 * V^0,7472 (2026, netto) bei V_ref = 60.000 m3 -> 67,8 EUR/m3; Stützwerte 20.000 m3 90, 50.000 m3 70, 100.000 m3 60, 200.000 m3 50 EUR/m3 |  | Frühere Basis (SIF/DRL 2014: 38,3 EUR/m3 bei 60.000 m3 x Index 1,5 = 57,5) liegt bei 60.000 m3 ≈ 15 % niedriger; bei 1.600 m3 praktisch gleich (175 vs. 168 EUR/m3). docs/entscheidungen.md E32. |
 | `ptes.V_ref` | 60000 | m3 | belegt | Bezugsgröße der Kostenkurve (innerhalb der KWW-Stützwerte 20.000-200.000 m3) |  |  |
 | `ptes.kosten_exponent` | -0.2528 | - | belegt | KWW Tab. 52: Invest ~ V^0,7472 -> spezifisch ~ V^-0,2528 | -0.2, -0.4 | Gültigkeit laut KWW 20.000-200.000 m3; darunter (Basisfall klein: 1.000-6.000 m3) extrapoliert -> unsicher, Sensitivität ptes.kosten_faktor. Marstal 10.000 m3 real ≈ 67 EUR/m3 (2014). |
@@ -96,7 +95,9 @@ Status: belegt 35, vorgabe 46, annahme 42, offen 0
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
 | `waermepumpe.approach` | 3 | K | vorgabe | BRF §3.4 (je Seite 3 K) |  |  |
-| `waermepumpe.eta_G_luft` | 0.5 | - | annahme | BRF §3.4: Rückrechnung GEA Swaffham (Luft, 55->75 degC, COP 2,5-3,5) | 0.45, 0.6 |  |
+| `waermepumpe.cop_ansatz_luft` | kww | - | vorgabe | KWW Tab. 24/25: COP = Gütegrad x T_VL / (T_VL - T_a) mit Gütegrad 46 % (70 °C) bzw. 44 % (95 °C), JAZ 2,5 bzw. 1,8 bei 7 °C Heizperiodenmittel; für 80 °C linear 45,2 % -> COP 2,19 bei 7 °C. Ersetzt den Lorenz-Ansatz des Briefings (der war ≈ 20 % optimistischer: Arbeitszahl 2022 2,65 statt 2,22). | lorenz | lorenz = Briefing-Ansatz (eta_G_luft, Abtauabschlag, logarithmische Mitteltemperaturen). Heizperiode 2022 (Okt-Apr) 6,4 °C, Mittel 1992-2021 5,5 °C (DWD 03028) -> Wetterjahr nur ≈ 1 % günstiger. docs/entscheidungen.md E35. |
+| `waermepumpe.guetegrad_faktor` | 1 | - | vorgabe | Faktor auf den KWW-Gütegrad (Sensitivität; KWW-Unsicherheit der JAZ ±30 %) | 0.85, 1.15 |  |
+| `waermepumpe.eta_G_luft` | 0.5 | - | annahme | BRF §3.4: Rückrechnung GEA Swaffham (Luft, 55->75 degC, COP 2,5-3,5) |  | Nur für cop_ansatz_luft = lorenz. |
 | `waermepumpe.luft_spreizung` | 5 | K | vorgabe | BRF §3.4: Quelle T_a -> T_a - 5 K |  |  |
 | `waermepumpe.abtau_abschlag` | 0.05 | - | annahme | BRF §3.4 (x) | 0, 0.1 |  |
 | `waermepumpe.abtau_grenze` | 5 | degC | annahme | BRF §3.4: Abschlag für T_a < 5 degC |  |  |
@@ -162,7 +163,8 @@ Status: belegt 35, vorgabe 46, annahme 42, offen 0
 | `oekonomie.foerderfaehig.netz` | True | - | belegt | BEW Richtlinie 4.2: Rohrleitungssystem inkl. Verlegung und Dämmung |  |  |
 | `oekonomie.foerderfaehig.hausanschluss` | False | - | annahme | Hausanschlussleitungen im gelesenen BEW-Text nicht ausdrücklich genannt -> konservativ nicht förderfähig; klären |  |  |
 | `oekonomie.foerderfaehig.gaskessel` | False | - | belegt | BEW: fossile Wärmeerzeuger nicht förderfähig (Gas-Referenz) |  |  |
-| `oekonomie.foerderquote` | 0 | - | vorgabe | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss | 0.4 | Variante 0,4 = BEW Modul 2 (BAFA, bis zu 40 % der förderfähigen Ausgaben). Gilt nur für Komponenten mit oekonomie.foerderfaehig = true (Kollektor, PTES, WP, Trasse); nicht für PtH, Hausanschluss (ungeklärt) und die Gas-Referenz. |
+| `oekonomie.foerderquote` | 0 | - | vorgabe | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss | 0.4 | Variante 0,4 = BEW Modul 2 (BAFA, bis zu 40 % der förderfähigen Ausgaben). Gilt nur für Komponenten mit oekonomie.foerderfaehig = true (Kollektor, PTES, WP, Trasse); nicht für PtH, Hausanschluss (ungeklärt) und die Gas-Referenz. Wirkt auf die Optimierung (Szenario bew_modul2). |
+| `oekonomie.bew_ausweis_quote` | 0.4 | - | belegt | BEW Richtlinie 7.1.2: Modul 2 bis zu 40 % der förderfähigen Ausgaben (docs/foerderung_bew.md) |  | Jeder Lauf weist zusätzlich die Kosten MIT BEW Modul 2 für dieselbe Auslegung aus (Kennzahlen *_bew). Obergrenze: der tatsächliche Zuschuss ist auf die Wirtschaftlichkeitslücke begrenzt (BAFA-Berechnung, hier nicht modelliert). 0 = kein Ausweis. |
 | `oekonomie.preisaenderung.invest` | 0 | 1/a | vorgabe | TEAM: reale Rechnung, Ersatzinvestitionen ohne reale Preisänderung (VDI 2067: r_K) |  |  |
 | `oekonomie.preisaenderung.betrieb` | 0 | 1/a | vorgabe | TEAM: reale Rechnung (VDI 2067: r_IN für Instandhaltung) |  |  |
 | `oekonomie.preisaenderung.strom` | 0 | 1/a | vorgabe | TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a | 0.02 |  |
@@ -196,4 +198,4 @@ Status: belegt 35, vorgabe 46, annahme 42, offen 0
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.fuellstand_voll', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |
+| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.schicht_min', 'waermepumpe.COP_ptes', 'waermepumpe.guetegrad_faktor', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

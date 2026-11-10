@@ -37,46 +37,43 @@ def _stapel(ax, df: pd.DataFrame) -> None:
 
 
 def jahresverlauf(r: pd.DataFrame, out: Path) -> Path:
-    """Oben: Wärmeherkunft (Tagesmittel, gestapelt) + Last. Unten: Speicherinhalt + Außentemperatur."""
+    """Oben: Wärmeherkunft (Tagesmittel) + Last. Mitte: Speicherinhalt heiß/kalt. Unten: Speichertemperaturen."""
     q = _quellen(r).resample("D").mean()
-    fig, (a1, a2) = plt.subplots(
-        2, 1, figsize=(12, 7), sharex=True, gridspec_kw={"height_ratios": [2, 1]}
+    fig, (a1, a2, a3) = plt.subplots(
+        3, 1, figsize=(12, 9), sharex=True, gridspec_kw={"height_ratios": [2, 1, 1]}
     )
     _stapel(a1, q)
     a1.plot(q.index, r["last"].resample("D").mean(), "k", lw=1, label="Last (inkl. Netzverluste)")
     a1.set_ylabel("Wärme [MW] (Tagesmittel)")
     a1.legend(ncol=6, fontsize=8, loc="upper center")
     a1.set_title("Wer deckt wann die Last?")
-    a2.fill_between(
+    a2.stackplot(
         r.index,
-        r["speicherinhalt"],
-        color="#f28e2b",
-        alpha=0.4,
-        label="Speicherinhalt (Energie in MWh, bez. auf 10 °C)",
+        r["speicher_kalt"],
+        r["speicher_heiss"],
+        labels=["kalter Teil (10-45 °C, nur über WP)", "heißer Teil (45-85 °C, direkt nutzbar)"],
+        colors=["#9ecae1", "#f28e2b"],
+        alpha=0.8,
+        linewidth=0,
     )
     a2.set_ylabel("Speicherinhalt [MWh]")
+    a2.legend(fontsize=8, loc="upper left")
     if "T_speicher_oben" in r:
-        a3 = a2.twinx()
         a3.plot(
             r["T_speicher_oben"].resample("D").mean(),
             color="#d62728",
             lw=1.0,
-            label="Speichertemperatur oben (Kennlinie aus Füllstand)",
+            label="oben (Kennlinie, Tagesmittel)",
         )
-        a3.plot(
-            r["T_speicher_mittel"].resample("D").mean(),
-            color="#7f7f7f",
-            lw=0.8,
-            label="Speichertemperatur Mittel",
+        a3.plot(r["T_speicher_mittel"].resample("D").mean(), color="#555", lw=1.0, label="Mittel")
+    if "T_direkt_noetig" in r.attrs:
+        a3.axhline(
+            r.attrs["T_direkt_noetig"], color="k", ls=":", lw=1, label="nötig für Direktentladung"
         )
-        a3.set_ylim(0, 100)
-        a3.set_ylabel("Speichertemperatur [°C]", color="#d62728")
-        a3.tick_params(axis="y", colors="#d62728")
-        a3.legend(fontsize=8, loc="upper right")
-    a2.set_ylabel("Speicher [MWh]", color="#c06c00")
-    a2.tick_params(axis="y", colors="#c06c00")
-    a2.legend(fontsize=8, loc="upper left")
-    for a in (a1, a2):
+    a3.set_ylim(0, 100)
+    a3.set_ylabel("Speicher [°C]")
+    a3.legend(fontsize=8, loc="upper left", ncol=3)
+    for a in (a1, a2, a3):
         a.grid(alpha=0.3)
     fig.tight_layout()
     fig.savefig(out, dpi=150)
@@ -227,6 +224,12 @@ def jahresbilanz(r: pd.DataFrame, k: dict, out: Path) -> Path:
         "CO₂": "#59595c",
     }
     gesehen = set()
+    if "lcoh_inkl_netz_bew" in k:
+        h = k["lcoh_inkl_netz_bew"]
+        a2.bar(2, h, color="#8cd17d", edgecolor="w", width=0.6, label="mit BEW Modul 2 (gesamt)")
+        a2.text(2, h + 2, f"{h:.0f} €/MWh", ha="center", fontweight="bold")
+        zuschuss = k["zuschuss_bew_EUR"] / 1e6
+        a2.text(2, h / 2, f"Zuschuss\n{zuschuss:.1f} Mio. €", ha="center", fontsize=8)
     for x, teile in [(0, sys_teile), (1, gas_teile)]:
         unten = 0.0
         for name, v in teile.items():
@@ -240,7 +243,12 @@ def jahresbilanz(r: pd.DataFrame, k: dict, out: Path) -> Path:
         a2.text(x, unten + 2, f"{unten:.0f} €/MWh", ha="center", fontweight="bold")
     a2.set_ylim(0, a2.get_ylim()[1] * 1.12)
     a2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=4)
-    a2.set_xticks([0, 1], ["Solar + PTES + WP + PtH", "Gas-Referenz"])
+    if "lcoh_inkl_netz_bew" in k:
+        a2.set_xticks(
+            [0, 1, 2], ["Solar + PTES + WP + PtH", "Gas-Referenz", "System mit BEW\n(max. 40 %)"]
+        )
+    else:
+        a2.set_xticks([0, 1], ["Solar + PTES + WP + PtH", "Gas-Referenz"])
     a2.set_ylabel("€ je MWh geliefert (inkl. Netz)")
     a2.set_title("Was kostet die Wärme beim Kunden? (VDI 2067, real)")
     a2.grid(axis="y", alpha=0.3)

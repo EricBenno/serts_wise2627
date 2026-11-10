@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from serts.heatpump import cop_lorenz, cop_luft, p_max_pu_luft, tlog
+from serts.heatpump import cop_kww, cop_lorenz, cop_luft, guetegrad_kww, p_max_pu_luft, tlog
 
 
 def test_tlog_handrechnung():
@@ -32,10 +32,21 @@ def test_cop_luft_briefing(t_luft, soll):
     assert cop == pytest.approx(soll, rel=0.05)
 
 
-def test_cop_luft_mit_abtau(cfg):
+def test_cop_luft_kww(cfg):
+    # KWW Tab. 24/25: JAZ 2,5 (70 °C, Gütegrad 46 %) und 1,8 (95 °C, 44 %) bei 7 °C Quelle
+    assert float(cop_kww(70, 7, 0.46)) == pytest.approx(2.5, abs=0.01)
+    assert float(cop_kww(95, 7, 0.44)) == pytest.approx(1.8, abs=0.05)
+    # Basis: Vorlauf 80 °C -> Gütegrad 45,2 % -> COP 2,19 bei 7 °C
+    assert guetegrad_kww(cfg) == pytest.approx(0.452)
+    cop = cop_luft(cfg, pd.Series([7.0, -5.0]))
+    np.testing.assert_allclose(cop, [2.187, 0.452 * 353.15 / 85], rtol=1e-3)
+
+
+def test_cop_luft_lorenz_mit_abtau(cfg):
+    c = cfg.variante("waermepumpe.cop_ansatz_luft", "lorenz")
     T = pd.Series([-5.0, 4.9, 5.0, 10.0])
-    cop = cop_luft(cfg, T)
-    ref = cop_lorenz(cfg.get("netz.T_RL"), cfg.get("netz.T_VL"), T, T - 5, eta_g=0.5, approach=3)
+    cop = cop_luft(c, T)
+    ref = cop_lorenz(c.get("netz.T_RL"), c.get("netz.T_VL"), T, T - 5, eta_g=0.5, approach=3)
     np.testing.assert_allclose(cop.to_numpy(), ref * np.array([0.95, 0.95, 1.0, 1.0]))
 
 

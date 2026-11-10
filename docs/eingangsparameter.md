@@ -43,7 +43,8 @@ Szenario: **base**. "=" heißt: im großen Netz gleicher Wert wie im kleinen. St
 | Betrachtungszeitraum | 20 | = | a | V | TEAM |
 | Preisbasis | 2025 | = | a | V | TEAM: 2025/26 |
 | Planungs-/Nebenkosten auf alle Investitionen | 10 | = | % | V | TEAM 09.11.2026: ca. 10 % Planungs-/Nebenkosten auf alle Investitionen … |
-| Förderquote (BEW, nur förderfähige Teile) | 0 | = | % | V | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss |
+| Förderquote in der Optimierung (Basis ohne) | 0 | = | % | V | AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss |
+| BEW Modul 2: Ausweis je Lauf (Obergrenze) | 40 | = | % | B | BEW Richtlinie 7.1.2: Modul 2 bis zu 40 % der förderfähigen Ausgaben (docs/foerderung_bew.md) |
 | Preisänderung Strom (real) | 0 | = | %/a | V | TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a |
 | Preisänderung Gas (real) | 0 | = | %/a | V | TEAM: real gleichbleibend; Variante +2 %/a |
 | Preisänderung CO2 (real) | 0 | = | %/a | V | TEAM: real gleichbleibend |
@@ -81,8 +82,10 @@ Szenario: **base**. "=" heißt: im großen Netz gleicher Wert wie im kleinen. St
 | PTES: max. Temperatur | 85 | = | degC | V | BRF §3.1; Liner-Grenze (Xiang et al. 2022) |
 | PTES: min. Temperatur | 10 | = | degC | V | BRF §3.1; DRL Tmin 9-12 degC |
 | PTES: Wärmeverlust (Speicherinhalt) | 4e-05 | = | 1/h | A | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) |
+| PTES: Übergangszone (Direktentladung erst darüber) | 30 | = | % Vol. | A | Temperaturkennlinie (Abschätzung): Übergangszone … |
 | PTES: Volumen je Grundfläche | 2,65 | = | m3/m2 | A | DRL-Geometrie … |
-| Luft-WP: Gütegrad (COP = Gütegrad x Lorenz) | 0,5 | = | - | A | BRF §3.4: Rückrechnung GEA Swaffham (Luft, 55->75 degC, COP 2,5-3,5) |
+| Luft-WP: COP-Ansatz (KWW: Gütegrad x Carnot auf Vorlauf) | kww | = | - | V | KWW Tab. 24/25: COP = Gütegrad x T_VL / (T_VL - T_a) mit Gütegrad 46 % (70 °C) bzw. 44 % … |
+| Luft-WP: Faktor auf KWW-Gütegrad (45 % bei 80 °C) | 1 | = | - | V | Faktor auf den KWW-Gütegrad (Sensitivität; KWW-Unsicherheit der JAZ ±30 %) |
 | Speicher-WP: COP | 4,5 | = | - | A | BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5 |
 | Luft-WP: Leistung bei -7 °C (Anteil) | 0,8 | = | - | A | BRF §3.4: linear auf 80 % der Leistung bei T_min_luft (-7 degC) … |
 | PtH: Wirkungsgrad | 0,99 | = | - | V | BRF §2 |

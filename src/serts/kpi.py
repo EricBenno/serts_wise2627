@@ -70,12 +70,15 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
         e = n.stores_t.e
         r["speicher_heiss"], r["speicher_kalt"] = e["ptes_heiss"], e["ptes_kalt"]
         r["speicherinhalt"] = e["ptes_heiss"] + e["ptes_kalt"]
-        kapazitaet = float(n.stores.loc[["ptes_heiss", "ptes_kalt"], "e_nom_opt"].sum())
-        if kapazitaet > 1e-6:
+        kap_h = float(n.stores.at["ptes_heiss", "e_nom_opt"])
+        kap_k = float(n.stores.at["ptes_kalt", "e_nom_opt"])
+        if kap_h > 1e-6 and kap_k > 1e-6:
             from serts.network import temperaturen_speicher
 
             r["T_speicher_oben"], r["T_speicher_mittel"] = temperaturen_speicher(
-                cfg, r["speicherinhalt"] / kapazitaet
+                cfg,
+                (r["speicher_heiss"] / kap_h).clip(0, 1),
+                (r["speicher_kalt"] / kap_k).clip(0, 1),
             )
     else:
         r["speicher_heiss"] = r["speicher_kalt"] = r["speicherinhalt"] = leer
@@ -85,6 +88,7 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     # Lösungsrauschen des Innere-Punkte-Verfahrens (|x| < 1e-6 MW) auf 0 setzen
     fluss = r.columns.difference(["T_a", "P_solar_spez", "T_speicher_oben", "T_speicher_mittel"])
     r[fluss] = r[fluss].where(r[fluss].abs() > 1e-6, 0.0)
+    r.attrs["T_direkt_noetig"] = cfg.get("netz.T_VL") + cfg.get("ptes.direkt_dT")
     return r
 
 
@@ -130,6 +134,10 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         "P_PtH_MW": float(n.links.at["pth", "p_nom_opt"]) * cfg.get("pth.eta"),
         "stunden": len(n.snapshots),
         "anteil_heiss": anteil_heiss(cfg),
+        "kennlinie_aktiv": bool(meta.get("kennlinie_aktiv", False)),
+        "kennlinie_direkt_h_lauf1": int(meta.get("kennlinie_direkt_h_lauf1", 0)),
+        "kennlinie_direkt_h": int(meta.get("kennlinie_direkt_h", 0)),
+        "kennlinie_rest_MWh": float(meta.get("kennlinie_rest_MWh", 0.0)),
     }
     k.update(
         {
@@ -234,6 +242,36 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     k["abstand_gas"] = ref["gas_lcoh"] - k["lcoh"]  # > 0: System günstiger als Gas-Referenz
 
     # Verteilnetz (gleich für System und Gas-Fernwärme) -> Wärmepreis beim Kunden
+    nk_bew = None
+    q_bew = cfg.get("oekonomie.bew_ausweis_quote")
+    if q_bew > 0 and cfg.get("oekonomie.foerderquote") == 0:
+        # Gleiche Auslegung, Kosten MIT BEW Modul 2 (nur förderfähige Teile, Obergrenze 40 %)
+        cb = cfg.variante("oekonomie.foerderquote", q_bew)
+        capex_b = {
+            "kollektor": A * annualisiert(cb, "kollektor", "kollektor.kosten_spez"),
+            "speicher": annualisiert(cb, "ptes", invest_speicher) if V > 0 else 0.0,
+            "waermepumpe": k["P_WP_MW"]
+            * annualisiert(cb, "waermepumpe", "waermepumpe.kosten_spez"),
+            "pth": k["P_PtH_MW"] * annualisiert(cb, "pth", "pth.kosten_spez"),
+        }
+        k["lcoh_bew"] = economics.lcoh(sum(capex_b.values()), strom, Q)
+        k["kosten_a_gesamt_bew"] = sum(capex_b.values()) + strom
+        foerderbar = {
+            "kollektor": A * cfg.get("kollektor.kosten_spez"),
+            "ptes": invest_speicher,
+            "waermepumpe": k["P_WP_MW"] * cfg.get("waermepumpe.kosten_spez"),
+            "pth": k["P_PtH_MW"] * cfg.get("pth.kosten_spez"),
+        }
+        if cfg.get("netz.netzkosten_einbeziehen"):
+            nk_bew = economics.netzkosten(cb)
+            foerderbar["netz"] = nk_bew["netz_invest_trasse_EUR"]
+            foerderbar["hausanschluss"] = nk_bew["netz_invest_hausanschluss_EUR"]
+        k["zuschuss_bew_EUR"] = sum(
+            v * (1.0 + cfg.get("oekonomie.nebenkosten")) * q_bew
+            for kompo, v in foerderbar.items()
+            if cfg.get(f"oekonomie.foerderfaehig.{kompo}")
+        )
+        k["bew_quote"] = q_bew
     if cfg.get("netz.netzkosten_einbeziehen"):
         nk = economics.netzkosten(cfg)
         k.update(nk)
@@ -242,6 +280,11 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         k["netzkosten_spez"] = nk["kosten_a_netz_system"] / Q_geliefert  # EUR/MWh geliefert
         k["lcoh_inkl_netz"] = (k["kosten_a_gesamt"] + nk["kosten_a_netz_system"]) / Q_geliefert
         k["gas_lcoh_inkl_netz"] = (ref["gas_lcoh"] * Q + nk["kosten_a_netz_gasref"]) / Q_geliefert
+        if nk_bew is not None:
+            k["lcoh_inkl_netz_bew"] = (
+                k["kosten_a_gesamt_bew"] + nk_bew["kosten_a_netz_system"]
+            ) / Q_geliefert
+            k["abstand_gas_inkl_netz_bew"] = k["gas_lcoh_inkl_netz"] - k["lcoh_inkl_netz_bew"]
 
     # Fläche (Check)
     flaeche = A * cfg.get("kollektor.flaechenfaktor") + V / cfg.get("ptes.volumen_je_grundflaeche")

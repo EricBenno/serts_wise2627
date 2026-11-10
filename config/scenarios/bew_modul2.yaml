@@ -1,0 +1,10 @@
+# Szenario: BEW Modul 2 wirkt auf die Auslegung (Investitionszuschuss 40 % auf förderfähige Teile).
+# Basisläufe weisen die Förderung nur für die UNGEFÖRDERT optimierte Auslegung aus (Kennzahlen *_bew);
+# hier wird mit Förderung optimiert (mehr Solar/Speicher). 40 % = Obergrenze (Wirtschaftlichkeitslücke!).
+meta:
+  beschreibung: "BEW Modul 2: 40 % Zuschuss auf Kollektor, PTES, WP, Trasse (PtH, Hausanschluss nicht)"
+oekonomie:
+  foerderquote:
+    wert: 0.4
+    status: belegt
+    quelle: "BEW Richtlinie 7.1.2: Modul 2 bis zu 40 % der förderfähigen Ausgaben (docs/foerderung_bew.md)"

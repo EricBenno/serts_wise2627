@@ -312,3 +312,61 @@ Nichtwohngebäuden eher oberes Ende (Sensitivität `netz.kosten_hausanschluss`).
 - **Zentrale Übersicht** `docs/eingangsparameter.md` (`uv run serts uebersicht`): aus der Config erzeugt, beide Netze
   nebeneinander mit Status und Kurzquelle, gruppiert in Netz, Energiepreise, Wirtschaftlichkeit, Investitionen/
   Lebensdauern, Technik, plus PTES-Kostenkurve. Vollständige Liste weiterhin `docs/annahmen.md`.
+
+### E34 Temperaturkennlinie des Speichers: Direktentladung nur bei dicker heißer Schicht (10.11.2026)
+**Anlass (TEAM):** Der Speicher speiste auch im Januar/Februar direkt ins Netz ein, obwohl seine Temperatur weit unter
+dem Vorlauf lag; die Speicher-WP lief im Winter kaum, der Speicher wurde nie richtig entladen. In Dronninglund hat die
+Oberschicht im Dezember nur noch ≈ 50 °C.
+**Erste Fassung (verworfen):** Kennlinie über den Füllstand des *ganzen* Speichers, im LP als
+p_direkt · 0,1 h ≤ E(t) − s_min · E_nom. Zwei Fehler: (1) der kalte Teil (Wasser 10–45 °C) zählte mit und hielt als
+„Ballast“ den Füllstand hoch – der kalte Teil blieb im Winter voll, die Speicher-WP lief nicht; (2) weil p ≥ 0 ist,
+erzwingt die Ungleichung E(t) ≥ s_min · E_nom in **jeder** Stunde – der Speicher konnte nie unter ≈ 40 % entladen
+werden.
+**Jetzt:** Heißes Wasser liegt oben, darunter eine Übergangszone (Thermokline). Direkt ins Netz (T_VL + 5 K) geht es
+nur, wenn die **heiße Schicht** dicker ist als diese Zone: Inhalt des heißen Teils zu Beginn der Stunde ≥
+`ptes.schicht_min` (0,3) × Kapazität des heißen Teils. 0,3 ≈ 5 m Übergangszone bei 16 m Tiefe (Dronninglund,
+Simulationsstudie; Annahme, Tornado 0/0,15/0,5). Eine solche Schwelle („erst ab …“) ist im LP nicht linear
+(braucht Binärvariablen). Gelöst mit **zwei Läufen** in `network.optimize`: (1) ohne Kennlinie rechnen; (2)
+Direktentladung nur in den Stunden erlauben, in denen sie in Lauf 1 bei dicker heißer Schicht stattfand, und in
+genau diesen Stunden die dicke Schicht als lineare Bedingung verlangen (E_heiß(t−1) ≥ 0,3 · E_heiß,nom, auch bei
+optimiertem Volumen linear). Ergebnis ist immer physikalisch gültig, aber leicht konservativ (Stunden, die erst in
+Lauf 2 sinnvoll wären, bleiben gesperrt). Ein iteratives Sperren (bis 8 Durchgänge) wurde getestet und verworfen:
+es konvergierte nicht (Rest ≈ 100 MWh Direktentladung bei dünner Schicht). Kontrollwert `kennlinie_rest_MWh` in
+`kpi.json`. Unter der Schwelle bleibt die Wärme über die Speicher-WP nutzbar (Link `umlagern` heiß → kalt).
+**Temperaturen (Kennlinie, nur Anzeige):** Mittel = T_unten + 35 K · s_kalt + 40 K · s_heiß; oben = T_unten +
+35 K · min(1, s_kalt/0,3) + 40 K · min(1, s_heiß/0,3). Plausibilität Dronninglund-Dezember (kalt 25 %, heiß 5 %) →
+oben ≈ 46 °C. In `zeitreihen.csv` (`T_speicher_oben`, `T_speicher_mittel`) und im Jahresverlauf (eigenes Feld; die
+Außentemperatur ist dort entfallen, sie wurde mit der Speichertemperatur verwechselt).
+**Maximaltemperatur:** im Modell 85 °C (`ptes.T_oben`, Liner-Grenze, Vorgabe). Werte über 85 °C gibt es nicht; in der
+alten Grafik lag die Speicherinhalts-Fläche (MWh) über der Temperaturachse und sah wie > 90 °C aus.
+
+### E35 Luft-WP: COP nach KWW-Ansatz statt Lorenz (10.11.2026)
+**Anlass (TEAM):** Die Luft-WP wirkte zu effizient. **Prüfung:** Der Briefing-Ansatz (Lorenz mit logarithmischen
+Mitteltemperaturen 45 → 80 °C, Gütegrad 0,5) ergab für 2022 eine Arbeitszahl von **2,65** (bei 7 °C Quelle: COP 2,66).
+Das KWW (Tab. 24/25) rechnet COP = Gütegrad · T_VL / (T_VL − T_Quelle) mit 46 % (70 °C) bzw. 44 % (95 °C) und kommt
+so auf JAZ 2,5 bzw. 1,8 bei 7 °C Heizperiodenmittel. Für 80 °C (linear 45,2 %) → **COP 2,19 bei 7 °C**, Arbeitszahl
+2022 **2,22** (−16 %). Das Referenzjahr ist nicht die Ursache: Heizperiode 2022 (Okt–Apr) 6,4 °C gegen 5,5 °C im Mittel
+1992–2021 (DWD 03028) → nur ≈ 1 % günstiger.
+**Umsetzung:** `waermepumpe.cop_ansatz_luft = kww` (Basis), `lorenz` als Vergleich; `guetegrad_faktor` (1,0; Tornado
+0,85/1,15). Im KWW-Ansatz kein zusätzlicher Abtauabschlag (Annahme: im Gütegrad enthalten). Die Speicher-WP bleibt
+bei COP 4,5 (Marstal gemessen 5–5,5; KWW Sole/Wasser 50 K: JAZ 3,9) – damit ist sie im Winter rund doppelt so
+effizient wie die Luft-WP (≈ 1,9–2,2), was ihre Nutzung im Winter erklärt.
+
+### E36 Speicherschichtung konsistent: kalter Teil relativ ≥ heißer Teil (10.11.2026)
+Im Zwei-Teile-Modell konnte die Speicher-WP den kalten Teil leeren, während der heiße Teil noch voll war – physikalisch
+unmöglich, weil heißes Wasser seinen Anteil 10–45 °C immer mit enthält. Die Kennlinie zeigte dann z. B. 50 °C oben
+bei erlaubter Direktentladung. Neue lineare Bedingung in jeder Stunde: E_kalt(t) ≥ (1−f)/f · E_heiß(t) (gleicher
+relativer Füllstand oder mehr im kalten Teil). Die WP kann Wärme aus dem heißen Teil weiterhin nutzen – erst über
+`umlagern` (das Wasser kühlt dabei unter 45 °C ab). Mini-Netz-Test `test_schichtung_konsistent`.
+
+### E37 BEW Modul 2 in jedem Lauf ausgewiesen, Vergleichsvarianten (10.11.2026)
+- **Ausweis:** Jeder Lauf rechnet für dieselbe (ungefördert optimierte) Auslegung zusätzlich die Kosten mit 40 %
+  Investitionszuschuss auf die förderfähigen Teile (Kollektor, PTES, WP, Trasse; nicht PtH/Hausanschluss) inkl.
+  Nebenkosten: `lcoh_bew`, `lcoh_inkl_netz_bew`, `zuschuss_bew_EUR` (Kommandozeile, `kpi.json`, Kostengrafik).
+  `oekonomie.bew_ausweis_quote` = 0,4. **Obergrenze:** der tatsächliche Zuschuss ist auf die
+  Wirtschaftlichkeitslücke begrenzt (BAFA-Berechnung, nicht modelliert) – ist das System schon ohne Förderung
+  günstiger als die fossile Referenz, kann die Lücke kleiner sein. Modul 4 (Betriebskostenförderung) nicht enthalten.
+- **Mit Förderung optimiert:** Szenario `bew_modul2` (Förderquote 0,4 wirkt auf die Auslegung).
+- **Vergleichsvarianten** (Briefing §1 Pflicht 5): `uv run serts varianten [--netz gross]` rechnet Basis, ohne Speicher,
+  nur WP + PtH und mit BEW (optimiert), jeweils mit Gas-Fernwärme als Referenz → `varianten.md/.csv` und
+  `pareto.png` (EE-Anteil gegen Wärmepreis). PV für die WP (5c) ist nicht modelliert (Abschätzung in `ausblick.md`).

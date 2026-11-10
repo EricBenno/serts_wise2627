@@ -18,7 +18,8 @@ uv run serts run             # Lauf: Größen optimieren, Kennzahlen ausgeben (�
 uv run serts run --V 0       # Variante ohne Speicher (weitere Optionen: --A, --szenario, --stunden)
 uv run serts run --netz gross  # größeres Netz (877 Gebäude, 8 ha); Ergebnisse getrennt in results/gross/
 uv run serts uebersicht      # docs/eingangsparameter.md: zentrale Übersicht der Eingangsparameter
-uv run serts tornado         # Sensitivitäten (≈ 20–25 min), Ergebnisse: docs/ergebnisse.md
+uv run serts varianten       # Vergleich Basis / ohne Speicher / nur WP+PtH / mit BEW (+ Gas), ≈ 10 min
+uv run serts tornado         # Sensitivitäten (≈ 1 h), Ergebnisse: docs/ergebnisse.md
 uv run pytest                # Tests
 ```
 
@@ -38,7 +39,7 @@ results/<netz>/<lauf-id>/   Laufergebnisse je Netz (klein|gross) inkl. Config-Ko
 notebooks/                  nur Auswertung, keine Logik
 ```
 
-Zentrale Übersicht aller wichtigen Eingangsparameter (Netz klein und groß nebeneinander): [docs/eingangsparameter.md](docs/eingangsparameter.md).
+Passt das Modell zur Leitfrage? [docs/kernfragen.md](docs/kernfragen.md). Zentrale Übersicht aller wichtigen Eingangsparameter (Netz klein und groß nebeneinander): [docs/eingangsparameter.md](docs/eingangsparameter.md).
 Details und Stand: [docs/struktur.md](docs/struktur.md). Ergebnisse: [docs/ergebnisse.md](docs/ergebnisse.md),
 offene Kostenpunkte: [docs/unsicherheiten.md](docs/unsicherheiten.md), Systemskizze: [docs/systemskizze.md](docs/systemskizze.md),
 BEW-Förderung: [docs/foerderung_bew.md](docs/foerderung_bew.md), Vorschläge: [docs/ausblick.md](docs/ausblick.md).

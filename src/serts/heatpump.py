@@ -39,8 +39,31 @@ def cop_lorenz(senke_ein, senke_aus, quelle_ein, quelle_aus, eta_g, approach=3.0
     return eta_g * t_k / (t_k - t_e)
 
 
+def cop_kww(t_senke_c, t_quelle_c, guetegrad):
+    """KWW-Technikkatalog (Tab. 24/25): COP = Gütegrad * T_Senke / (T_Senke - T_Quelle), Senke = Vorlauf."""
+    t_s = np.asarray(t_senke_c, dtype=float) + K0
+    t_q = np.asarray(t_quelle_c, dtype=float) + K0
+    return guetegrad * t_s / (t_s - t_q)
+
+
+def guetegrad_kww(cfg: Config) -> float:
+    """Gütegrad der Luft-WP nach KWW, linear zwischen 70 °C (46 %) und 95 °C (44 %) Vorlauf interpoliert."""
+    t_vl = cfg.get("netz.T_VL")
+    return float(np.interp(t_vl, [70.0, 95.0], [0.46, 0.44])) * cfg.get(
+        "waermepumpe.guetegrad_faktor"
+    )
+
+
 def cop_luft(cfg: Config, T_a: pd.Series) -> pd.Series:
-    """COP Luftquelle je Stunde inkl. Abtauabschlag."""
+    """COP Luftquelle je Stunde.
+
+    ``waermepumpe.cop_ansatz_luft``:
+      kww    (Basis) Carnot auf den Vorlauf x Gütegrad nach KWW (JAZ-Bezug, Abtauen im Gütegrad enthalten)
+      lorenz (Briefing) Lorenz mit Mitteltemperaturen, eta_G_luft, plus Abtauabschlag
+    """
+    if cfg.get("waermepumpe.cop_ansatz_luft") == "kww":
+        cop = cop_kww(cfg.get("netz.T_VL"), T_a, guetegrad_kww(cfg))
+        return pd.Series(cop, index=T_a.index, name="COP_luft")
     T_rl, T_vl = cfg.get("netz.T_RL"), cfg.get("netz.T_VL")
     dT = cfg.get("waermepumpe.luft_spreizung")
     cop = cop_lorenz(
