@@ -1,0 +1,58 @@
+# Szenario: auch WP, PtH, Netz-Lebensdauer aus dem KWW Technikkatalog (Netz klein, Größenklassen ≈ 1-2 MW).
+# Basisfall übernimmt vom KWW nur Solarthermie und PTES (Kosten, Lebensdauer); dieses Szenario zeigt, wie
+# stark sich das Ergebnis ändert, wenn die Anlagenkosten insgesamt dem deutschen Katalog (2026) folgen.
+# Für das große Netz: kww_komplett_gross (andere Größenklassen). Aufruf: uv run serts run --szenario kww_komplett
+
+waermepumpe:
+  kosten_spez:
+    wert: 1730000
+    einheit: "EUR/MW_th"
+    status: belegt
+    quelle: "KWW Tab. 24 (Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto): 1.730 EUR/kW_th bei 1 MW (2 MW: 1.600; 5 MW: 1.440; 10 MW: 1.340), Unsicherheit ±30 %"
+    hinweis: "Basis (Frederikssund 2022, DK, NH3): 1,0 Mio. EUR/MW. Das KWW enthält keine Speicher-WP (Sole/Wasser-Quelle) -> gleicher Satz für beide Teile angenommen."
+pth:
+  kosten_spez:
+    wert: 340000
+    einheit: "EUR/MW_th"
+    status: belegt
+    quelle: "KWW Tab. 31 (Widerstandserhitzer, 2026): 550 EUR/kW bei 1 MW, 340 EUR/kW bei 2 MW (Reserve hier ≈ 1,6 MW)"
+gas_referenz:
+  kosten_spez:
+    wert: 97000
+    einheit: "EUR/MW_th"
+    status: belegt
+    quelle: "KWW Tab. 20 (Erdgaskessel Spitzenlast): Kostenkurve 920 * P_kW^0,6989 -> 97 EUR/kW bei 1,75 MW (0,5 MW: 140, 10 MW: 60)"
+oekonomie:
+  lebensdauer:
+    waermepumpe:
+      wert: 28
+      einheit: "a"
+      status: belegt
+      quelle: "KWW Tab. 24: 28 a (Bezug VDI 2067-1), Unsicherheit ±30 %"
+    gaskessel:
+      wert: 30
+      einheit: "a"
+      status: belegt
+      quelle: "KWW Tab. 20: 30 a"
+    netz:
+      wert: 30
+      einheit: "a"
+      status: belegt
+      quelle: "KWW Tab. 36/37: 30 a (KMR bei 110 °C mindestens 30 a; PMR bei 70 °C ≈ 50 a, bei geringeren Netztemperaturen länger)"
+      hinweis: "Basis 40 a. Bei 80/50 °C (hier) eher oberer Bereich."
+  om_fix:
+    waermepumpe:
+      wert: 0.03
+      einheit: "1/a vom Invest"
+      status: belegt
+      quelle: "KWW Tab. 24: fix 17.700-402.000 EUR/a = 3,0 % des Invests (zusätzlich variabel 2 EUR/MWh_th, hier nicht berücksichtigt)"
+    pth:
+      wert: 0.01
+      einheit: "1/a vom Invest"
+      status: belegt
+      quelle: "KWW Tab. 31: 5.500-11.000 EUR/a = 1 % des Invests"
+    gaskessel:
+      wert: 0.02
+      einheit: "1/a vom Invest"
+      status: belegt
+      quelle: "KWW Tab. 20: 1.400-24.000 EUR/a = 2 % des Invests"

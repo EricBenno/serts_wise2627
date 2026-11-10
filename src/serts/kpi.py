@@ -70,13 +70,20 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
         e = n.stores_t.e
         r["speicher_heiss"], r["speicher_kalt"] = e["ptes_heiss"], e["ptes_kalt"]
         r["speicherinhalt"] = e["ptes_heiss"] + e["ptes_kalt"]
+        kapazitaet = float(n.stores.loc[["ptes_heiss", "ptes_kalt"], "e_nom_opt"].sum())
+        if kapazitaet > 1e-6:
+            from serts.network import temperaturen_speicher
+
+            r["T_speicher_oben"], r["T_speicher_mittel"] = temperaturen_speicher(
+                cfg, r["speicherinhalt"] / kapazitaet
+            )
     else:
         r["speicher_heiss"] = r["speicher_kalt"] = r["speicherinhalt"] = leer
     r["abregelung"] = (
         n.generators.at["kollektor", "p_nom_opt"] * ts["P_solar"].clip(0, 1) - r["kollektor"]
     ).clip(lower=0)
     # Lösungsrauschen des Innere-Punkte-Verfahrens (|x| < 1e-6 MW) auf 0 setzen
-    fluss = r.columns.difference(["T_a", "P_solar_spez"])
+    fluss = r.columns.difference(["T_a", "P_solar_spez", "T_speicher_oben", "T_speicher_mittel"])
     r[fluss] = r[fluss].where(r[fluss].abs() > 1e-6, 0.0)
     return r
 
@@ -88,7 +95,14 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
 
     r = zeitreihen_ergebnis(n, cfg, ts)
     skal = 8760.0 / len(n.snapshots)
-    S = {k: float(v) * skal for k, v in r.drop(columns="speicherinhalt").sum().items()}
+    S = {
+        k: float(v) * skal
+        for k, v in r.drop(
+            columns=["speicherinhalt", "T_speicher_oben", "T_speicher_mittel"], errors="ignore"
+        )
+        .sum()
+        .items()
+    }
     Q = S["last"]
 
     # Größen

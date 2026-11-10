@@ -25,7 +25,22 @@ RAW_FILES: list[RawFile] = [
     RawFile(
         "results netzberechnung.xlsx",
         "bad_lippspringe/results netzberechnung.xlsx",
-        "Eigene Netzberechnung: Lastgang 2022 (8760 h), Netzverluste, Gebäudestatistik",
+        "Eigene Netzberechnung (Netz klein): Lastgang 2022 (8760 h), Netzverluste, Gebäudestatistik",
+    ),
+    RawFile(
+        "results_gross.xlsx",
+        "bad_lippspringe/results_gross.xlsx",
+        "Eigene Netzberechnung (Netz groß, 877 Gebäude): Lastgang 2022 (8760 h), Netzverluste, Statistik",
+    ),
+    RawFile(
+        "../Netzannahmen.pdf",
+        "bad_lippspringe/Netzannahmen.pdf",
+        "Karte und Kennzahlen beider Netze (klein/groß: Gebäude, Trasse, Verlust, Temperaturen)",
+    ),
+    RawFile(
+        "../AP 0 und Annahmen/KWW-Technikkatalog-Waermeplanung_08-2026_Version_1.1.xlsx",
+        "kww/KWW-Technikkatalog-Waermeplanung_08-2026_Version_1.1.xlsx",
+        "KWW Technikkatalog Wärmeplanung v1.1: Kosten/Lebensdauern (2026, netto, real); Erträge werden nicht übernommen",
     ),
     RawFile(
         "stundenwerte_TU_03028_19710401_20251231_hist/produkt_tu_stunde_19710401_20251231_03028.txt",

@@ -5,9 +5,7 @@ Modell (Raster 24 Läufe, 12 Szenarien) und aus Recherchen (Quellen unten).
 
 ## 1 Befund im Modell
 
-Der Basislauf wählt ein **Kurzzeit-/Wochenspeicher**: ≈ 1.600 m³ (≈ 140 MWh), **≈ 5 Zyklen pro Jahr**, nur
-28 % der Entladung im Winter (Nov–Mär), Solaranteil ≈ 24 %. Ein Saisonspeicher hätte < 2 Zyklen und ≥ 60 %
-Winteranteil (Kennzahl `speicher_charakter` in `serts run`). Dronninglund: ≈ 2 Zyklen, ≈ 40 % Solaranteil.
+Der Basislauf wählt ein **Kurzzeit-/Wochenspeicher**: ≈ 1.600 m³ (≈ 140 MWh), **≈ 5 Zyklen pro Jahr**, nur 28 % der Entladung im Winter (Nov–Mär), Solaranteil ≈ 24 %. Ein Saisonspeicher hätte < 2 Zyklen und ≥ 60 % Winteranteil (Kennzahl `speicher_charakter` in `serts run`). Dronninglund: ≈ 2 Zyklen, ≈ 40 % Solaranteil.
 
 ## 2 Warum es sich in Dänemark lohnt (recherchiert)
 
@@ -44,32 +42,28 @@ daher: Er verschiebt Solarwärme von mittags auf abends/Wochen und spart Sommer-
 **Strukturelle Gründe im Modell (Bad Lippspringe statt Dänemark):**
 1. **Maßstab:** 5,5 GWh/a statt 37–50 GWh/a; PTES ≈ 5.000–10.000 m³ statt 60.000–200.000 m³ → Speicherkosten
    ≈ 95–170 €/m³ statt 24–38 €/m³ (Skaleneffekt, Exponent −0,31).
-2. **Fläche:** Nur 13.000 m². Dronninglund braucht ≈ 10 ha (Kollektoren ×2,3 + Becken). Hier: Kollektorfeld ≤ 4.500 m²
-   bei 8.000–10.000 m³ Speicher – das Feld ist zu klein, um einen großen Speicher zu füllen.
+2. **Fläche:** Nur 13.000 m². Dronninglund braucht ≈ 10 ha (Kollektoren ×2,3 + Becken). Hier: Kollektorfeld ≤ 4.500 m² bei 8.000–10.000 m³ Speicher – das Feld ist zu klein, um einen großen Speicher zu füllen.
 3. **Kostenniveau:** Kollektor 450 €/m² (kleines Feld, Planungsbudget 2020) statt 164–250 €/m².
 4. **Zins und Nebenkosten:** 5 % real + 10 % Nebenkosten gegen 3 % Kommunalkredit.
-5. **Alternative:** Eine Luft-WP (COP 2,3–3,3) mit 30 ct/kWh ist kein billiger Referenzfall für Solarwärme –
-   die dänische Alternative sind kostenbasierte Fernwärmepreise (inkl. Steuer auf Gas).
-6. **Modellannahmen, die Saisonspeicher benachteiligen:** konstante Verlustrate 4·10⁻⁵ 1/h (ohne Skaleneffekt der
-   Oberfläche), Speicher-WP mit konstantem COP 4,5, kein Wärmeübertrager-/Mischungseffekt; **begünstigen**:
-   perfekte Voraussicht.
+5. **Alternative:** Eine Luft-WP (COP 2,3–3,3) mit 30 ct/kWh ist kein billiger Referenzfall für Solarwärme – die dänische Alternative sind kostenbasierte Fernwärmepreise (inkl. Steuer auf Gas).
+6. **Modellannahmen, die Saisonspeicher benachteiligen:** konstante Verlustrate 4·10⁻⁵ 1/h (ohne Skaleneffekt der Oberfläche), Speicher-WP mit konstantem COP 4,5, kein Wärmeübertrager-/Mischungseffekt; **begünstigen**: perfekte Voraussicht.
 
 ## 4 Welche Parameter müssten sich ändern? (Rechnungen mit dem Modell)
 
 Kennzeichnung: **saisonal** = < 2 Zyklen und ≥ 60 % Entladung im Winter. Raster Speicherkosten-Faktor
 (0,35 / 0,5 / 0,7 / 1,0 × der Kostenkurve) × Kollektorkosten (450 / 350 / 250 €/m²) × Fläche (13.000 / 30.000 m²):
 
-| Speicherkosten (Faktor) | Kollektor €/m² | Fläche | Kollektor / Speicher | Zyklen | Winteranteil | Solar | LCOH | Charakter |
-|---|---|---|---|---|---|---|---|---|
-| 1,0 (Basis) | 450 | 13.000 | 2.540 m² / 1.640 m³ | 5,0 | 28 % | 24 % | 141,2 | Kurzzeit |
-| 1,0 | 350 | 13.000 | 4.490 / 7.080 | 2,6 | 47 % | 42 % | 135,4 | gemischt |
-| 1,0 | 350 | 30.000 | 6.790 / 16.510 | **1,8** | **61 %** | 62 % | 134,9 | **saisonal** |
-| 1,0 | 250 | 30.000 | 8.800 / 25.880 | **1,5** | **69 %** | 79 % | 121,5 | **saisonal** |
-| 0,7 | 450 | 13.000 | 4.230 / 8.290 | 2,0 | 57 % | 39 % | 139,0 | fast saisonal |
-| 0,5 | 450 | 13.000 | 4.070 / 9.670 | **1,7** | **68 %** | 37 % | 136,1 | **saisonal** |
-| 0,35 | 450 | 13.000 | 3.920 / 10.540 | **1,5** | **75 %** | 36 % | 133,7 | **saisonal** |
-| 0,35 | 250 | 13.000 | 4.360 / 7.860 | 2,3 | 53 % | 41 % | 119,6 | gemischt |
-| 0,35 | 250 | 30.000 | 8.770 / 26.080 | **1,5** | **70 %** | 78 % | 101,9 | **saisonal** |
+| Speicherkosten (Faktor) | Kollektor €/m² | Fläche | Kollektor / Speicher | Zyklen  | Winteranteil | Solar | LCOH  | Charakter     |
+| ----------------------- | -------------- | ------ | -------------------- | ------- | ------------ | ----- | ----- | ------------- |
+| 1,0 (Basis)             | 450            | 13.000 | 2.540 m² / 1.640 m³  | 5,0     | 28 %         | 24 %  | 141,2 | Kurzzeit      |
+| 1,0                     | 350            | 13.000 | 4.490 / 7.080        | 2,6     | 47 %         | 42 %  | 135,4 | gemischt      |
+| 1,0                     | 350            | 30.000 | 6.790 / 16.510       | **1,8** | **61 %**     | 62 %  | 134,9 | **saisonal**  |
+| 1,0                     | 250            | 30.000 | 8.800 / 25.880       | **1,5** | **69 %**     | 79 %  | 121,5 | **saisonal**  |
+| 0,7                     | 450            | 13.000 | 4.230 / 8.290        | 2,0     | 57 %         | 39 %  | 139,0 | fast saisonal |
+| 0,5                     | 450            | 13.000 | 4.070 / 9.670        | **1,7** | **68 %**     | 37 %  | 136,1 | **saisonal**  |
+| 0,35                    | 450            | 13.000 | 3.920 / 10.540       | **1,5** | **75 %**     | 36 %  | 133,7 | **saisonal**  |
+| 0,35                    | 250            | 13.000 | 4.360 / 7.860        | 2,3     | 53 %         | 41 %  | 119,6 | gemischt      |
+| 0,35                    | 250            | 30.000 | 8.770 / 26.080       | **1,5** | **70 %**     | 78 %  | 101,9 | **saisonal**  |
 
 **Einzelne Hebel** (alles andere Basis, Fläche 13.000 m²; Szenarien-Sweep):
 

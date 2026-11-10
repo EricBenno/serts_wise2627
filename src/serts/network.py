@@ -51,6 +51,33 @@ def anteil_heiss(cfg: Config) -> float:
     return (t_o - t_r) / (t_o - t_u)
 
 
+def fuellstand_direkt(cfg: Config) -> float:
+    """Mindestfüllstand (Energieinhalt / Kapazität) für Direktentladung ins Netz (Temperaturkennlinie).
+
+    Die Oberschicht hat ab ``ptes.fuellstand_voll`` die Temperatur T_oben, darunter fällt sie linear bis
+    T_unten. Direkt ins Netz geht es erst bei T_oben_min = T_VL + dT. 0 = Kennlinie aus.
+    """
+    s_voll = cfg.get("ptes.fuellstand_voll")
+    if s_voll <= 0:
+        return 0.0
+    t_o, t_u = cfg.get("ptes.T_oben"), cfg.get("ptes.T_unten")
+    t_noetig = cfg.get("netz.T_VL") + cfg.get("ptes.direkt_dT")
+    return s_voll * min(1.0, max(0.0, (t_noetig - t_u) / (t_o - t_u)))
+
+
+def temperaturen_speicher(cfg: Config, fuellstand: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """(Temperatur Oberschicht, mittlere Temperatur) in degC aus dem Füllstand 0..1 (Kennlinie)."""
+    t_o, t_u = cfg.get("ptes.T_oben"), cfg.get("ptes.T_unten")
+    s_voll = cfg.get("ptes.fuellstand_voll")
+    mittel = t_u + fuellstand * (t_o - t_u)
+    oben = (
+        t_u + (t_o - t_u) * (fuellstand / s_voll).clip(upper=1.0)
+        if s_voll > 0
+        else mittel * 0 + t_o
+    )
+    return oben, mittel
+
+
 def build_network(
     cfg: Config,
     ts: pd.DataFrame,
@@ -158,6 +185,10 @@ def build_network(
             marginal_cost=eps,
         )
         n.add("Link", "entladen_direkt", bus0="heiss", bus1="waerme", carrier="waerme", p_nom=1e3)
+        if fuellstand_direkt(cfg) > 0:
+            # Kühlt sich der Inhalt unter die Direkt-Grenze ab, ist die Wärme des heißen Bands nur noch über
+            # die Wärmepumpe nutzbar: Umbuchung heiß -> kalt (verlustfrei, Energie bleibt im Speicher).
+            n.add("Link", "umlagern", bus0="heiss", bus1="kalt", carrier="waerme", p_nom=1e3)
 
     # Wärmepumpe: Luft (COP je Stunde, aus unter T_min) und Speicher (COP konstant)
     luft_aus = ts["T_a"] < cfg.get("waermepumpe.T_min_luft")

@@ -12,6 +12,11 @@ from serts.config import load_config
 from serts.paths import DATA_RAW, DEFAULT_RAW_SOURCE, DOCS
 
 
+def _cfg(a):
+    """Konfiguration aus --netz und --szenario (Szenarien mit + kombinierbar)."""
+    return load_config(a.szenario, netz=getattr(a, "netz", "klein"))
+
+
 def _cmd_import_raw(a):
     from serts.sources.rawdata import import_raw
 
@@ -30,12 +35,12 @@ def _cmd_verify_raw(a):
 def _cmd_prepare(a):
     from serts.prepare import prepare
 
-    kz = prepare(load_config(a.szenario))
+    kz = prepare(_cfg(a))
     print(json.dumps(kz, indent=2, ensure_ascii=False))
 
 
 def _cmd_offen(a):
-    cfg = load_config(a.szenario)
+    cfg = _cfg(a)
     for path in cfg.offene():
         p = cfg.node(path)
         print(f"{path:40s} [{p.get('einheit', '')}]  {p.get('hinweis', '')}")
@@ -46,6 +51,16 @@ def _cmd_annahmen(a):
 
     out = DOCS / "annahmen.md"
     out.write_text(annahmen_markdown(load_config()), encoding="utf-8")
+    print(f"geschrieben: {out}")
+
+
+def _cmd_uebersicht(a):
+    from serts.uebersicht import uebersicht_markdown
+
+    klein = load_config(a.szenario, netz="klein")
+    gross = load_config(a.szenario, netz="gross")
+    out = DOCS / "eingangsparameter.md"
+    out.write_text(uebersicht_markdown(klein, gross), encoding="utf-8")
     print(f"geschrieben: {out}")
 
 
@@ -64,7 +79,7 @@ def _cmd_check_strahlung(a):
 def _cmd_fetch_pvgis(a):
     from serts.weather import fetch_pvgis
 
-    print(f"gespeichert: {fetch_pvgis(load_config(a.szenario))}")
+    print(f"gespeichert: {fetch_pvgis(_cfg(a))}")
 
 
 def _cmd_fetch_strompreise(a):
@@ -77,7 +92,7 @@ def _cmd_fetch_strompreise(a):
 def _cmd_run(a):
     from serts.run import run
 
-    out = run(load_config(a.szenario), A_m2=a.A, V_m3=a.V, stunden=a.stunden)
+    out = run(_cfg(a), A_m2=a.A, V_m3=a.V, stunden=a.stunden)
     k = json.loads((out / "kpi.json").read_text("utf-8"))
     zeilen = [
         ("Kollektorfläche [m2]", "A_koll_m2", "{:,.0f}"),
@@ -117,7 +132,7 @@ def _cmd_tornado(a):
 
     from serts.tornado import tornado
 
-    out = tornado(load_config(a.szenario), jobs=a.jobs)
+    out = tornado(_cfg(a), jobs=a.jobs)
     df = pd.read_csv(out / "tornado.csv").sort_values(["parameter", "wert"])
     cols = ["parameter", "wert", "lcoh", "lcoh_inkl_netz", "abstand_gas", "solar_gesamt", "V_m3"]
     print(df[cols].round(3).to_string(index=False))
@@ -148,10 +163,12 @@ def main(argv: list[str] | None = None) -> int:
     ]:
         p = sub.add_parser(name, help=hlp)
         p.add_argument("--szenario", default=None)
+        p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
         p.set_defaults(func=func)
 
     p = sub.add_parser("run", help="Lauf: Größen optimieren (oder mit --A/--V festlegen)")
     p.add_argument("--szenario", default=None)
+    p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
     p.add_argument("--A", type=float, default=None, help="Kollektorfläche fest [m2]")
     p.add_argument("--V", type=float, default=None, help="Speichervolumen fest [m3] (0 = ohne)")
     p.add_argument("--stunden", type=int, default=None, help="nur die ersten N Stunden (Test)")
@@ -159,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("tornado", help="Sensitivitäten (tornado.parameter x sens-Werte)")
     p.add_argument("--szenario", default=None)
+    p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
     p.add_argument("--jobs", type=int, default=4, help="parallele Läufe (je 1 Thread)")
     p.set_defaults(func=_cmd_tornado)
 
@@ -169,6 +187,11 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=_cmd_fetch_strompreise)
 
     sub.add_parser("annahmen", help="docs/annahmen.md erzeugen").set_defaults(func=_cmd_annahmen)
+    p = sub.add_parser(
+        "uebersicht", help="docs/eingangsparameter.md: zentrale Übersicht (Netz klein + groß)"
+    )
+    p.add_argument("--szenario", default=None)
+    p.set_defaults(func=_cmd_uebersicht)
     sub.add_parser(
         "check-strahlung", help="DWD-Strahlung 03028 1991-2010 (Klimavergleich für PVGIS)"
     ).set_defaults(func=_cmd_check_strahlung)

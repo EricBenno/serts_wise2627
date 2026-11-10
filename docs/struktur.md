@@ -34,7 +34,9 @@ Als Mermaid-Diagramm (exakt wie gerechnet): [docs/systemskizze.md](systemskizze.
 uv run serts run                         # Basis: Größen optimieren, 5 Kostensegmente (≈ 2 min)
 uv run serts run --V 0                   # Variante ohne Speicher
 uv run serts run --A 4000 --V 6000       # feste Größen vorgeben
-uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis)
+uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis); kombinierbar: --szenario a+b
+uv run serts run --netz gross            # größeres Netz (config/netze/gross.yaml), Ausgabe in results/gross/
+uv run serts uebersicht                  # docs/eingangsparameter.md (Netz klein + groß) neu erzeugen
 uv run serts run --stunden 168           # Schnelltest
 uv run serts tornado                     # Sensitivitäten (≈ 45 Varianten, ≈ 20–25 min)
 uv run serts prepare                     # nur Zeitreihen + Plots
@@ -44,14 +46,16 @@ uv run serts run --szenario strom_day_ahead_2024  # Strom als Zeitreihe statt fe
 uv run pytest                            # 71 Tests
 ```
 
-Ergebnis je Lauf in `results/<zeit>_<szenario>_<label>/`: `kpi.json` (alle Kennzahlen), `zeitreihen.csv`,
+Ergebnis je Lauf in `results/<netz>/<zeit>_<szenario>_<label>/` (Netz `klein` = Basis, `gross` = größeres Netz;
+Zeitreihen in `data/processed/<netz>/<szenario>/`): `kpi.json` (alle Kennzahlen), `zeitreihen.csv`,
 `monatsbilanz.png`, `network.nc`, `config.yaml` + `meta.json` (Git-Hash).
 
 ## Module (`src/serts/`)
 
 | Modul | Aufgabe |
 |---|---|
-| `config.py` | YAML laden/prüfen; `cfg.get("a.b")` bricht ab, wenn der Wert fehlt |
+| `config.py` | YAML laden/prüfen (Basis → Netzfall → Szenario); `cfg.get("a.b")` bricht ab, wenn der Wert fehlt |
+| `uebersicht.py` | zentrale Parameterübersicht → `docs/eingangsparameter.md` |
 | `sources/` | Leser: Netzberechnung (Excel), DWD, Rohdaten-Import |
 | `demand.py`, `weather.py`, `solar.py`, `heatpump.py`, `prices.py` | Zeitreihen: Last, T_a, Strahlung, Kollektorleistung, COP, Strompreis |
 | `prepare.py` | baut daraus eine Tabelle 8760 h |

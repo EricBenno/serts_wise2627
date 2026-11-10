@@ -1,0 +1,62 @@
+# Szenario: auch WP, PtH, Netz-Lebensdauer aus dem KWW Technikkatalog, Größenklassen für das große Netz
+# (WP ≈ 5-10 MW, PtH/Gaskessel ≈ 15-17 MW). Aufruf: uv run serts run --netz gross --szenario kww_komplett_gross
+# Gegenstück für das kleine Netz: kww_komplett.
+
+waermepumpe:
+  kosten_spez:
+    wert: 1400000
+    einheit: "EUR/MW_th"
+    status: belegt
+    quelle: "KWW Tab. 24 (Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto): 1.440 EUR/kW bei 5 MW, 1.340 EUR/kW bei 10 MW -> 1.400 EUR/kW, Unsicherheit ±30 %"
+    hinweis: "Basis (Frederikssund 2022, DK, NH3): 1,0 Mio. EUR/MW. Das KWW enthält keine Speicher-WP -> gleicher Satz für beide Teile angenommen."
+pth:
+  kosten_spez:
+    wert: 160000
+    einheit: "EUR/MW_th"
+    status: belegt
+    quelle: "KWW Tab. 32 (Elektrodenkessel, 2026): 180 EUR/kW bei 10 MW, 140 EUR/kW bei 20 MW (Reserve hier ≈ 15,6 MW) -> 160 EUR/kW"
+gas_referenz:
+  kosten_spez:
+    wert: 50000
+    einheit: "EUR/MW_th"
+    status: belegt
+    quelle: "KWW Tab. 20 (Erdgaskessel Spitzenlast): Kostenkurve 920 * P_kW^0,6989 -> 49 EUR/kW bei 17 MW (10 MW: 60, 30 MW: 40)"
+oekonomie:
+  lebensdauer:
+    waermepumpe:
+      wert: 28
+      einheit: "a"
+      status: belegt
+      quelle: "KWW Tab. 24: 28 a (Bezug VDI 2067-1), Unsicherheit ±30 %"
+    pth:
+      wert: 25
+      einheit: "a"
+      status: belegt
+      quelle: "KWW Tab. 32 (Elektrodenkessel): 25 a"
+    gaskessel:
+      wert: 30
+      einheit: "a"
+      status: belegt
+      quelle: "KWW Tab. 20: 30 a"
+    netz:
+      wert: 30
+      einheit: "a"
+      status: belegt
+      quelle: "KWW Tab. 36/37: 30 a (KMR bei 110 °C mindestens 30 a; PMR bei 70 °C ≈ 50 a, bei geringeren Netztemperaturen länger)"
+      hinweis: "Basis 40 a. Bei 80/50 °C (hier) eher oberer Bereich."
+  om_fix:
+    waermepumpe:
+      wert: 0.03
+      einheit: "1/a vom Invest"
+      status: belegt
+      quelle: "KWW Tab. 24: fix 17.700-402.000 EUR/a = 3,0 % des Invests (zusätzlich variabel 2 EUR/MWh_th, hier nicht berücksichtigt)"
+    pth:
+      wert: 0.015
+      einheit: "1/a vom Invest"
+      status: belegt
+      quelle: "KWW Tab. 32: 27.000-216.000 EUR/a = 1,5 % des Invests"
+    gaskessel:
+      wert: 0.02
+      einheit: "1/a vom Invest"
+      status: belegt
+      quelle: "KWW Tab. 20: 1.400-24.000 EUR/a = 2 % des Invests"

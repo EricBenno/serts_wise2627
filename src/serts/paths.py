@@ -7,6 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_DIR = ROOT / "config"
 SCENARIO_DIR = CONFIG_DIR / "scenarios"
+NETZ_DIR = (
+    CONFIG_DIR / "netze"
+)  # ein Netzfall = Lastgang, Trassen, Fläche (Abweichungen von base.yaml)
 DATA_RAW = ROOT / "data" / "raw"
 DATA_PROCESSED = ROOT / "data" / "processed"
 DATA_REFERENCE = ROOT / "data" / "reference"

@@ -55,16 +55,23 @@ def jahresverlauf(r: pd.DataFrame, out: Path) -> Path:
         label="Speicherinhalt (Energie in MWh, bez. auf 10 °C)",
     )
     a2.set_ylabel("Speicherinhalt [MWh]")
-    if "T_a" in r:
+    if "T_speicher_oben" in r:
         a3 = a2.twinx()
         a3.plot(
-            r["T_a"].resample("D").mean(),
-            color="grey",
-            lw=0.8,
-            label="Außentemperatur (Tagesmittel, nicht Speichertemp.)",
+            r["T_speicher_oben"].resample("D").mean(),
+            color="#d62728",
+            lw=1.0,
+            label="Speichertemperatur oben (Kennlinie aus Füllstand)",
         )
-        a3.set_ylabel("Außentemperatur [°C]", color="grey")
-        a3.tick_params(axis="y", colors="grey")
+        a3.plot(
+            r["T_speicher_mittel"].resample("D").mean(),
+            color="#7f7f7f",
+            lw=0.8,
+            label="Speichertemperatur Mittel",
+        )
+        a3.set_ylim(0, 100)
+        a3.set_ylabel("Speichertemperatur [°C]", color="#d62728")
+        a3.tick_params(axis="y", colors="#d62728")
         a3.legend(fontsize=8, loc="upper right")
     a2.set_ylabel("Speicher [MWh]", color="#c06c00")
     a2.tick_params(axis="y", colors="#c06c00")

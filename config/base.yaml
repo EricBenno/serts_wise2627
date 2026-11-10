@@ -16,7 +16,9 @@
 #   SCH = obsidian/Waermenetz_PTES_Modellschema_v3.md, DRL = Dronninglund (Solites 2019),
 #   NB = data/raw/bad_lippspringe/results netzberechnung.xlsx (eigene Netzberechnung des Teams),
 #   TEAM = Rückmeldung des Teams vom 09.11.2026, SIF = Sifnaios et al. 2023 (Solar Energy 251),
-#   BSW = BSW-Solar (2025): Wärmeplanung mit Solarthermie
+#   BSW = BSW-Solar (2025): Wärmeplanung mit Solarthermie,
+#   KWW = KWW Technikkatalog Wärmeplanung v1.1 (08-2026), data/raw/kww/ (Kosten/Lebensdauer 2026, netto, real; Erträge nicht übernommen),
+#   GR = data/raw/bad_lippspringe/results_gross.xlsx (Netzberechnung großes Netz, config/netze/gross.yaml)
 # Geldwerte: EUR, Preisbasis oekonomie.preisbasisjahr, netto (ohne MwSt.)
 # =====================================================================================
 
@@ -181,18 +183,19 @@ netz:
     quelle: "TEAM: Großteil der Trasse unter Straßen, Rest 'grüne Wiese' – Verhältnis nachsteuerbar"
     sens: [0.5, 1.0]
   kosten_trasse_strasse:
-    wert: 550
+    wert: 650
     einheit: "EUR/m Trasse"
-    status: annahme
-    quelle: "Manderfeld (via Borderstep 2012): flexible Rohre unter Asphalt 220-440 EUR/m; CARMEN: 200-400 EUR/m; x ≈ 1,6 Baupreissteigerung 2012->2025 (grob) -> ≈ 350-700, Mitte 550 EUR/m (inkl. Tiefbau und Oberfläche)"
-    sens: [400, 800]
-    hinweis: "KEA-BW Technikkatalog Wärmeplanung (Netzkosten nach DN und Oberfläche) nachtragen"
+    status: belegt
+    quelle: "KWW Tab. 36/37 (2026, netto): Tiefbau befestigtes Terrain (Mittel aus min./max.) + Rohrmaterial, gewichtet mit der Längenverteilung je Rohrdimension der Netzberechnung (PEX 20-100, KMR 100-250): 653 EUR/m, Spanne 366-940 (scripts/kww_trasse.py)"
+    sens: [370, 940]
+    hinweis: "Vorher 550 EUR/m (Manderfeld/Borderstep 2012 x 1,6). Größere Rohre sind teurer: Netz groß 1.140 EUR/m (config/netze/gross.yaml). docs/entscheidungen.md E32."
   kosten_trasse_gruen:
-    wert: 250
+    wert: 320
     einheit: "EUR/m Trasse"
-    status: annahme
-    quelle: "Manderfeld (via Borderstep 2012): flexible Rohre unbefestigt 100-180 EUR/m; x ≈ 1,6 -> ≈ 160-290, gerundet 250 EUR/m"
-    sens: [150, 400]
+    status: belegt
+    quelle: "KWW Tab. 36/37 (2026, netto): Tiefbau unbefestigtes Terrain (Mittel aus min./max.) + Rohrmaterial, gewichtet wie oben: 322 EUR/m, Spanne 241-403 (scripts/kww_trasse.py)"
+    sens: [240, 400]
+    hinweis: "Vorher 250 EUR/m (Manderfeld/Borderstep 2012 x 1,6). Netz groß 640 EUR/m."
   kosten_hausanschluss:
     wert: 10000
     einheit: "EUR/Stück"
@@ -227,28 +230,48 @@ ptes:
     quelle: "BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh)"
     sens: [1.5e-5, 8.0e-5]
     hinweis: "PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10)."
+  fuellstand_voll:
+    wert: 0.375
+    einheit: "-"
+    status: annahme
+    quelle: "Temperaturkennlinie des Speichers (Abschätzung): Oberschicht hat T_oben ab diesem Füllstand (Energieinhalt / Kapazität), darunter fällt sie linear bis T_unten (bei Füllstand 0). Kalibriert an Dronninglund: Dezember Füllstand 12-24 % (684-1.323 MWh von ≈ 5.500 MWh, Solites 2019) bei ≈ 50 °C Oberschicht (TEAM) -> (50-10)/(85-10) = 0,53; 0,2/0,53 = 0,375"
+    sens: [0.0, 0.25, 0.5]
+    hinweis: "0 = keine Kennlinie (altes Verhalten: Direktentladung bei jedem Füllstand). Gleiche Kennlinie liefert die Temperaturen in den Ergebnisplots. Ein Messwert der Oberschichttemperatur (Solites/DTU-Datensatz 2014-2020) würde die Annahme belegen. docs/entscheidungen.md E34."
+  direkt_dT:
+    wert: 5
+    einheit: "K"
+    status: vorgabe
+    quelle: "BRF §3.1: Direktentladung braucht T_oben >= T_VL + 5 K (Wärmeübertrager/Übergabe)"
+  direkt_glaettung:
+    wert: 0.1
+    einheit: "h"
+    status: vorgabe
+    quelle: "numerische Hilfsgröße: Direktleistung <= (Energie oberhalb der Grenzfüllstand) / 0,1 h -> volle Leistung ab ≈ 1,5 MWh Überschuss (je Netz), danach fest 'an/aus'"
   kosten_ref:
-    wert: 38.3
+    wert: 67.77
     einheit: "EUR/m3"
     status: belegt
-    quelle: "SIF Kap. 2: DRL 60.000 m3, Speicherkosten ≈ 2,3 Mio. EUR (38,3 EUR/m3), Preisstand 2014 (docs/saisonaler_speicher.md: weitere Stützpunkte Marstal 10.000 m3 = 67, Vojens 210.000 m3 = 24 EUR/m3)"
+    quelle: "KWW Tab. 52 (Erdbeckenspeicher): Kostenkurve Invest = 1093,6 * V^0,7472 (2026, netto) bei V_ref = 60.000 m3 -> 67,8 EUR/m3; Stützwerte 20.000 m3 90, 50.000 m3 70, 100.000 m3 60, 200.000 m3 50 EUR/m3"
+    hinweis: "Frühere Basis (SIF/DRL 2014: 38,3 EUR/m3 bei 60.000 m3 x Index 1,5 = 57,5) liegt bei 60.000 m3 ≈ 15 % niedriger; bei 1.600 m3 praktisch gleich (175 vs. 168 EUR/m3). docs/entscheidungen.md E32."
   V_ref:
     wert: 60000
     einheit: "m3"
     status: belegt
-    quelle: "SIF / DRL"
+    quelle: "Bezugsgröße der Kostenkurve (innerhalb der KWW-Stützwerte 20.000-200.000 m3)"
   kosten_exponent:
-    wert: -0.31
+    wert: -0.2528
     einheit: "-"
-    status: annahme
-    quelle: "eigene Anpassung c ~ V^b durch Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019 via IEA SHC) und DRL; Kontrolle Vojens 200.000 m3: Modell 26, real 24 EUR/m3"
+    status: belegt
+    quelle: "KWW Tab. 52: Invest ~ V^0,7472 -> spezifisch ~ V^-0,2528"
     sens: [-0.2, -0.4]
+    hinweis: "Gültigkeit laut KWW 20.000-200.000 m3; darunter (Basisfall klein: 1.000-6.000 m3) extrapoliert -> unsicher, Sensitivität ptes.kosten_faktor. Marstal 10.000 m3 real ≈ 67 EUR/m3 (2014)."
   preisindex:
-    wert: 1.5
+    wert: 1.0
     einheit: "-"
-    status: annahme
-    quelle: "Preissteigerung Tiefbau/Bau 2014 -> 2025 grob +50 % (Größenordnung Destatis Baupreisindex; genauer Index noch einsetzen)"
-    sens: [1.3, 1.8]
+    status: vorgabe
+    quelle: "KWW-Kosten gelten bereits für 2026 (netto, real) -> kein Index nötig (Preisbasis 2025/26 ≈ gleich)"
+    sens: [1.3]
+    hinweis: "Bei Rückgriff auf Preise älterer Projekte (DRL 2014) Index ≈ 1,5 einsetzen."
   segmente_m3:
     wert: [0, 1000, 2500, 6000, 12000, 35000]
     einheit: "m3"
@@ -341,12 +364,12 @@ kollektor:
     sens: [pvgis_sarah3]
     hinweis: "pvgis_sarah3 = gemessenes, strahlungsreiches Jahr 2022 (Szenario wetter_2022)."
   kosten_spez:
-    wert: 450
-    einheit: "EUR/m2"
-    status: annahme
-    quelle: "Bitterfeld-Wolfen (BBU 2024): Budget 2,25 Mio. EUR für 5.000 m2 -> 450 EUR/m2 (Planung 2020); DRL 2014: (5,856+0,321) Mio. EUR / 37.573 m2 = 164 EUR/m2 (sehr groß, DK)"
-    sens: [300, 550]
-    hinweis: "Feldgröße hier ≈ 2.000-5.000 m2 -> Bitterfeld-Größenordnung passender als DRL."
+    wert: 304
+    einheit: "EUR/m2 Brutto"
+    status: belegt
+    quelle: "KWW Tab. 21 (Flachkollektor Freifläche, 2026, netto): 330 EUR/m2 Apertur bei 5.000 m2 (Spanne 390 bei 500 m2 bis 300 bei 15.000 m2, Unsicherheit ±20 %) x 0,92 (Apertur/Brutto) = 304 EUR/m2 Brutto"
+    sens: [240, 380]
+    hinweis: "Größenklasse hier 5.000 m2 Apertur (Netz klein); Netz groß: config/netze/gross.yaml (15.000 m2 Apertur). Vorher 450 EUR/m2 (Bitterfeld-Wolfen, Planung 2020; DRL 164 EUR/m2 DK). Erträge aus dem KWW (450 kWh/m2) werden NICHT übernommen (eigene Rechnung, PVGIS). docs/entscheidungen.md E32."
 
 # -------------------------------------------------------------------------------------
 waermepumpe:
@@ -646,15 +669,17 @@ oekonomie:
       quelle: "TEAM: real gleichbleibend"
   lebensdauer:
     ptes:
-      wert: 25
+      wert: 30
       einheit: "a"
-      status: annahme
-      quelle: "Liner-Lebensdauer; Größenordnung DEA Technology Data Energy Storage (20-40 a)"
+      status: belegt
+      quelle: "KWW Tab. 52: 30 a (mittlere Lebensdauer, Unsicherheit ±40 %); Anmerkung GX: die Abdeckung muss i. d. R. deutlich früher erneuert werden"
+      sens: [20, 40]
+      hinweis: "Vorher 25 a (Liner, DEA 20-40 a). Der Betrachtungszeitraum ist 20 a -> Restwert nach VDI 2067 wirkt (E32)."
     kollektor:
       wert: 25
       einheit: "a"
-      status: annahme
-      quelle: "Größenordnung DEA/VDI 2067-1 (20-30 a)"
+      status: belegt
+      quelle: "KWW Tab. 21: 25 a (Freifläche, professionelle Wartung; Bezug VDI 2067-1)"
     waermepumpe:
       wert: 20
       einheit: "a"
@@ -684,13 +709,13 @@ oekonomie:
     ptes:
       wert: 0.005
       einheit: "1/a vom Invest"
-      status: annahme
-      quelle: "geringe Wartung (Pumpen/Deckel), Größenordnung VDI 2067-1"
+      status: belegt
+      quelle: "KWW Tab. 52: fix 7.500-100.000 EUR/a (≈ 5 EUR/MWh Speicherkapazität) = 0,4-0,75 % des Invests je nach Größe; Mitte 0,5 %"
     kollektor:
       wert: 0.01
       einheit: "1/a vom Invest"
-      status: annahme
-      quelle: "Größenordnung VDI 2067-1 (Solaranlagen 1-1,5 %/a)"
+      status: belegt
+      quelle: "KWW Tab. 21: 1 % des Invests (in Anlehnung an VDI 2067-1)"
     waermepumpe:
       wert: 0.025
       einheit: "1/a vom Invest"
@@ -745,6 +770,7 @@ tornado:
       - last.skalierung
       - last.ankerkunde_anteil
       - ptes.verlustrate
+      - ptes.fuellstand_voll
       - waermepumpe.COP_ptes
       - waermepumpe.eta_G_luft
       - netz.T_RL
@@ -766,3 +792,4 @@ tornado:
     einheit: "-"
     status: vorgabe
     quelle: "BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens'"
+

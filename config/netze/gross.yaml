@@ -1,0 +1,85 @@
+# Netzfall "gross": größeres Netz (877 Gebäude, mehr Nichtwohngebäude) und ca. 8 ha Freifläche.
+# Nur Abweichungen von base.yaml (= Netz "klein"). Aufruf: uv run serts run --netz gross
+# Ausgaben getrennt: results/gross/..., data/processed/gross/...
+# Quelle aller Netzdaten: GR = data/raw/bad_lippspringe/results_gross.xlsx (eigene Netzberechnung, F|Heat)
+#   und Netzannahmen.pdf (Karte/Kennzahlen beider Netze).
+
+meta:
+  netzfall: gross
+  beschreibung: "Größeres Netz: 877 Gebäude, 42.783 MWh/a, Trasse 14.291 m, Freifläche ca. 80.000 m2"
+
+standort:
+  flaeche_verfuegbar:
+    wert: 80000
+    einheit: "m2"
+    status: vorgabe
+    quelle: "TEAM 10.11.2026: Freifläche für das große Netz ca. 8 ha (Netzannahmen.pdf: gelb umrandete Fläche)"
+    hinweis: "Muss Kollektorfeld (inkl. Reihenabstand, Technik) UND PTES aufnehmen."
+
+last:
+  datei:
+    wert: "bad_lippspringe/results_gross.xlsx"
+    einheit: "-"
+    status: belegt
+    quelle: "GR (relativ zu data/raw)"
+  Q_gebaeude:
+    wert: 42781.9
+    einheit: "MWh/a"
+    status: belegt
+    quelle: "GR Lastprofil, Summe 'Summe aller Gebäudetypen' (Zusammenfassung: 42.783; 877 Gebäude; EFH 378, MFH 172, GMK 222, GKO 105)"
+    hinweis: "Kontrollwert; das Modell nutzt die Zeitreihe. Nichtwohngebäude (GMK + GKO) = 54 % der Last."
+  Q_netzverlust:
+    wert: 5440.0
+    einheit: "MWh/a"
+    status: belegt
+    quelle: "GR Lastprofil, Spalte 'Verlust' (Zusammenfassung: 5.437,8), gerechnet bei 80/50 degC"
+    sens: [4826.8]
+    hinweis: "4.826,8 MWh/a = Variante extra Dämmung (last.netzverlust_variante)."
+  P_max_kontrolle:
+    wert: 15.503
+    einheit: "MW"
+    status: belegt
+    quelle: "GR Lastprofil, Max. 'Gesamtsumme' am 21.01.2022 07:00 (Stundensumme aller Gebäude + Verlust)"
+    hinweis: "Die Zusammenfassung nennt 11,47 MW 'inkl. Gleichzeitigkeitsfaktor 0,4537'; das Modell rechnet wie beim kleinen Netz mit der Stundensumme (konservativ, gilt für PtH-Reserve und Gaskessel)."
+
+netz:
+  trassenlaenge:
+    wert: 14291
+    einheit: "m"
+    status: belegt
+    quelle: "GR Zusammenfassung, Summe Trassenlänge (ohne Hausanschlussleitungen 16.755 m)"
+  kosten_trasse_strasse:
+    wert: 1140
+    einheit: "EUR/m Trasse"
+    status: belegt
+    quelle: "KWW Tab. 36/37 (2026, netto): Tiefbau befestigt (Mittel min./max.) + Material, gewichtet mit der Rohrdimensionsverteilung des großen Netzes (viele KMR DN 100-250): 1.143 EUR/m, Spanne 730-1.556 (scripts/kww_trasse.py)"
+    sens: [730, 1560]
+    hinweis: "Rund doppelt so teuer je m wie im kleinen Netz (653), weil das große Netz Hauptleitungen bis DN 250 braucht."
+  kosten_trasse_gruen:
+    wert: 640
+    einheit: "EUR/m Trasse"
+    status: belegt
+    quelle: "KWW Tab. 36/37 (2026, netto): Tiefbau unbefestigt (Mittel min./max.) + Material, gewichtet wie oben: 644 EUR/m, Spanne 501-786 (scripts/kww_trasse.py)"
+    sens: [500, 790]
+  hausanschluesse:
+    wert: 877
+    einheit: "Stück"
+    status: belegt
+    quelle: "GR Zusammenfassung, Anzahl Hausanschlüsse (nach Rohrdimension: PEX 20: 559, PEX 25: 259, PEX 32: 37, PEX 40-80: 22); Hausanschlusslänge gesamt 16.755 m"
+
+kollektor:
+  kosten_spez:
+    wert: 276
+    einheit: "EUR/m2 Brutto"
+    status: belegt
+    quelle: "KWW Tab. 21 (Flachkollektor Freifläche, 2026, netto): 300 EUR/m2 Apertur bei 15.000 m2 (größte Stützstelle; darüber Kostenkurve 616,3 * A^0,928 -> 30.000 m2: 294) x 0,92 (Apertur/Brutto) = 276 EUR/m2 Brutto"
+    sens: [220, 350]
+    hinweis: "Größenklasse ≥ 15.000 m2 Apertur (Netz groß); Netz klein: 304 EUR/m2 (5.000 m2). Ertragsangaben des KWW werden nicht übernommen."
+
+ptes:
+  segmente_m3:
+    wert: [0, 2500, 10000, 30000, 70000, 130000]
+    einheit: "m3"
+    status: vorgabe
+    quelle: "Stützstellen der Kostenkurve für das große Netz (je Segment ein LP-Lauf); Obergrenze 130.000 m3 ≈ 49.000 m2 Grundfläche bei 80.000 m2 Gesamtfläche"
+    hinweis: "Bei Optimum an der oberen Grenze die Stützstellen verschieben (docs/entscheidungen.md E30)."

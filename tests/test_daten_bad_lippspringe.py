@@ -24,6 +24,22 @@ def test_lastgang_kontrollwerte(last, cfg):
     assert kz["P_max_MW"] == pytest.approx(cfg.get("last.P_max_kontrolle"), abs=1e-3)
 
 
+@pytest.mark.parametrize("netz", ["klein", "gross"])
+def test_lastgang_kontrollwerte_je_netz(netz):
+    """Jedes Netz: Kontrollwerte der Config passen zur eigenen Lastgang-Datei (data/raw)."""
+    from serts.config import load_config
+    from serts.paths import DATA_RAW
+
+    c = load_config(netz=netz)
+    datei = DATA_RAW / c.get("last.datei")
+    if not datei.exists():
+        pytest.skip(f"Rohdatei fehlt ({datei.name}) -> `uv run serts import-raw`")
+    kz = netzberechnung.kennzahlen(netzberechnung.read_lastgang(datei))
+    assert kz["Q_gebaeude_MWh"] == pytest.approx(c.get("last.Q_gebaeude"), abs=1)
+    assert kz["Q_verlust_MWh"] == pytest.approx(c.get("last.Q_netzverlust"), abs=1)
+    assert kz["P_max_MW"] == pytest.approx(c.get("last.P_max_kontrolle"), abs=1e-3)
+
+
 def test_summenspalten_konsistent(last):
     typen = last[netzberechnung.TYPEN].sum(axis=1)
     assert (typen - last["gebaeude"]).abs().max() < 0.005  # Rundung auf 3 Nachkommastellen

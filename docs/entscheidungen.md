@@ -267,3 +267,48 @@ gerechnet (docs/saisonaler_speicher.md).
   (saisonal: < 2 Zyklen und ≥ 60 % Winteranteil; kurzzeit: ≥ 4 Zyklen; sonst gemischt), `strompreis_mittel`
   und `strompreis_gewichtet` (tatsächlich bezahlter Mittelwert nach Strommenge).
 
+### E32 KWW Technikkatalog als einheitliche deutsche Kostenquelle (10.11.2026)
+Quelle: KWW Technikkatalog Wärmeplanung v1.1 (08-2026), Preise 2026 real, **netto**, `data/raw/kww/`.
+**Übernommen** (Basisfall): 
+- *Kollektor* (Tab. 21, Flachkollektor Freifläche): 330 €/m² Apertur bei 5.000 m² (Netz klein), 300 €/m² bei
+  15.000 m² (Netz groß), × 0,92 = **304 bzw. 276 €/m² Brutto** (unser Kollektorfeld ist die Bruttofläche; vorher
+  450 €/m² nach Bitterfeld-Wolfen). Lebensdauer 25 a und O&M 1 % unverändert, jetzt belegt. Der **Ertrag** (450 kWh/m²)
+  wird *nicht* übernommen (eigene Rechnung mit PVGIS; die KWW-Anmerkung CG sagt selbst, er sei nicht pauschal gültig).
+  Die Größenklasse ist eine Festlegung je Netz (die Kostenkurve des Kollektors bleibt linear); nach dem Lauf
+  prüfen, ob das gewählte Feld zur Klasse passt (Tabelle in `docs/ergebnisse_netz_gross.md`).
+- *PTES* (Tab. 52): Kostenkurve **Invest = 1093,6 · V^0,7472** (Stützwerte 90/70/60/50 €/m³ bei 20.000/50.000/
+  100.000/200.000 m³). Das entspricht in unserer Form c(V) = c_ref · (V/V_ref)^b mit c_ref = 67,8 €/m³ bei
+  60.000 m³ und b = −0,2528; **Preisindex 1,0** (die 1,5 galten für die 2014er DRL-Preise). Bei 1.600 m³ praktisch
+  gleich wie vorher (168 statt 175 €/m³), bei 60.000 m³ ≈ 18 % höher (68 statt 57 €/m³). **Achtung:** das KWW gilt für
+  20.000–200.000 m³; für das kleine Netz (1.000–6.000 m³) wird die Kurve extrapoliert (Sensitivität
+  `ptes.kosten_faktor`).
+  **Lebensdauer 30 a** (vorher 25; KWW: „mittlere Lebensdauer, Abdeckung muss deutlich früher erneuert werden“,
+  Unsicherheit ±40 %). Bei 20 a Betrachtungszeitraum wirkt der Restwert (VDI 2067); Sens. 20/40 a. O&M 0,5 %
+  (KWW: 0,4–0,75 %). Das KWW nennt für TTES (Behälter) 40 a und 500–650 €/m³ – hier nicht relevant.
+- *Trasse* (Tab. 36/37): €/m aus Tiefbau (Mittel min./max.) + Rohrmaterial, gewichtet mit der Rohrdimensions-
+  verteilung der Netzberechnung (`scripts/kww_trasse.py`): **klein 653 €/m Straße / 322 €/m Grün** (vorher 550/250),
+  **groß 1.143 / 644 €/m**: das große Netz braucht Rohre bis DN 250 (KMR) und ist je m fast doppelt so teuer.
+  Anteil Straße weiter 80 % (Teamvorgabe).
+**Nicht im Basisfall** (Szenarien `kww_komplett`, `kww_komplett_gross`): Luft-WP 1.730 €/kW (1 MW) bis 1.340 €/kW
+(10 MW) gegenüber 1.000 €/kW (Frederikssund, DK) im Basisfall, 28 a Lebensdauer, O&M 3 %; PtH 340 €/kW (2 MW) bzw.
+160 €/kW (Elektrodenkessel, 15 MW); Gaskessel; Netz-Lebensdauer 30 a (KWW) statt 40 a. Grund: Die WP-Kosten
+verändern das Ergebnis stark und das KWW enthält keine Sole-/Speicher-WP; das Team soll bewusst entscheiden.
+**Hausanschluss** bleibt bei 10.000 € je Anschluss (inkl. Übergabestation): KWW Hausstation 5.000–9.600 € (10–60 kW)
++ Hausanschlussleitung 12 m (3.000–6.500 € je nach Terrain) = 8.000–16.000 € – passt. Im großen Netz mit 54 %
+Nichtwohngebäuden eher oberes Ende (Sensitivität `netz.kosten_hausanschluss`).
+**Alle Erträge, Wirkungsgrade und Speicherverluste des KWW werden nicht übernommen.**
+
+### E33 Netzfälle klein/groß, getrennte Ausgaben, zentrale Parameterübersicht (10.11.2026)
+- **Netzfall** = `config/netze/<netz>.yaml` (nur Abweichungen von `base.yaml`): `klein` (Basis, ohne Datei) und
+  `gross` (877 Gebäude, Last/Verluste/Spitze aus `results_gross.xlsx`, Trasse 14.291 m, 877 Anschlüsse, Fläche
+  80.000 m², Kollektorkosten, Trassenkosten, Speicher-Stützstellen bis 130.000 m³). Aufruf `--netz gross`; Szenarien
+  lassen sich mit `+` kombinieren (`--szenario kww_komplett_gross+strom_day_ahead_2024`). Das ist die einfachste
+  Lösung, die beide Netze ohne Codeverzweigung abbildet: kein Modellcode kennt „klein“ oder „groß“.
+- **Ausgaben getrennt:** `results/<netz>/<zeit>_<szenario>_<label>/` und `data/processed/<netz>/<szenario>/`
+  (bestehende Läufe nach `results/klein/` verschoben); `config.yaml`/`meta.json` enthalten das Netz.
+- **Spitzenlast:** wie beim kleinen Netz die Stundensumme (15,5 MW); die Zusammenfassung nennt 11,47 MW „inkl.
+  Gleichzeitigkeitsfaktor“ (0,4537). Für PtH-Reserve und Gaskessel wäre das knapp 26 % weniger Leistung – bewusst
+  konservativ gelassen (Sensitivität `pth.redundanz`).
+- **Zentrale Übersicht** `docs/eingangsparameter.md` (`uv run serts uebersicht`): aus der Config erzeugt, beide Netze
+  nebeneinander mit Status und Kurzquelle, gruppiert in Netz, Energiepreise, Wirtschaftlichkeit, Investitionen/
+  Lebensdauern, Technik, plus PTES-Kostenkurve. Vollständige Liste weiterhin `docs/annahmen.md`.

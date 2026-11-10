@@ -54,7 +54,7 @@ def build_zeitreihen(cfg: Config, vollstaendig: bool = True) -> tuple[pd.DataFra
 
 def prepare(cfg: Config) -> dict:
     jahr = int(cfg.get("zeit.wetterjahr"))
-    out_dir = DATA_PROCESSED / cfg.name
+    out_dir = DATA_PROCESSED / cfg.netz / cfg.name
     out_dir.mkdir(parents=True, exist_ok=True)
     ts, hinweise = build_zeitreihen(cfg, vollstaendig=False)
     ts.to_csv(out_dir / f"zeitreihen_{jahr}.csv", float_format="%.6g")

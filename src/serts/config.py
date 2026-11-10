@@ -19,8 +19,9 @@ from typing import Any
 
 import yaml
 
-from serts.paths import CONFIG_DIR, SCENARIO_DIR
+from serts.paths import CONFIG_DIR, NETZ_DIR, SCENARIO_DIR
 
+STANDARD_NETZ = "klein"
 STATUS = ("belegt", "vorgabe", "annahme", "offen")
 PARAM_KEYS = {"wert", "einheit", "status", "quelle", "sens", "hinweis"}
 
@@ -109,6 +110,9 @@ class Config:
     tree: dict
     name: str = "base"
     sources: list[str] = field(default_factory=list)
+    netz: str = (
+        "klein"  # Netzfall: bestimmt die Ausgabeordner results/<netz>/ und data/processed/<netz>/
+    )
 
     # -- Zugriff ---------------------------------------------------------------
     def node(self, dotted: str) -> Any:
@@ -159,7 +163,9 @@ class Config:
         if not is_param(node):
             raise KeyError(f"'{dotted}' ist kein Parameter")
         node["wert"] = wert
-        return Config(tree=tree, name=f"{self.name}:{dotted}={wert}", sources=self.sources)
+        return Config(
+            tree=tree, name=f"{self.name}:{dotted}={wert}", sources=self.sources, netz=self.netz
+        )
 
     def params(self) -> list[tuple[str, dict]]:
         return list(iter_params(self.tree))
@@ -168,7 +174,12 @@ class Config:
         return [path for path, p in self.params() if p.get("wert") is None]
 
     def dump(self, path: Path) -> None:
-        payload = {"_szenario": self.name, "_quellen": self.sources, **self.tree}
+        payload = {
+            "_netz": self.netz,
+            "_szenario": self.name,
+            "_quellen": self.sources,
+            **self.tree,
+        }
         path.write_text(yaml.safe_dump(payload, allow_unicode=True, sort_keys=False), "utf-8")
 
 
@@ -190,18 +201,44 @@ def resolve_scenario(scenario: str | Path) -> Path:
     raise FileNotFoundError(f"Szenario '{scenario}' nicht gefunden (gesucht: {candidate})")
 
 
+def resolve_netz(netz: str) -> Path | None:
+    """config/netze/<netz>.yaml (Abweichungen von base.yaml); None für das Standardnetz ohne Datei."""
+    candidate = NETZ_DIR / f"{netz}.yaml"
+    if candidate.exists():
+        return candidate
+    if netz == STANDARD_NETZ:
+        return None
+    verfuegbar = sorted(p.stem for p in NETZ_DIR.glob("*.yaml"))
+    raise FileNotFoundError(f"Netz '{netz}' nicht gefunden (vorhanden: {verfuegbar})")
+
+
 def load_config(
-    scenario: str | Path | None = None, base: Path = CONFIG_DIR / "base.yaml"
+    scenario: str | Path | None = None,
+    base: Path = CONFIG_DIR / "base.yaml",
+    netz: str = STANDARD_NETZ,
 ) -> Config:
+    """base.yaml -> Netzfall (config/netze/<netz>.yaml) -> Szenario(en).
+
+    Mehrere Szenarien lassen sich mit ``+`` kombinieren (``kww_komplett+strom_day_ahead_2024``);
+    spätere überschreiben frühere.
+    """
     tree = _read_yaml(base)
     sources = [str(base)]
     name = "base"
+    npath = resolve_netz(netz)
+    if npath is not None:
+        tree = deep_merge(tree, _read_yaml(npath))
+        sources.append(str(npath))
     if scenario is not None:
-        spath = resolve_scenario(scenario)
-        tree = deep_merge(tree, _read_yaml(spath))
-        sources.append(str(spath))
-        name = spath.stem
+        teile = [str(s) for s in str(scenario).split("+")] if "+" in str(scenario) else [scenario]
+        stems = []
+        for teil in teile:
+            spath = resolve_scenario(teil)
+            tree = deep_merge(tree, _read_yaml(spath))
+            sources.append(str(spath))
+            stems.append(spath.stem)
+        name = "+".join(stems)
     errors = validate(tree)
     if errors:
         raise ConfigError("Ungültige Konfiguration:\n  - " + "\n  - ".join(errors))
-    return Config(tree=tree, name=name, sources=sources)
+    return Config(tree=tree, name=name, sources=sources, netz=netz)

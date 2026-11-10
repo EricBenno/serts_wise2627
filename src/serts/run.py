@@ -28,13 +28,19 @@ def git_info() -> dict[str, str | bool]:
 
 
 def new_run_dir(cfg: Config, label: str = "", root: Path = RESULTS) -> Path:
-    """results/<YYYYmmdd-HHMMSS>_<szenario>[_<label>]/ mit config.yaml und meta.json."""
+    """results/<netz>/<YYYYmmdd-HHMMSS>_<szenario>[_<label>]/ mit config.yaml und meta.json."""
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     name = "_".join(filter(None, [stamp, cfg.name, label]))
-    out = root / name
+    out = root / cfg.netz / name
     out.mkdir(parents=True, exist_ok=False)
     cfg.dump(out / "config.yaml")
-    meta = {"szenario": cfg.name, "label": label, "zeit": stamp, "git": git_info()}
+    meta = {
+        "netz": cfg.netz,
+        "szenario": cfg.name,
+        "label": label,
+        "zeit": stamp,
+        "git": git_info(),
+    }
     (out / "meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), "utf-8")
     return out
 

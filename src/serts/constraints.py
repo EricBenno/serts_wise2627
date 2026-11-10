@@ -6,6 +6,9 @@
              f = (T_oben - T_RL) / (T_oben - T_unten) ≈ 53 %; nur wenn das Volumen optimiert wird)
 3. WP bei Kälte: COP_luft(t) * p_hp_luft(t) <= p_max_pu_luft(t) * P_WP
              (thermische Leistung der Luft-WP sinkt bei Kälte; Speicher-WP nicht betroffen)
+4. Temperaturkennlinie: Direktentladung nur oberhalb eines Mindestfüllstands s_min (Oberschicht >= T_VL + dT):
+             p_direkt(t) <= (E(t) - s_min * E_nom) / glaettung,   E = Energieinhalt heiß + kalt
+             Darunter nur Wärmepumpe (Link ``umlagern`` bucht heiß -> kalt, damit nichts "strandet").
 
 Die frühere Jahresregel „Direktanteil <= 53 %“ und die Monatsbeschränkung der Speicher-WP entfallen:
 das feste Verhältnis heiß : kalt gilt jetzt in jeder Stunde (docs E27).
@@ -16,7 +19,7 @@ from __future__ import annotations
 import pandas as pd
 
 from serts.config import Config
-from serts.network import M2_JE_MW, anteil_heiss, mwh_je_m3
+from serts.network import M2_JE_MW, anteil_heiss, fuellstand_direkt, mwh_je_m3
 
 
 def _sel(var, name: str):
@@ -67,3 +70,17 @@ def extra_functionality(n, snapshots, *, cfg: Config, ts: pd.DataFrame) -> None:
     cop = _zeitreihe(ts["COP_luft"], ts.index)
     pu = _zeitreihe(ts["p_max_pu_luft"], ts.index)
     m.add_constraints(cop * _sel(m["Link-p"], "hp_luft") - pu * p_wp <= 0, name="wp_luft_leistung")
+
+    # 4 Temperaturkennlinie des Speichers -> Direktentladung nur bei hoher Füllung
+    s_min = fuellstand_direkt(cfg)
+    if hat_speicher and s_min > 0:
+        e_hk = _sel(m["Store-e"], "ptes_heiss") + _sel(m["Store-e"], "ptes_kalt")
+        if v_var:
+            e_nom = _sel(m["Store-e_nom"], "ptes_heiss") + _sel(m["Store-e_nom"], "ptes_kalt")
+        else:
+            e_nom = float(n.stores.loc[["ptes_heiss", "ptes_kalt"], "e_nom"].sum())
+        glaettung = cfg.get("ptes.direkt_glaettung")
+        m.add_constraints(
+            _sel(m["Link-p"], "entladen_direkt") * glaettung - (e_hk - s_min * e_nom) <= 0,
+            name="speicher_direkt_kennlinie",
+        )

@@ -16,6 +16,8 @@ uv run serts annahmen        # docs/annahmen.md aus config/base.yaml erzeugen
 uv run serts fetch-pvgis     # Strahlung 2022 (einmalig, Netzzugang)
 uv run serts run             # Lauf: Größen optimieren, Kennzahlen ausgeben (≈ 2,5 min)
 uv run serts run --V 0       # Variante ohne Speicher (weitere Optionen: --A, --szenario, --stunden)
+uv run serts run --netz gross  # größeres Netz (877 Gebäude, 8 ha); Ergebnisse getrennt in results/gross/
+uv run serts uebersicht      # docs/eingangsparameter.md: zentrale Übersicht der Eingangsparameter
 uv run serts tornado         # Sensitivitäten (≈ 20–25 min), Ergebnisse: docs/ergebnisse.md
 uv run pytest                # Tests
 ```
@@ -24,17 +26,19 @@ uv run pytest                # Tests
 
 ```
 config/base.yaml            alle Parameter: wert, einheit, status (belegt|vorgabe|annahme|offen), quelle
-config/scenarios/*.yaml     nur Abweichungen zur Basis
+config/netze/gross.yaml     Netzfall "gross" (Lastgang, Trasse, Fläche); Netz "klein" = Basis
+config/scenarios/*.yaml     nur Abweichungen zur Basis (kombinierbar: --szenario a+b)
 data/raw/                   Rohdaten unverändert (nicht im Git, siehe data/raw/MANIFEST.md)
-data/processed/             erzeugte Zeitreihen (nicht im Git, reproduzierbar per `serts prepare`)
+data/processed/<netz>/      erzeugte Zeitreihen je Netz (nicht im Git, reproduzierbar per `serts prepare`)
 data/reference/             Referenzwerte Dronninglund (Solites 2019) für Validierung
 docs/                       Datenbasis, Entscheidungen, Annahmen (generiert), Modellgrenzen
 src/serts/                  Paket (siehe docs/struktur.md)
 tests/                      pytest
-results/<lauf-id>/          Laufergebnisse inkl. Config-Kopie + Git-Hash (nicht im Git)
+results/<netz>/<lauf-id>/   Laufergebnisse je Netz (klein|gross) inkl. Config-Kopie + Git-Hash (nicht im Git)
 notebooks/                  nur Auswertung, keine Logik
 ```
 
+Zentrale Übersicht aller wichtigen Eingangsparameter (Netz klein und groß nebeneinander): [docs/eingangsparameter.md](docs/eingangsparameter.md).
 Details und Stand: [docs/struktur.md](docs/struktur.md). Ergebnisse: [docs/ergebnisse.md](docs/ergebnisse.md),
 offene Kostenpunkte: [docs/unsicherheiten.md](docs/unsicherheiten.md), Systemskizze: [docs/systemskizze.md](docs/systemskizze.md),
 BEW-Förderung: [docs/foerderung_bew.md](docs/foerderung_bew.md), Vorschläge: [docs/ausblick.md](docs/ausblick.md).

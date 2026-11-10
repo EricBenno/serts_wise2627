@@ -88,6 +88,38 @@ def test_speicherteile_wachsen_im_festen_verhaeltnis(cfg, ts):
     assert kalt == pytest.approx((1 - f) / f * h, abs=1e-6)
 
 
+def test_temperaturkennlinie_werte(cfg):
+    # Kalibrierung Dronninglund: Füllstand 0,2 -> Oberschicht ≈ 50 °C; voll ab 0,375; leer = T_unten
+    f = pd.Series([0.0, 0.2, 0.375, 0.5, 1.0])
+    oben, mittel = network.temperaturen_speicher(cfg, f)
+    np.testing.assert_allclose(oben, [10.0, 50.0, 85.0, 85.0, 85.0], atol=0.01)
+    np.testing.assert_allclose(mittel, [10.0, 25.0, 38.125, 47.5, 85.0], atol=0.01)
+    # T_VL 80 + 5 K = T_oben -> Direktentladung erst ab "voll"
+    assert network.fuellstand_direkt(cfg) == pytest.approx(0.375)
+    # kälteres Netz (VL 60): Oberschicht 65 °C genügt -> niedrigerer Mindestfüllstand
+    assert network.fuellstand_direkt(cfg.variante("netz.T_VL", 60)) == pytest.approx(
+        0.375 * 55 / 75
+    )
+
+
+def test_direktentladung_nur_bei_hohem_fuellstand(cfg, ts, netz_fest):
+    s_min = network.fuellstand_direkt(cfg)
+    e = netz_fest.stores_t.e
+    E = netz_fest.stores.loc[["ptes_heiss", "ptes_kalt"], "e_nom"].sum()
+    ueberschuss = e["ptes_heiss"] + e["ptes_kalt"] - s_min * E
+    p = netz_fest.links_t.p0["entladen_direkt"]
+    assert (p <= ueberschuss / cfg.get("ptes.direkt_glaettung") + 1e-6).all()
+    assert (p[ueberschuss < -1e-6] <= 1e-6).all()
+
+
+def test_kennlinie_aus_ist_altes_verhalten(cfg, ts):
+    c = cfg.variante("ptes.fuellstand_voll", 0.0)
+    n = network.build_network(c, ts, A_m2=3000.0, V_m3=3000.0)
+    assert "umlagern" not in n.links.index
+    network.optimize(n, c, ts)
+    assert "speicher_direkt_kennlinie" not in n.model.constraints
+
+
 def test_luft_wp_leistung_sinkt_bei_kaelte(cfg, ts, netz_fest):
     P = netz_fest.links.at["wp_out", "p_nom_opt"]
     p0 = netz_fest.links_t.p0
@@ -130,8 +162,15 @@ def test_speicherkosten_stetig_monoton_und_degressiv(cfg):
     assert invest == sorted(invest)  # mehr Volumen kostet nie weniger (kein Sprung nach unten)
     je_m3 = [economics.ptes_kosten_je_m3(cfg, v) for v in vs]
     assert je_m3 == sorted(je_m3, reverse=True)  # Skaleneffekt: je m3 immer günstiger
-    # bei V_ref: c_ref * Preisindex (38,3 * 1,5)
-    assert economics.ptes_kosten_je_m3(cfg, 60_000) == pytest.approx(38.3 * 1.5)
+    # bei V_ref: c_ref * Preisindex (KWW Tab. 52: 1093,6 * V^0,7472 / V = 67,8 EUR/m3)
+    assert economics.ptes_kosten_je_m3(cfg, 60_000) == pytest.approx(67.77 * 1.0)
+
+
+def test_speicherkosten_passen_zu_kww_stuetzwerten(cfg):
+    # KWW Tab. 52 (2026): 20.000 m3 = 90, 50.000 = 70, 100.000 = 60, 200.000 m3 = 50 EUR/m3
+    kww = {20_000: 90, 50_000: 70, 100_000: 60, 200_000: 50}
+    for v, soll in kww.items():
+        assert economics.ptes_kosten_je_m3(cfg, v) == pytest.approx(soll, rel=0.05)
 
 
 def test_segmente_sind_stetig(cfg):

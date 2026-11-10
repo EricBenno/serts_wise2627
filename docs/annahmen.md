@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 27, vorgabe 43, annahme 50, offen 0
+Status: belegt 35, vorgabe 46, annahme 42, offen 0
 
 
 ## standort
@@ -50,8 +50,8 @@ Status: belegt 27, vorgabe 43, annahme 50, offen 0
 | `netz.hausanschluesse` | 159 | Stück | belegt | NB Zusammenfassung, Anzahl Hausanschlüsse (EFH 119, MFH 38, GHA 2); Hausanschlusslänge gesamt 3.413 m |  |  |
 | `netz.netzkosten_einbeziehen` | True | - | vorgabe | TEAM 09.11.2026: Netzkosten in die LCOH einbeziehen (zusätzlich zur LCOH der Erzeugung ausgewiesen) |  |  |
 | `netz.anteil_strasse` | 0.8 | - | vorgabe | TEAM: Großteil der Trasse unter Straßen, Rest 'grüne Wiese' – Verhältnis nachsteuerbar | 0.5, 1 |  |
-| `netz.kosten_trasse_strasse` | 550 | EUR/m Trasse | annahme | Manderfeld (via Borderstep 2012): flexible Rohre unter Asphalt 220-440 EUR/m; CARMEN: 200-400 EUR/m; x ≈ 1,6 Baupreissteigerung 2012->2025 (grob) -> ≈ 350-700, Mitte 550 EUR/m (inkl. Tiefbau und Oberfläche) | 400, 800 | KEA-BW Technikkatalog Wärmeplanung (Netzkosten nach DN und Oberfläche) nachtragen |
-| `netz.kosten_trasse_gruen` | 250 | EUR/m Trasse | annahme | Manderfeld (via Borderstep 2012): flexible Rohre unbefestigt 100-180 EUR/m; x ≈ 1,6 -> ≈ 160-290, gerundet 250 EUR/m | 150, 400 |  |
+| `netz.kosten_trasse_strasse` | 650 | EUR/m Trasse | belegt | KWW Tab. 36/37 (2026, netto): Tiefbau befestigtes Terrain (Mittel aus min./max.) + Rohrmaterial, gewichtet mit der Längenverteilung je Rohrdimension der Netzberechnung (PEX 20-100, KMR 100-250): 653 EUR/m, Spanne 366-940 (scripts/kww_trasse.py) | 370, 940 | Vorher 550 EUR/m (Manderfeld/Borderstep 2012 x 1,6). Größere Rohre sind teurer: Netz groß 1.140 EUR/m (config/netze/gross.yaml). docs/entscheidungen.md E32. |
+| `netz.kosten_trasse_gruen` | 320 | EUR/m Trasse | belegt | KWW Tab. 36/37 (2026, netto): Tiefbau unbefestigtes Terrain (Mittel aus min./max.) + Rohrmaterial, gewichtet wie oben: 322 EUR/m, Spanne 241-403 (scripts/kww_trasse.py) | 240, 400 | Vorher 250 EUR/m (Manderfeld/Borderstep 2012 x 1,6). Netz groß 640 EUR/m. |
 | `netz.kosten_hausanschluss` | 10000 | EUR/Stück | annahme | Hausanschlussleitung + Übergabestation EFH: 5.000-15.000 EUR (co2online via Finanztip; 42watt), Mitte 10.000 EUR | 5000, 15000 | Wird in der Praxis oft über Baukostenzuschüsse/Hausanschlusskosten von den Kunden getragen. |
 
 ## ptes
@@ -62,10 +62,13 @@ Status: belegt 27, vorgabe 43, annahme 50, offen 0
 | `ptes.T_oben` | 85 | degC | vorgabe | BRF §3.1; Liner-Grenze (Xiang et al. 2022) | 90 | Direktentladung braucht T_oben >= T_VL + 5 K = 85 degC -> bei VL 80 genau an der Grenze. |
 | `ptes.T_unten` | 10 | degC | vorgabe | BRF §3.1; DRL Tmin 9-12 degC |  |  |
 | `ptes.verlustrate` | 4e-05 | 1/h | annahme | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) | 1.5e-05, 8e-05 | PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10). |
-| `ptes.kosten_ref` | 38.3 | EUR/m3 | belegt | SIF Kap. 2: DRL 60.000 m3, Speicherkosten ≈ 2,3 Mio. EUR (38,3 EUR/m3), Preisstand 2014 (docs/saisonaler_speicher.md: weitere Stützpunkte Marstal 10.000 m3 = 67, Vojens 210.000 m3 = 24 EUR/m3) |  |  |
-| `ptes.V_ref` | 60000 | m3 | belegt | SIF / DRL |  |  |
-| `ptes.kosten_exponent` | -0.31 | - | annahme | eigene Anpassung c ~ V^b durch Marstal 10.000 m3 / 67 EUR/m3 (DEA 2019 via IEA SHC) und DRL; Kontrolle Vojens 200.000 m3: Modell 26, real 24 EUR/m3 | -0.2, -0.4 |  |
-| `ptes.preisindex` | 1.5 | - | annahme | Preissteigerung Tiefbau/Bau 2014 -> 2025 grob +50 % (Größenordnung Destatis Baupreisindex; genauer Index noch einsetzen) | 1.3, 1.8 |  |
+| `ptes.fuellstand_voll` | 0.375 | - | annahme | Temperaturkennlinie des Speichers (Abschätzung): Oberschicht hat T_oben ab diesem Füllstand (Energieinhalt / Kapazität), darunter fällt sie linear bis T_unten (bei Füllstand 0). Kalibriert an Dronninglund: Dezember Füllstand 12-24 % (684-1.323 MWh von ≈ 5.500 MWh, Solites 2019) bei ≈ 50 °C Oberschicht (TEAM) -> (50-10)/(85-10) = 0,53; 0,2/0,53 = 0,375 | 0, 0.25, 0.5 | 0 = keine Kennlinie (altes Verhalten: Direktentladung bei jedem Füllstand). Gleiche Kennlinie liefert die Temperaturen in den Ergebnisplots. Ein Messwert der Oberschichttemperatur (Solites/DTU-Datensatz 2014-2020) würde die Annahme belegen. docs/entscheidungen.md E34. |
+| `ptes.direkt_dT` | 5 | K | vorgabe | BRF §3.1: Direktentladung braucht T_oben >= T_VL + 5 K (Wärmeübertrager/Übergabe) |  |  |
+| `ptes.direkt_glaettung` | 0.1 | h | vorgabe | numerische Hilfsgröße: Direktleistung <= (Energie oberhalb der Grenzfüllstand) / 0,1 h -> volle Leistung ab ≈ 1,5 MWh Überschuss (je Netz), danach fest 'an/aus' |  |  |
+| `ptes.kosten_ref` | 67.77 | EUR/m3 | belegt | KWW Tab. 52 (Erdbeckenspeicher): Kostenkurve Invest = 1093,6 * V^0,7472 (2026, netto) bei V_ref = 60.000 m3 -> 67,8 EUR/m3; Stützwerte 20.000 m3 90, 50.000 m3 70, 100.000 m3 60, 200.000 m3 50 EUR/m3 |  | Frühere Basis (SIF/DRL 2014: 38,3 EUR/m3 bei 60.000 m3 x Index 1,5 = 57,5) liegt bei 60.000 m3 ≈ 15 % niedriger; bei 1.600 m3 praktisch gleich (175 vs. 168 EUR/m3). docs/entscheidungen.md E32. |
+| `ptes.V_ref` | 60000 | m3 | belegt | Bezugsgröße der Kostenkurve (innerhalb der KWW-Stützwerte 20.000-200.000 m3) |  |  |
+| `ptes.kosten_exponent` | -0.2528 | - | belegt | KWW Tab. 52: Invest ~ V^0,7472 -> spezifisch ~ V^-0,2528 | -0.2, -0.4 | Gültigkeit laut KWW 20.000-200.000 m3; darunter (Basisfall klein: 1.000-6.000 m3) extrapoliert -> unsicher, Sensitivität ptes.kosten_faktor. Marstal 10.000 m3 real ≈ 67 EUR/m3 (2014). |
+| `ptes.preisindex` | 1 | - | vorgabe | KWW-Kosten gelten bereits für 2026 (netto, real) -> kein Index nötig (Preisbasis 2025/26 ≈ gleich) | 1.3 | Bei Rückgriff auf Preise älterer Projekte (DRL 2014) Index ≈ 1,5 einsetzen. |
 | `ptes.segmente_m3` | [0, 1000, 2500, 6000, 12000, 35000] | m3 | vorgabe | Stützstellen der stückweise linearen Kostenfunktion C(V) = V * c(V) (stetig, konkav); je Segment ein LP-Lauf mit Grenzkosten und Fixkostenanteil (docs E30) |  | Obergrenze 35.000 m3 ≈ ganze Fläche. Mehr Stützstellen = genauer, aber ein Lauf mehr je Stelle. |
 | `ptes.kosten_faktor` | 1 | - | vorgabe | Faktor auf die gesamte Speicherkostenkurve (Sensitivität Speicherkosten) | 0.7, 1.3 |  |
 | `ptes.volumen_je_grundflaeche` | 2.65 | m3/m2 | annahme | DRL-Geometrie (Pyramidenstumpf 90/26 m, 16 m tief) ähnlich skaliert auf 8.700 m3: Oberkante 47 m, Tiefe 8 m; + 5 m Randstreifen -> 3.280 m2 Grund -> 8.700/3.280 | 2, 4 |  |
@@ -86,7 +89,7 @@ Status: belegt 27, vorgabe 43, annahme 50, offen 0
 | `kollektor.flaechenfaktor` | 2.3 | m2 Grund / m2 Kollektor | belegt | BSW: 2- bis 2,3-fache Bruttokollektorfläche inkl. Reihenabstände und Heizzentrale (Berlin.de nennt ≈ 3) | 2, 3 |  |
 | `kollektor.strahlung_skalierung` | 1 | - | vorgabe | Faktor auf die Strahlung (Sensitivität Solarressource) | 0.9, 1.1 | ±10 % ≈ Spanne strahlungsarmer/-reicher Jahre: DWD 03028 1992-2010 meist 850-1.056 kWh/m2 um den Median ≈ 960 (datenbasis §2). Jahr 2022: Szenario wetter_2022. |
 | `kollektor.strahlungsquelle` | pvgis_tmy | - | vorgabe | TEAM 09.11.2026: Normaljahr als Basis. PVGIS-TMY (SARAH3, 2005-2023), auf 35 deg Süd umgerechnet (pvlib Perez). DWD-Strahlung 03028 endet 2011. | pvgis_sarah3 | pvgis_sarah3 = gemessenes, strahlungsreiches Jahr 2022 (Szenario wetter_2022). |
-| `kollektor.kosten_spez` | 450 | EUR/m2 | annahme | Bitterfeld-Wolfen (BBU 2024): Budget 2,25 Mio. EUR für 5.000 m2 -> 450 EUR/m2 (Planung 2020); DRL 2014: (5,856+0,321) Mio. EUR / 37.573 m2 = 164 EUR/m2 (sehr groß, DK) | 300, 550 | Feldgröße hier ≈ 2.000-5.000 m2 -> Bitterfeld-Größenordnung passender als DRL. |
+| `kollektor.kosten_spez` | 304 | EUR/m2 Brutto | belegt | KWW Tab. 21 (Flachkollektor Freifläche, 2026, netto): 330 EUR/m2 Apertur bei 5.000 m2 (Spanne 390 bei 500 m2 bis 300 bei 15.000 m2, Unsicherheit ±20 %) x 0,92 (Apertur/Brutto) = 304 EUR/m2 Brutto | 240, 380 | Größenklasse hier 5.000 m2 Apertur (Netz klein); Netz groß: config/netze/gross.yaml (15.000 m2 Apertur). Vorher 450 EUR/m2 (Bitterfeld-Wolfen, Planung 2020; DRL 164 EUR/m2 DK). Erträge aus dem KWW (450 kWh/m2) werden NICHT übernommen (eigene Rechnung, PVGIS). docs/entscheidungen.md E32. |
 
 ## waermepumpe
 
@@ -166,15 +169,15 @@ Status: belegt 27, vorgabe 43, annahme 50, offen 0
 | `oekonomie.preisaenderung.gas` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend; Variante +2 %/a | 0.02 |  |
 | `oekonomie.preisaenderung.co2` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend | 0.05 |  |
 | `oekonomie.preisaenderung.biomasse` | 0 | 1/a | vorgabe | TEAM: real gleichbleibend |  |  |
-| `oekonomie.lebensdauer.ptes` | 25 | a | annahme | Liner-Lebensdauer; Größenordnung DEA Technology Data Energy Storage (20-40 a) |  |  |
-| `oekonomie.lebensdauer.kollektor` | 25 | a | annahme | Größenordnung DEA/VDI 2067-1 (20-30 a) |  |  |
+| `oekonomie.lebensdauer.ptes` | 30 | a | belegt | KWW Tab. 52: 30 a (mittlere Lebensdauer, Unsicherheit ±40 %); Anmerkung GX: die Abdeckung muss i. d. R. deutlich früher erneuert werden | 20, 40 | Vorher 25 a (Liner, DEA 20-40 a). Der Betrachtungszeitraum ist 20 a -> Restwert nach VDI 2067 wirkt (E32). |
+| `oekonomie.lebensdauer.kollektor` | 25 | a | belegt | KWW Tab. 21: 25 a (Freifläche, professionelle Wartung; Bezug VDI 2067-1) |  |  |
 | `oekonomie.lebensdauer.waermepumpe` | 20 | a | annahme | Größenordnung DEA/VDI 2067-1 (18-25 a) |  |  |
 | `oekonomie.lebensdauer.pth` | 20 | a | annahme | Größenordnung DEA (20 a) |  |  |
 | `oekonomie.lebensdauer.gaskessel` | 20 | a | annahme | Größenordnung VDI 2067-1 (18-20 a) |  |  |
 | `oekonomie.lebensdauer.netz` | 40 | a | annahme | KMR/PEX-Fernwärmeleitungen: Größenordnung 40 a (DEA District heating distribution; VDI 2067-1) |  |  |
 | `oekonomie.lebensdauer.hausanschluss` | 25 | a | annahme | Übergabestation dominiert die Kosten: Größenordnung 20-30 a |  |  |
-| `oekonomie.om_fix.ptes` | 0.005 | 1/a vom Invest | annahme | geringe Wartung (Pumpen/Deckel), Größenordnung VDI 2067-1 |  |  |
-| `oekonomie.om_fix.kollektor` | 0.01 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Solaranlagen 1-1,5 %/a) |  |  |
+| `oekonomie.om_fix.ptes` | 0.005 | 1/a vom Invest | belegt | KWW Tab. 52: fix 7.500-100.000 EUR/a (≈ 5 EUR/MWh Speicherkapazität) = 0,4-0,75 % des Invests je nach Größe; Mitte 0,5 % |  |  |
+| `oekonomie.om_fix.kollektor` | 0.01 | 1/a vom Invest | belegt | KWW Tab. 21: 1 % des Invests (in Anlehnung an VDI 2067-1) |  |  |
 | `oekonomie.om_fix.waermepumpe` | 0.025 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 (Wärmepumpen 2,5 %/a) |  |  |
 | `oekonomie.om_fix.pth` | 0.02 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 |  |  |
 | `oekonomie.om_fix.gaskessel` | 0.02 | 1/a vom Invest | annahme | Größenordnung VDI 2067-1 |  |  |
@@ -193,4 +196,4 @@ Status: belegt 27, vorgabe 43, annahme 50, offen 0
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |
+| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.fuellstand_voll', 'waermepumpe.COP_ptes', 'waermepumpe.eta_G_luft', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

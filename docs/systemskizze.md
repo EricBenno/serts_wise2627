@@ -1,7 +1,7 @@
 # Systemskizze – so wie das Modell rechnet
 
 Diese Skizze entspricht 1:1 `src/serts/network.py` (Komponenten, Wirkungsgrade) und `src/serts/constraints.py`
-(Zusatzbedingungen), Stand nach E27. Rechtecke = Komponenten (PyPSA-Links/Generatoren), Stadien/Kreise = Knoten
+(Zusatzbedingungen), Stand nach E34 (Netz klein; Netz groß: Zahlen siehe `docs/eingangsparameter.md`). Rechtecke = Komponenten (PyPSA-Links/Generatoren), Stadien/Kreise = Knoten
 (Busse), Zylinder = Speicher. **✱ = Größe wird vom Solver optimiert.** Die Optimierung läuft über alle 8760 Stunden
 gemeinsam (perfekte Voraussicht).
 
@@ -20,7 +20,8 @@ flowchart LR
 
     SOLD["solar_direkt<br/>η = 1"]
     LAD["laden<br/>1 MWh Solar = 0,53 heiß + 0,47 kalt<br/>0,1 EUR/MWh Hilfskosten"]
-    ENT["entladen_direkt<br/>heiß → Netz, η = 1"]
+    ENT["entladen_direkt<br/>heiß → Netz, η = 1<br/>nur bei Füllstand ≥ 37,5 %"]
+    UML["umlagern<br/>heiß → kalt, η = 1<br/>(Wärme unter der Direkt-Grenze<br/>nur noch über die WP nutzbar)"]
     HPL["hp_luft<br/>COP(T_a) 2,1 bis 3,3<br/>nur wenn T_a ≥ -7 °C"]
     HPS["hp_speicher<br/>COP 4,5, ganzjährig"]
     WPO["wp_out ✱<br/>gemeinsame WP-Leistung<br/>(Luft + Speicher)"]
@@ -33,6 +34,7 @@ flowchart LR
     LAD --> SPH
     LAD --> SPK
     SPH --> ENT --> W
+    SPH --> UML --> SPK
     ELEC --> HPL --> WPB
     ELEC --> HPS --> WPB
     SPK -. "Quellwärme: 3,5 MWh je MWh Strom" .-> HPS
@@ -43,12 +45,16 @@ flowchart LR
     C1["Nebenbedingung 1: Fläche<br/>2,3 · A + V / 2,65 ≤ 13.000 m²"]
     C2["Nebenbedingung 2: Größe Speicher<br/>kalt = 0,875 × heiß<br/>(gilt in jeder Stunde)"]
     C3["Nebenbedingung 3: Luft-WP bei Kälte<br/>Wärmeleistung ≤ 100 % bis 80 % von P_WP<br/>(ab -1 bis -7 °C)"]
+    C4["Nebenbedingung 4: Temperaturkennlinie<br/>Direktleistung ≤ (Inhalt − 37,5 % · Kapazität) / 0,1 h<br/>Oberschicht 85 °C erst ab Füllstand 37,5 %"]
     C1 -.- KOL
     C1 -.- SPH
     C2 -.- SPH
     C2 -.- SPK
     C3 -.- HPL
     C3 -.- WPO
+    C4 -.- ENT
+    C4 -.- SPH
+    C4 -.- SPK
 
     NETZ["Verteilnetz - nicht optimiert<br/>Trasse 2.432 m + 159 Hausanschlüsse<br/>nur Kosten: Wärmepreis beim Kunden"]
     LAST -.- NETZ
@@ -62,8 +68,8 @@ flowchart LR
     class ELEC,SOLAR,WPB,W bus
     class NS,KOL quelle
     class SPH,SPK speicher
-    class SOLD,LAD,ENT,HPL,HPS,WPO,PTH link
-    class C1,C2,C3,NETZ regel
+    class SOLD,LAD,ENT,UML,HPL,HPS,WPO,PTH link
+    class C1,C2,C3,C4,NETZ regel
     class LAST last
 ```
 
@@ -75,9 +81,11 @@ flowchart LR
 - **Optimiert (✱):** Kollektorfläche, Speichervolumen (innerhalb des gewählten Kostensegments), WP-Leistung,
   PtH-Leistung (mindestens Spitzenlast). Alle Verbindungen (Links) sind ansonsten nicht in der Leistung begrenzt.
 - **Speicher:** Beladen füllt immer beide Teile im Verhältnis 53 : 47 (Wasser von 10 auf 85 °C). Direkt ins Netz
-  geht nur der heiße Teil, die Wärmepumpe holt ihre Quellwärme aus dem kalten Teil. Das ersetzt die frühere
+  geht nur der heiße Teil (und nur bei hohem Füllstand, E34), die Wärmepumpe holt ihre Quellwärme aus dem kalten Teil. Das ersetzt die frühere
   Jahresregel („Direktanteil ≤ 53 %“) und die Monatsbeschränkung (E27).
-- **Nicht im Modell:** Wärmeübertrager-Grenzen, Transmissionsleitung, Mischung/Zwischentemperaturen im Speicher,
+- **Temperaturkennlinie (E34):** Oberschichttemperatur und Mitteltemperatur folgen aus dem Füllstand (`ptes.fuellstand_voll` = 0,375,
+  0 = aus); sie steuern die Direktentladung und erscheinen in den Ergebnisplots.
+- **Nicht im Modell:** Wärmeübertrager-Grenzen, Transmissionsleitung, zeitliche Mischung im Speicher (nur die Füllstands-Kennlinie),
   WP lädt den Speicher (rechnet sich bei festem Strompreis nicht, siehe `docs/ausblick.md`), Teillast der WP,
   Frostschutz des Kollektorfelds, Stagnation, Netzhydraulik, Leistungspreis für Strom.
 - **Kostenseite (nicht in der Skizze):** Jahreskosten nach VDI 2067 je Komponente (inkl. 10 % Nebenkosten) + Strom
