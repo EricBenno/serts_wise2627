@@ -56,6 +56,12 @@ Apertur), Trasse 1.140/640 €/m (KWW, größere Rohre), Luft-WP nach KWW-Güteg
   35.000–50.000 m³): 1,6–2,3 Zyklen, 44–62 % Winteranteil – auf dem Weg zum Saisonspeicher.
 * Ohne Speicher hilft mehr Kollektor nicht (244–249 €/MWh, PtH ≈ 1.900 MWh/a).
 
+**Ohne Flächengrenze (Abschätzung aus der Heatmap, kein Lauf):** Bei 25.000 m² wird es mit mehr Speicher noch
+billiger (232 → 230 €/MWh von 20.000 auf 50.000 m³), +5.000 m² Kollektor bringen −5, dann −3 €/MWh. Geschätztes
+Optimum ≈ 35.000–40.000 m² / 60.000–90.000 m³ (≈ 12–14 ha statt 8 ha), Wärmepreis ≈ 225–227 €/MWh (**−2 bis
+−4 €/MWh**), Solaranteil ≈ 35–40 %, Speicher deutlich saisonaler (< 1,5 Zyklen, > 60 % Winteranteil). Obergrenze,
+denn Fläche kostet im Modell nichts; schon eine geringe Pacht zehrt den Vorteil auf.
+
 ## Lesart
 
 * **Die Fläche begrenzt das System**, nicht die Kosten: Kollektor (2,3 m² Grund je m²) und Speicher (2,65 m³ je m²)

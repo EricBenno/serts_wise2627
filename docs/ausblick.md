@@ -29,6 +29,11 @@ Sortiert nach Nutzen für die Aussage und Aufwand (Aufwand: ● klein, ●● mi
 - **Mehrere Wetterjahre** (kalt/warm, strahlungsarm) nacheinander statt Normaljahr; Klimawandel-Trend.
 - **Nichtlineare Speicherphysik** (Temperaturschichten) nur, wenn die Zwei-Teile-Näherung des Speichers (E27) als zu grob kritisiert wird.
 - **Stündlicher CO₂-Faktor** des Strommix statt Jahresmittel (relevant für Day-Ahead-Betrieb der WP).
+- **CO₂-Bilanz vervollständigen** (`docs/unsicherheiten.md` §3a), ●: Strom-Emissionsfaktor als Mittel des KWW-Pfads über
+  20 a (Tab. 1, ≈ 100 g/kWh), Erdgas mit Vorkette (240 g/kWh); graue Emissionen nur mit belegten Literaturwerten
+  (LCA zu Großkollektoren/PTES/WP), sonst als Grenze benennen.
+- **Fläche und Grundstückskosten** ●: Lauf ohne bindende Fläche (z. B. 150.000 m², Speicher-Segmente bis 150.000 m³)
+  und mit Pacht-/Kaufpreis je m² – die Abschätzung in `docs/ergebnisse*.md` ist nur eine Obergrenze.
 - **Versorgungssicherheit** qualitativ: PtH-Reserve, Ausfall der Luft-WP bei Frost, Anteil Spitzenlast.
 
 ## D Stromzeitreihe: woher und wie?

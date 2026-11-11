@@ -32,6 +32,11 @@ erklärt: `docs/speichermodell.md`.
 im November/Dezember gehalten und im Januar zuerst direkt (Oberschicht ≈ 85 °C), danach über die Speicher-WP bis
 10 °C entladen. Direktentladung gibt es nur bei dicker heißer Schicht (`kennlinie_rest_MWh` = 0).
 
+**Ohne Flächengrenze (Abschätzung aus der Heatmap, kein Lauf):** Die 13.000 m² binden, kosten aber wenig. Bei 4.000 m²
+bringen +1.000 m² Kollektor nur noch 3–5 €/MWh weniger, Tendenz fallend. Geschätztes Optimum ohne Grenze ≈ 5.000 m² /
+8.000–10.000 m³, Wärmepreis **höchstens 1–2 €/MWh** niedriger, Solaranteil ≈ 45 %. Obergrenze, denn Fläche kostet im
+Modell nichts (keine Pacht/kein Kauf).
+
 ## Was die Änderungen vom 10.11. bewirkt haben (Netz klein)
 
 | Stand | Kollektor / Speicher | LCOH | Wärmepreis inkl. Netz / Gas | Solar | Winteranteil |
