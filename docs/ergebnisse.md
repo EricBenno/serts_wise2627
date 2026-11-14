@@ -12,7 +12,7 @@ erklärt: `docs/speichermodell.md`.
 
 Geändert: Speicher in drei Teilen mit getrennten Ladelinks, Vorwärmen, größenabhängige Verluste/Übergangszone,
 Leistungspreis Strom, Einfallswinkel am Kollektor (E39; Prüfung `docs/validierung_dronninglund.md`).
-**Alle Abschnitte weiter unten (Varianten, Heatmap, Strom, Tornado) sind noch mit dem alten Speicher gerechnet.**
+**Alle Abschnitte ab „Basislauf alt“ (Varianten, Heatmap, Strom, Tornado) sind noch mit dem alten Speicher gerechnet.**
 
 | Kennzahl | alt (10.11.) | **Basis neu** | gleitender Vorlauf (`vl_gleitend`) | Day-Ahead 2024 (WP/PtH laden Speicher) |
 |---|---|---|---|---|
@@ -41,7 +41,23 @@ Ergebnisordner: `results/klein/20261114-172557_base_opt`, `…-170407_vl_gleiten
   LCOH 151,4). Das wahre Optimum liegt bei ≈ 6.000 m³; das Tal ist flach.
 * **Gleitender Vorlauf** (nur COP der Luft-WP): −6,7 €/MWh. **Day-Ahead 2024:** −19 €/MWh gegenüber fest 30 ct;
   davon bringt das Laden des Speichers durch WP/PtH ≈ 3 €/MWh (bei fester Auslegung 133,5 → 130,6).
-* Noch nicht neu gerechnet: Netz groß, Varianten, Heatmap, Tornado.
+* Noch nicht neu gerechnet: Heatmap, Tornado, Strom-Vergleich (außer Day-Ahead 2024).
+
+**Vergleichsvarianten neu** (`uv run serts varianten`, `results/klein/20261114-173001_base_varianten`):
+
+| | Basis | ohne Speicher | nur WP + PtH | mit BEW Modul 2 (optimiert) | Gas-Fernwärme |
+|---|---|---|---|---|---|
+| Kollektor / Speicher | 4.670 m² / 6.000 m³ | 1.210 m² / – | – | 4.670 m² / 6.000 m³ | – |
+| Wärmepumpe | 0,95 MW | 1,10 MW | 1,11 MW | 0,95 MW | – |
+| Solaranteil / EE-Anteil | 40 % / 87 % | 9 % / 80 % | 0 % / 79 % | 40 % / 87 % | 0 |
+| CO₂ [t/a] | 551 | 853 | 924 | 551 | 1.156 |
+| LCOH Erzeugung [€/MWh] | 150,0 | 173,5 | 178,2 | 129,2 | 164,9 |
+| Wärmepreis inkl. Netz [€/MWh] | **243,4** | 271,8 | 277,5 | **209,3** | **261,4** |
+| dito mit BEW, gleiche Auslegung | 209,3 | 248,7 | 256,9 | 209,3 | – |
+
+Solar + Speicher spart jetzt 34 €/MWh gegenüber reiner WP + PtH (vorher 18) und 28 €/MWh gegenüber Solar ohne
+Speicher (vorher 12). Die Varianten ohne Speicher sind ≈ 5 €/MWh teurer als am 10.11. (Leistungspreis, geringerer
+Kollektorertrag).
 
 ## Basislauf alt (Stand 10.11.2026, vor E39)
 
