@@ -14,7 +14,7 @@ uv run serts prepare         # Zeitreihen 8760 h -> data/processed/
 uv run serts offen           # Liste der offenen Parameter (x-Werte)
 uv run serts annahmen        # docs/annahmen.md aus config/base.yaml erzeugen
 uv run serts fetch-pvgis     # Strahlung 2022 (einmalig, Netzzugang)
-uv run serts run             # Lauf: Größen optimieren, Kennzahlen ausgeben (≈ 2,5 min)
+uv run serts run             # Lauf: Größen optimieren, Kennzahlen ausgeben (≈ 4 min)
 uv run serts run --V 0       # Variante ohne Speicher (weitere Optionen: --A, --szenario, --stunden)
 uv run serts run --netz gross  # größeres Netz (877 Gebäude, 8 ha); Ergebnisse getrennt in results/gross/
 uv run serts uebersicht      # docs/eingangsparameter.md: zentrale Übersicht der Eingangsparameter
@@ -43,6 +43,7 @@ Passt das Modell zur Leitfrage? [docs/kernfragen.md](docs/kernfragen.md). Zentra
 Details und Stand: [docs/struktur.md](docs/struktur.md). Ergebnisse: [docs/ergebnisse.md](docs/ergebnisse.md),
 offene Kostenpunkte: [docs/unsicherheiten.md](docs/unsicherheiten.md), Systemskizze: [docs/systemskizze.md](docs/systemskizze.md),
 BEW-Förderung: [docs/foerderung_bew.md](docs/foerderung_bew.md), Vorschläge: [docs/ausblick.md](docs/ausblick.md).
+Speichermodell: [docs/speichermodell.md](docs/speichermodell.md), geprüft gegen Dronninglund: [docs/validierung_dronninglund.md](docs/validierung_dronninglund.md).
 Wie die Berechnung funktioniert: [notebooks/01_modell_erklaert.ipynb](notebooks/01_modell_erklaert.ipynb).
 
 ## Projekt weitergeben / auf einem neuen Rechner einrichten

@@ -55,7 +55,7 @@ uv run serts fetch-strompreise 2022 2023 2024   # Day-Ahead-Preise laden (einmal
 uv run serts run --szenario strom_day_ahead_2024  # Strom als Zeitreihe statt fester Tarif
 uv run serts run --szenario vl_gleitend           # gleitender Vorlauf 80 -> 70 °C
 uv run serts run --szenario validierung_dronninglund --A 37573 --V 60000   # Speichermodell prüfen
-uv run pytest                            # 71 Tests
+uv run pytest                            # 95 Tests
 ```
 
 Ergebnis je Lauf in `results/<netz>/<zeit>_<szenario>_<label>/` (Netz `klein` = Basis, `gross` = größeres Netz;

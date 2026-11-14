@@ -4,7 +4,8 @@ Vorläufig: Kollektorkennwerte und mehrere Kosten sind Annahmen (`docs/annahmen.
 `docs/eingangsparameter.md`). Basis: Normaljahr (PVGIS-TMY), Lastgang/Temperatur 2022, Vorlauf 80 °C, **Zins real 5 %**,
 10 % Nebenkosten, fester Strompreis 30 ct/kWh, VDI 2067-1 real, **Kosten für Kollektor, Speicher, Trasse und WP
 (1.340 €/kW, unteres Ende) aus dem KWW Technikkatalog 2026** (E32, E38), **Luft-WP nach KWW-Gütegrad** (E35),
-Speicher mit **Temperaturkennlinie** und konsistenter Schichtung (E34, E36). Großes Netz:
+Speicher in drei Teilen mit Schichtung, Vorwärmen und größenabhängigen Verlusten, Leistungspreis Strom (E39;
+vor dem 14.11.: Temperaturkennlinie E34/E36). Großes Netz:
 **`docs/ergebnisse_netz_gross.md`**. Prüfung gegen die Leitfrage: **`docs/kernfragen.md`**. Speichermodell
 erklärt: `docs/speichermodell.md`.
 

@@ -11,7 +11,8 @@ Gesamtpreis(t) = Energie(t) + Netzentgelt (Arbeitspreis) + Abgaben   [EUR/MWh]
 - ``strom.day_ahead_normieren`` = true: das Day-Ahead-Profil wird so skaliert, dass der Jahresmittelwert der
   Energiekomponente dem festen Tarif entspricht -> vergleicht nur die zeitliche Struktur, nicht das Preisniveau.
 
-Nicht modelliert: Leistungspreis (EUR/kW und Jahr auf die höchste Netzbezugsleistung).
+Leistungspreis (EUR/kW und Jahr auf die höchste Netzbezugsleistung): ``strom.leistungspreis``, im Netz als
+Kosten der Anschlussleistung (network.py, Link ``netzanschluss``).
 """
 
 from __future__ import annotations

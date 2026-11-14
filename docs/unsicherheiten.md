@@ -18,7 +18,7 @@ Stand 09.11.2026. Richtung: ↑ = Modell unterschätzt die Kosten / ↓ = übers
 
 | Annahme | Stand im Modell | Risiko | Tornado |
 |---|---|---|---|
-| **Strompreisstruktur** | fester Mischpreis 30 ct/kWh | Größter Hebel überhaupt. Real: Arbeitspreis + Leistungspreis, ggf. reduzierte Netzentgelte (§ 14a, atypische Netznutzung), Day-Ahead-Optimierung, PV-Eigenstrom → kann deutlich günstiger *oder* teurer sein | Höhe ja, Struktur nein |
+| **Strompreisstruktur** | fester Mischpreis 30 ct/kWh + Leistungspreis 15,50 €/kW·a (E39) | Größter Hebel überhaupt. Real: Arbeitspreis + Leistungspreis, ggf. reduzierte Netzentgelte (§ 14a, atypische Netznutzung), Day-Ahead-Optimierung, PV-Eigenstrom → kann deutlich günstiger *oder* teurer sein | Höhe ja, Struktur nein |
 | Gaspreis- und CO₂-Pfad (Referenz) | 12 ct/kWh, 100 €/t, real konstant | entscheidet, ob das System günstiger als Gas ist | ja (Höhe) |
 | Förderung BEW | Basis 0 % | 40 % Invest-Zuschuss senkt LCOH spürbar | ja (40 %) |
 | Lebensdauern, O&M-Sätze | VDI/DEA-Größenordnung | ±10–20 % auf Kapitalkosten | nein |
