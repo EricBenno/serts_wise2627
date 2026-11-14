@@ -1,61 +1,69 @@
-# Wie der Speicher im Modell funktioniert (zwei Teile) – und was drei Schichten kosten würden
+# Wie der Speicher im Modell funktioniert (drei Teile)
 
-## 1 Zwei Teile = zwei Temperaturbänder, nicht zwei Becken
+Stand 14.11.2026 (E39). Geprüft gegen Dronninglund: `docs/validierung_dronninglund.md`.
+
+## 1 Drei Teile = drei Sorten Wärme in demselben Wasser
 
 Der Speicher ist ein Wasservolumen V. Gezählt wird Energie **bezogen auf 10 °C** (T_unten). Diese Energie wird in
-zwei Bänder geteilt:
+drei Teile sortiert (Zahlen für 80/45 °C Netz und ≈ 7.400 m³):
 
-| Teil | Band | Anteil der Kapazität | wer kann ihn leeren? |
+| Teil | was ist das? | Anteil der Kapazität | wie kommt die Wärme heraus? |
 |---|---|---|---|
-| **heiß** | Wärme zwischen 45 °C (Netz-Rücklauf) und 85 °C | 40 K / 75 K = **53 %** | `entladen_direkt` ins Netz |
-| **kalt** | Wärme zwischen 10 °C und 45 °C | 35 K / 75 K = **47 %** | nur die Speicher-WP (Quelle) |
+| **heißer Kern** | Wärme über 45 °C in richtig heißem Wasser (85 °C, oben) | 53 % × 70 % = 37 % | `entladen_direkt` ins Netz |
+| **Übergangszone** | Wärme über 45 °C im Mischwasser zwischen heiß und kalt (≈ 65 °C) | 53 % × 30 % = 16 % | `vorwaermen` (Rücklauf auf ≈ 60 °C, WP/PtH heizen nach) oder `umlagern` → WP |
+| **kalt** | Wärme zwischen 10 °C und 45 °C (Rücklauf) | 47 % | nur die Speicher-WP (Quelle, COP 4,5) |
 
-Man kann sich drei Wassertemperaturen vorstellen: oben 85 °C, in der Mitte 45 °C, unten 10 °C.
+* **Laden kalt** (`laden_kalt`): Wasser wird von 10 °C auf 45 °C erwärmt.
+* **Laden heiß** (`laden_heiss`): Wasser mit 45 °C wird auf 85 °C erwärmt. Ist der kalte Teil voll (Speicher unten
+  auf Rücklauftemperatur, im Sommer normal), wird nur noch heiß geladen und entladen: der Speicher pendelt zwischen
+  45 und 85 °C, ganz ohne Wärmepumpe.
+* **Direkt entladen:** 85-°C-Wasser geht ins Netz und kommt mit 45 °C zurück → nur der Kern sinkt.
+* **Vorwärmen:** Mischwasser hebt den Rücklauf von 45 auf ≈ 60 °C; die restlichen 20 K liefert in derselben Stunde
+  die WP oder PtH (je MW Nachheizung höchstens 0,75 MW Vorwärmen).
+* **Speicher-WP:** kühlt 45-°C-Wasser auf 10 °C ab → nur der kalte Teil sinkt.
+* **Mischen** (`abbau` Kern → Übergangszone, `umlagern` Übergangszone → kalt): heißes Wasser wird zu Mischwasser,
+  Mischwasser kühlt unter 45 °C. Keine Energie geht verloren, aber sie wird weniger wert.
 
-* **Laden (Solar):** 10-°C-Wasser wird auf 85 °C erwärmt → 1 MWh füllt 0,53 MWh heiß + 0,47 MWh kalt.
-* **Direkt entladen:** 85-°C-Wasser geht ins Netz und kommt mit 45 °C zurück → nur der heiße Teil sinkt.
-* **Speicher-WP:** kühlt 45-°C-Wasser auf 10 °C ab (COP 4,5) → nur der kalte Teil sinkt.
-* **Umlagern:** ist die heiße Schicht zu dünn für das Netz, wird ihr Inhalt dem kalten Teil zugeschlagen
-  (das Wasser vermischt sich und ist danach nur noch über die WP nutzbar).
+Zwei Bedingungen halten das physikalisch (`constraints.py`):
 
-Drei Bedingungen halten das physikalisch:
-
-1. **Größenverhältnis:** kalt = 0,875 × heiß (beide Bänder gehören zu demselben Wasser).
-2. **Schichtung (E36):** der kalte Teil ist relativ immer mindestens so voll wie der heiße – heißes Wasser enthält
-   seinen 10–45-°C-Anteil immer mit.
-3. **Kennlinie (E34):** direkt ins Netz nur, wenn die heiße Schicht dicker ist als die Übergangszone (30 % des
-   Volumens). Das ist eine „erst-ab“-Schwelle, die ein lineares Programm nicht direkt kann. Deshalb rechnet das
-   Modell **zweimal**: Lauf 1 ohne Schwelle; Lauf 2 erlaubt die Direktentladung nur in den Stunden, in denen sie in
-   Lauf 1 bei dicker Schicht lief, und verlangt dort die dicke Schicht als Bedingung.
+1. **Größenverhältnis:** die drei Teile gehören zu demselben Wasser und wachsen gemeinsam.
+2. **Schichtung:** Füllstand Kern ≤ Füllstand Übergangszone ≤ Füllstand kalt (jeweils Inhalt / Kapazität), in jeder
+   Stunde. Heißes Wasser liegt immer auf seiner Übergangszone, und jedes Wasser über 45 °C enthält seinen
+   10–45-°C-Anteil. Folge: von einem vollen heißen Teil gehen höchstens 70 % direkt ins Netz, der Rest ist Mischwasser.
 
 Die Optimierung (PyPSA/HiGHS) entscheidet für jede der 8.760 Stunden gleichzeitig, wie viel geladen, direkt
-entladen, umgelagert und über die WP genutzt wird – mit perfekter Voraussicht über das ganze Jahr. Ziel sind die
-geringsten Jahreskosten (Annuitäten + Strom). Die Temperaturen in den Grafiken werden aus den Füllständen
-zurückgerechnet (Kennlinie), sie sind kein eigener Rechenwert.
+entladen, vorgewärmt und über die WP genutzt wird – mit perfekter Voraussicht über das ganze Jahr, in **einem**
+Lauf. Die Temperaturen in den Grafiken werden aus den Füllständen zurückgerechnet, sie sind kein eigener Rechenwert.
 
-## 2 Kann eine Schicht mit 70–75 °C einspeisen?
+## 2 Kleine Speicher sind schlechter
 
-Bei **80 °C Vorlauf** nicht direkt: die Entnahme muss mindestens ≈ 85 °C haben (T_VL + 5 K). Wasser mit 70–75 °C
-kann aber den **Rücklauf vorwärmen** (45 → ≈ 70 °C); den Rest bis 80 °C liefert dann die WP oder PtH. Außerdem
-ist warmes Wasser eine bessere Quelle für die Speicher-WP (höherer COP). Beides fehlt im Zwei-Teile-Modell: Wärme
-unter 85 °C ist dort nur über die WP mit festem COP 4,5 nutzbar – **das Modell ist hier eher konservativ**.
+Zwei Größen hängen von der Speichergröße ab (`ptes.groessen_exponent` = −1/3, Bezug Dronninglund 60.000 m³):
 
-## 3 Was drei Schichten kosten würden
+| Volumen | Verlust je Stunde (vom Inhalt) | Übergangszone (Anteil am heißen Teil) |
+|---|---|---|
+| 60.000 m³ | 4,0 · 10⁻⁵ | 15 % (Messdaten Dronninglund 2014) |
+| 23.500 m³ | 5,5 · 10⁻⁵ | 21 % |
+| 7.400 m³ | 8,0 · 10⁻⁵ | 30 % |
+| 1.750 m³ | 13 · 10⁻⁵ | 49 % |
 
-| Baustein | Aufwand |
-|---|---|
-| drittes Band „warm“ (z. B. 45–75 °C) mit Bus, Speicherteil, Größenverhältnis | klein |
-| Laden je nach Kollektortemperatur in „warm“ oder „heiß“ (zwei Kollektor-Ausgänge mit eigener Effizienz) | mittel – neue Zeitreihe, mehr Annahmen |
-| Vorwärmen: warm → Netz nur zusammen mit Nachheizung (WP/PtH ≥ 5/30 der Vorwärmleistung je Stunde) | klein (eine lineare Bedingung) |
-| Speicher-WP aus „warm“ (COP ≈ 6) und aus „kalt“ (COP 4,5) | klein (ein Link) |
-| Schichtung warm/heiß/kalt + Kennlinie je Band (zwei Läufe) | mittel |
-| Tests, Doku, Notebook | mittel |
+Grund: kleine Speicher haben je m³ mehr Oberfläche (Verluste) und sind flacher; die Übergangszone ist aber eine
+Dicke in Metern. Wird das Volumen optimiert, gilt je Kostensegment der Wert der Untergrenze (vorsichtig; im ersten Segment die Mitte).
 
-**Gesamt ≈ 1–2 Arbeitstage**, Rechenzeit ≈ +30–50 % (der Tornado dauert jetzt schon ≈ 3 h). Mehr Parameter
-(Bandgrenze, Kollektorkennlinie je Temperatur), schwerer zu erklären.
+## 3 Was das Modell nicht kann
 
-**Nutzen abschätzen, bevor man baut:** Der Tornado zeigt die Obergrenze: ohne Kennlinie (ideale Schichtung) wird das
-System 11 €/MWh günstiger. Drei Schichten holen davon einen Teil zurück. **Kleiner Zwischenschritt** mit dem
-meisten Nutzen für wenig Aufwand: eine zweite Speicher-WP, die direkt aus dem heißen Teil schöpft (Quelle 45–85 °C,
-COP ≈ 6) – ein Link, keine neue Schicht. Empfehlung: erst diesen Schritt, drei Schichten nur, wenn das Ergebnis
-dann noch deutlich reagiert.
+* Heißes Wasser bleibt 85 °C; Verluste verringern die Menge, nicht die Temperatur. Da das Netz 85 °C braucht
+  (80 °C + 5 K), gibt es keine Reserve – die Direktentladung ist eher optimistisch.
+* Die Übergangszone ist ein fester Anteil. In Dronninglund ist sie bei vollem Speicher kleiner (5–13 %) und beim
+  Entladen größer (bis 33 %).
+* Bei fast leerem Speicher darf eine dünne heiße Schicht sofort wieder direkt entladen werden. Für Tag-Nacht-Zyklen
+  passt das, für lange Standzeiten ist es zu großzügig.
+* Der Kollektor liefert immer bei 67,5 °C mittlerer Temperatur, auch wenn er nur den kalten Teil lädt (dort wäre
+  der Ertrag höher).
+
+## 4 Vorher (bis 10.11.2026) und warum geändert
+
+Vorher: zwei Teile, Laden immer im Verhältnis 53 : 47, Direktentladung erst ab 30 % Füllstand des heißen Teils,
+gelöst mit zwei Läufen. Probleme (`docs/review_ptes_wp.md`): Im Sommer musste die Speicher-WP laufen, damit
+nachgeladen werden konnte (Mai–September 645 MWh über die WP, 66 MWh direkt); die Zwei-Lauf-Lösung sperrte mehr
+Stunden als nötig; Wasser mit 60–70 °C ging nur über die WP. Direktanteil der Speicherentladung 21 %, in
+Dronninglund gemessen 52–63 %.

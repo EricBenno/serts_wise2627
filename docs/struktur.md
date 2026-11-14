@@ -8,22 +8,28 @@ Als Mermaid-Diagramm (exakt wie gerechnet): [docs/systemskizze.md](systemskizze.
 [PTES-Obergrenze](ptes_obergrenze.md), [BEW-Förderung](foerderung_bew.md), [Ausblick](ausblick.md).
 
 ```
-                 ┌──────────── solar_direkt ─────────────┐
-    Kollektor ──>│ solar                                 ▼
-                 └── laden ──> [Speicher heiß | kalt] ──> entladen_direkt ──> waerme ──> Last
-                                  (53 % | 47 %)  └── Quellwärme ──┐              ▲   ▲
-    Netzstrom ──> hp_luft ─────────────────────────────────> wp ──┴> wp_out ─────┘   │
-             └──> hp_speicher (holt Quellwärme aus dem kalten Teil) ┘                 │
-             └──> pth (Mindestleistung = Spitzenlast) ──────────────────────────────┘
+    Kollektor ──> solar ──┬── solar_direkt ─────────────────────────────────────────────> waerme ──> Last
+                          ├── laden_heiss ─> [ heiß (Kern)   85 °C ] ── entladen_direkt ──>   ▲
+                          │                  [ Übergangszone       ] ── vorwaermen ───────>   │ (+ Nachheizen)
+                          └── laden_kalt ──> [ kalt        10-45 °C] ── Quellwärme ─┐         │
+    Netzstrom ──> hp_luft ──────────────────────────────> wp ── wp_out ─────────────┴────────>┤
+             └──> hp_speicher (holt Quellwärme aus dem kalten Teil) ┘                         │
+             └──> pth (Mindestleistung = Spitzenlast) ────────────────────────────────────────┘
 ```
 
 - PyPSA minimiert die Jahreskosten (Annuitäten + Strom) über 8760 h und legt dabei die Größen von
-  Kollektorfeld, Speicher, Wärmepumpe und PtH fest.
-- **Speicher in zwei Teilen** (heiß: direkt nutzbar, kalt: nur über die WP), Beladen im festen Verhältnis 53 : 47 (E27).
+  Kollektorfeld, Speicher, Wärmepumpe, PtH und Netzanschluss fest.
+- **Speicher in drei Teilen** (E39, erklärt in `docs/speichermodell.md`): heißer Kern (direkt nutzbar),
+  Übergangszone (Rücklauf vorwärmen oder über die WP), kalt (nur über die WP). Laden getrennt: `laden_kalt`
+  (10 → 45 °C) und `laden_heiss` (45 → 85 °C). Geprüft gegen Dronninglund: `docs/validierung_dronninglund.md`.
+- Verlustrate und Übergangszone hängen von der Speichergröße ab (kleine Speicher sind schlechter).
 - Speicherkosten als stetige, mit der Größe degressive Kurve (stückweise linear): je Kostensegment ein Lauf, das günstigste gewinnt (E30).
 - Zusatzbedingungen (`constraints.py`): Fläche (13.000 bzw. 80.000 m²), Speicherteile im festen Größenverhältnis,
-  Luft-WP-Leistung sinkt bei Kälte, Schichtung konsistent (E36); **Temperaturkennlinie**: Direktentladung nur bei
-  dicker heißer Schicht, umgesetzt mit zwei Läufen in `network.optimize` (E34).
+  Luft-WP-Leistung sinkt bei Kälte, **Schichtung** (Füllstand Kern ≤ Übergangszone ≤ kalt), Vorwärmen nur mit
+  Nachheizen. Ein Lauf je Kostensegment (die frühere Kennlinie mit zwei Läufen entfällt).
+- Strom: Arbeitspreis + **Leistungspreis** auf den höchsten Bezug (Netzbetreiber-Preisblatt).
+- Kollektor mit Einfallswinkel-Korrektur der Direktstrahlung; Vorlauf konstant 80 °C, gleitend als Szenario
+  `vl_gleitend`.
 - Luft-WP: COP nach KWW-Gütegrad (≈ 45 % von Carnot auf den Vorlauf, E35); Speicher-WP COP 4,5.
 - BEW Modul 2 wird in jedem Lauf zusätzlich ausgewiesen (Obergrenze 40 %, E37).
 - Kosten nach VDI 2067-1 inkl. 10 % Nebenkosten; Strom in Energie/Netzentgelt/Abgaben getrennt; Wärmenetz
@@ -34,7 +40,7 @@ Als Mermaid-Diagramm (exakt wie gerechnet): [docs/systemskizze.md](systemskizze.
 ## Befehle
 
 ```bash
-uv run serts run                         # Basis: Größen optimieren, 5 Kostensegmente (≈ 2 min)
+uv run serts run                         # Basis: Größen optimieren, 5 Kostensegmente (≈ 4 min)
 uv run serts run --V 0                   # Variante ohne Speicher
 uv run serts run --A 4000 --V 6000       # feste Größen vorgeben
 uv run serts run --szenario rl_50        # Szenario (Abweichungen zur Basis); kombinierbar: --szenario a+b
@@ -47,6 +53,8 @@ uv run serts prepare                     # nur Zeitreihen + Plots
 uv run serts annahmen                    # docs/annahmen.md neu erzeugen
 uv run serts fetch-strompreise 2022 2023 2024   # Day-Ahead-Preise laden (einmalig, Netzzugang)
 uv run serts run --szenario strom_day_ahead_2024  # Strom als Zeitreihe statt fester Tarif
+uv run serts run --szenario vl_gleitend           # gleitender Vorlauf 80 -> 70 °C
+uv run serts run --szenario validierung_dronninglund --A 37573 --V 60000   # Speichermodell prüfen
 uv run pytest                            # 71 Tests
 ```
 
@@ -65,7 +73,7 @@ Zeitreihen in `data/processed/<netz>/<szenario>/`): `kpi.json` (alle Kennzahlen)
 | `demand.py`, `weather.py`, `solar.py`, `heatpump.py`, `prices.py` | Zeitreihen: Last, T_a, Strahlung, Kollektorleistung, COP, Strompreis |
 | `prepare.py` | baut daraus eine Tabelle 8760 h |
 | `network.py` | das PyPSA-Netz (Bild oben) |
-| `constraints.py` | Fläche, Speicherverhältnis, Luft-WP bei Kälte, Schichtung, Kennlinie (2. Lauf) |
+| `constraints.py` | Fläche, Speicherverhältnis, Luft-WP bei Kälte, Schichtung, Vorwärmen mit Nachheizen |
 | `kpi.py` | Kennzahlen: Bilanzen, Solar-/EE-Anteil, Speicher-η, LCOH, Wärmepreis inkl. Netz, CO₂, Gas-Referenz |
 | `ergebnisplots.py` | Grafiken je Lauf: Jahresverlauf, Typwochen, Dauerlinie, Tag×Stunde, Jahresbilanz/Kosten |
 | `tornado.py` | Sensitivitäten (Parameterliste `tornado.parameter`, Werte aus `sens`) |

@@ -46,12 +46,27 @@ def cop_kww(t_senke_c, t_quelle_c, guetegrad):
     return guetegrad * t_s / (t_s - t_q)
 
 
-def guetegrad_kww(cfg: Config) -> float:
-    """Gütegrad der Luft-WP nach KWW, linear zwischen 70 °C (46 %) und 95 °C (44 %) Vorlauf interpoliert."""
-    t_vl = cfg.get("netz.T_VL")
-    return float(np.interp(t_vl, [70.0, 95.0], [0.46, 0.44])) * cfg.get(
-        "waermepumpe.guetegrad_faktor"
+def vorlauf(cfg: Config, T_a: pd.Series) -> pd.Series:
+    """Vorlauftemperatur je Stunde [degC]. Basis: konstant ``netz.T_VL``.
+
+    Gleitend, wenn ``netz.T_VL_min`` < T_VL: T_VL bei Tagesmittel der Außentemperatur <= ``gleit_T_kalt``,
+    linear fallend auf T_VL_min bei >= ``gleit_T_warm`` (Mittel der letzten 24 h, das Netz ist träge).
+    """
+    t_vl, t_min = cfg.get("netz.T_VL"), cfg.get("netz.T_VL_min")
+    if t_min >= t_vl:
+        return pd.Series(float(t_vl), index=T_a.index, name="T_VL")
+    tag = T_a.rolling(24, min_periods=1).mean()
+    werte = np.interp(
+        tag, [cfg.get("netz.gleit_T_kalt"), cfg.get("netz.gleit_T_warm")], [t_vl, t_min]
     )
+    return pd.Series(werte, index=T_a.index, name="T_VL")
+
+
+def guetegrad_kww(cfg: Config, t_vl=None):
+    """Gütegrad der Luft-WP nach KWW, linear zwischen 70 °C (46 %) und 95 °C (44 %) Vorlauf interpoliert."""
+    t_vl = cfg.get("netz.T_VL") if t_vl is None else t_vl
+    g = np.interp(t_vl, [70.0, 95.0], [0.46, 0.44]) * cfg.get("waermepumpe.guetegrad_faktor")
+    return float(g) if np.ndim(g) == 0 else g
 
 
 def cop_luft(cfg: Config, T_a: pd.Series) -> pd.Series:
@@ -61,10 +76,11 @@ def cop_luft(cfg: Config, T_a: pd.Series) -> pd.Series:
       kww    (Basis) Carnot auf den Vorlauf x Gütegrad nach KWW (JAZ-Bezug, Abtauen im Gütegrad enthalten)
       lorenz (Briefing) Lorenz mit Mitteltemperaturen, eta_G_luft, plus Abtauabschlag
     """
+    T_vl = vorlauf(cfg, T_a).to_numpy()  # konstant oder gleitend (netz.T_VL_min)
     if cfg.get("waermepumpe.cop_ansatz_luft") == "kww":
-        cop = cop_kww(cfg.get("netz.T_VL"), T_a, guetegrad_kww(cfg))
+        cop = cop_kww(T_vl, T_a, guetegrad_kww(cfg, T_vl))
         return pd.Series(cop, index=T_a.index, name="COP_luft")
-    T_rl, T_vl = cfg.get("netz.T_RL"), cfg.get("netz.T_VL")
+    T_rl = cfg.get("netz.T_RL")
     dT = cfg.get("waermepumpe.luft_spreizung")
     cop = cop_lorenz(
         T_rl,

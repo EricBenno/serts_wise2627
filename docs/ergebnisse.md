@@ -1,4 +1,4 @@
-# Ergebnisse Netz klein (Stand 10.11.2026 nachts, nach E32–E38)
+# Ergebnisse Netz klein (oben Stand 14.11.2026 nach E39, darunter Stand 10.11.2026)
 
 Vorläufig: Kollektorkennwerte und mehrere Kosten sind Annahmen (`docs/annahmen.md`, Übersicht:
 `docs/eingangsparameter.md`). Basis: Normaljahr (PVGIS-TMY), Lastgang/Temperatur 2022, Vorlauf 80 °C, **Zins real 5 %**,
@@ -8,7 +8,43 @@ Speicher mit **Temperaturkennlinie** und konsistenter Schichtung (E34, E36). Gro
 **`docs/ergebnisse_netz_gross.md`**. Prüfung gegen die Leitfrage: **`docs/kernfragen.md`**. Speichermodell
 erklärt: `docs/speichermodell.md`.
 
-## Basislauf (`uv run serts run`)
+## Stand 14.11.2026 nach E39 (neues Speichermodell) – Testläufe, Netz klein
+
+Geändert: Speicher in drei Teilen mit getrennten Ladelinks, Vorwärmen, größenabhängige Verluste/Übergangszone,
+Leistungspreis Strom, Einfallswinkel am Kollektor (E39; Prüfung `docs/validierung_dronninglund.md`).
+**Alle Abschnitte weiter unten (Varianten, Heatmap, Strom, Tornado) sind noch mit dem alten Speicher gerechnet.**
+
+| Kennzahl | alt (10.11.) | **Basis neu** | gleitender Vorlauf (`vl_gleitend`) | Day-Ahead 2024 (WP/PtH laden Speicher) |
+|---|---|---|---|---|
+| Kollektor / Speicher | 4.440 m² / 7.400 m³ | **4.670 m² / 6.000 m³** | 4.670 / 6.000 | 4.660 / 6.040 |
+| Wärmepumpe | 0,93 MW | 0,95 MW | 0,95 MW | 0,93 MW |
+| LCOH Erzeugung (Gas 164,9) | 159,9 | **150,0** | 143,3 | 130,6 |
+| Wärmepreis inkl. Netz (Gas-Fernwärme 261,4) | 255,3 | **243,4** (−7 %) | 235,3 (−10 %) | 220,0 (−16 %) |
+| mit BEW Modul 2, gleiche Auslegung | 221,1 | 209,3 | – | – |
+| Solaranteil | 41 % | 40,5 % | 40,5 % | 41 % |
+| Strombezug / höchste Leistung | 1.720 MWh / – | 1.520 MWh / 0,46 MW | 1.400 MWh / 0,44 MW | 1.520 MWh / 0,46 MW |
+| PtH-Wärme | 140 MWh | 0 | 0 | 5 MWh |
+| Speicher: Zyklen / Winteranteil / Wirkungsgrad | 2,3 / 46 % / 93 % | 3,2 / 37 % / 89 % | 3,2 / 37 % / 89 % | 4,1 / 42 % / – |
+| Speicherentladung direkt mit 85 °C | 21 % | 71 % | 71 % | 76 % |
+
+Ergebnisordner: `results/klein/20261114-172557_base_opt`, `…-170407_vl_gleitend_opt`,
+`…-171910_strom_day_ahead_2024_opt`.
+
+* **Woher die −10 €/MWh kommen:** Im Sommer (Juni–August) braucht das System jetzt keinen Strom mehr; der Speicher
+  pendelt zwischen 45 und 85 °C. Vorher lief dafür die Speicher-WP (Mai–September 645 MWh). Die PtH-Spitzen im
+  Februar entfallen. Gegenläufig: doppelte Speicherverluste (8·10⁻⁵ statt 4·10⁻⁵ 1/h), −3 % Kollektorertrag,
+  Leistungspreis ≈ 7.100 €/a (≈ 1,3 €/MWh).
+* **Der Speicher ist jetzt deutlicher ein Mischspeicher** (3,2 Zyklen, 37 % der Entladung im Winter). Die Speicher-WP
+  liefert nur noch ≈ 255 MWh/a (kalter Teil einmal im Winter geleert).
+* **Optimum an der Segmentgrenze 6.000 m³:** Verlustrate und Übergangszone gelten je Kostensegment für dessen
+  Untergrenze; das Segment 2.500–6.000 m³ rechnet deshalb mit den schlechteren Werten von 2.500 m³ (5.780 m³,
+  LCOH 151,4). Das wahre Optimum liegt bei ≈ 6.000 m³; das Tal ist flach.
+* **Gleitender Vorlauf** (nur COP der Luft-WP): −6,7 €/MWh. **Day-Ahead 2024:** −19 €/MWh gegenüber fest 30 ct;
+  davon bringt das Laden des Speichers durch WP/PtH ≈ 3 €/MWh (bei fester Auslegung 133,5 → 130,6).
+* Noch nicht neu gerechnet: Netz groß, Varianten, Heatmap, Tornado.
+
+## Basislauf alt (Stand 10.11.2026, vor E39)
+
 
 | Kennzahl | Wert |
 |---|---|

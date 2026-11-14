@@ -383,3 +383,38 @@ relativer Füllstand oder mehr im kalten Teil). Die WP kann Wärme aus dem heiß
   Paketversionen fest; PVGIS- und Strompreisdateien jetzt im Git (klein), DWD weiter per `import-raw`; `import-raw`
   übernimmt Dateien aus dem Repo, wenn die Quelle fehlt, und überspringt die (optionale) Netzkarte. Die CLI gibt UTF-8
   aus (Windows-Konsole). Speichermodell für Einsteiger: `docs/speichermodell.md`.
+
+### E39 Speicher in drei Teilen, ein Lauf; Größenabhängigkeit; Leistungspreis, Einfallswinkel, gleitender Vorlauf (14.11.2026)
+**Anlass:** Review `docs/review_ptes_wp.md` (TEAM-Auftrag). Der Speicher war im Modell fast nur WP-Quelle
+(Direktanteil der Entladung 21 %, Dronninglund 52–63 %; Mai–September 645 MWh über die Speicher-WP).
+**Speicher (ersetzt E34, ändert E27/E36):**
+- *Laden getrennt:* `laden_kalt` (10 → 45 °C) und `laden_heiss` (45 → 85 °C) statt eines Links mit festem
+  Verhältnis 53 : 47. Vorher konnte bei vollem kalten Teil nicht nachgeladen werden, bis die WP unten Platz schuf.
+- *Übergangszone als eigener Teil* statt Schwelle mit zwei Läufen: heißer Teil = Kern + Übergangszone;
+  Schichtung Füllstand Kern ≤ Übergangszone ≤ kalt (linear, ein Lauf). Direkt ins Netz geht nur der Kern.
+  Das ist die engste lineare Form der alten Schwelle; bei fast leerem Speicher etwas großzügiger.
+- *Vorwärmen:* die Übergangszone darf den Rücklauf vorwärmen (45 → 60 °C), wenn WP/PtH in derselben Stunde
+  nachheizen (≤ 0,75 MW je MW Nachheizung; aus den Temperaturen abgeleitet, kein neuer Zahlenwert). `ptes.vorwaermen`.
+- *Übergangszone 0,15 bei 60.000 m³* (`ptes.uebergang_ref`, vorher `schicht_min` 0,3 ungeprüft) aus den Messdaten
+  Dronninglund 2014; *Einschichtanteil* 0 (`ptes.einschicht_anteil`): die Nachrechnung 2015–2017 trifft damit alle
+  Jahreswerte, Direktanteil 61 % (`docs/validierung_dronninglund.md`).
+- *Größenabhängig* (`ptes.groessen_exponent` = −1/3): Verlustrate und Übergangszone × (V/60.000)^(−1/3); bei
+  optimiertem Volumen für die Untergrenze des Kostensegments (vorsichtig; erstes Segment: Mitte; Sprünge an den
+  Segmentgrenzen in Kauf genommen). Bei
+  7.400 m³: Verlust 8·10⁻⁵ 1/h (vorher 4·10⁻⁵), Übergangszone 0,30.
+**Rechenzeit:** ein LP je Kostensegment statt zwei (≈ 50 s je Lauf, vorher 2 × ≈ 22 s) – unverändert.
+**Weitere Punkte:**
+- *Leistungspreis* (`strom.leistungspreis` 15,50 €/kW·a, Westfalen Weser Netz 2025, Mittelspannung < 2.500 h/a):
+  im Netz als Kosten der Anschlussleistung (Link `netzanschluss`), keine eigene Bedingung. Netzentgelt-Arbeitspreis
+  aus demselben Preisblatt: 79,9 statt 93 €/MWh (fester Tarif bleibt 300 €/MWh, Day-Ahead wird 13 €/MWh günstiger).
+- *Einfallswinkel* (`kollektor.iam_b0` 0,1, ASHRAE, nur Direktstrahlung): Ertrag −3 % (533 → 517 kWh/m² bei 67,5 °C).
+- *Gleitender Vorlauf* als Szenario `vl_gleitend` (`netz.T_VL_min` 70): 80 °C bei ≤ −10 °C, 70 °C ab 15 °C
+  (24-h-Mittel). Wirkt nur auf den COP der Luft-WP (lastgewichtet 2,25 → 2,49). Basis bleibt 80 °C (Teamvorgabe).
+- *WP/PtH laden den Speicher* (`ptes.laden_aus_netz`, Link `laden_netz` Wärmeknoten → Kern): Basis aus (E29 gilt
+  weiter für den festen Tarif), in den Szenarien `strom_day_ahead_*` an. Solaranteil zählt Speicherwärme dann nur
+  anteilig als solar.
+**Nicht umgesetzt:** Laden des kalten Teils bei niedriger Kollektortemperatur (höherer Ertrag; braucht eine zweite
+Zeitreihe und eine Flächenbedingung je Stunde).
+**Folge:** Alle Ergebnisse vor dem 14.11.2026 (Heatmap, Varianten, Tornado, Netz groß) sind mit dem alten Speicher
+gerechnet und müssen neu laufen; `kpi.json` enthält statt `kennlinie_*` jetzt `uebergang_anteil`,
+`verlustrate_1_h`, `speicher_direktanteil`, `P_netzanschluss_MW`, `kosten_a_strom_leistung`.
