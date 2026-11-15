@@ -73,8 +73,35 @@ def fetch_pvgis(cfg: Config) -> Path:
     return out
 
 
+def einfallswinkel_faktor(cfg: Config, zeit_utc: pd.DatetimeIndex) -> pd.Series:
+    """Korrekturfaktor K (0..1) für die Direktstrahlung bei schrägem Einfall (ASHRAE, ``kollektor.iam_b0``).
+
+    K = 1 - b0 * (1 / cos(Einfallswinkel) - 1); 1 bei senkrechtem Einfall, ≈ 0,94 bei 50°. b0 = 0 -> aus.
+    ``zeit_utc``: Zeitpunkte (tz-aware UTC), für die der Sonnenstand gilt.
+    """
+    import pvlib
+
+    b0 = cfg.get("kollektor.iam_b0")
+    if b0 <= 0:
+        return pd.Series(1.0, index=zeit_utc)
+    loc = pvlib.location.Location(
+        cfg.get("standort.lat"), cfg.get("standort.lon"), altitude=cfg.get("standort.hoehe")
+    )
+    sp = loc.get_solarposition(zeit_utc)
+    winkel = pvlib.irradiance.aoi(
+        cfg.get("kollektor.neigung"),
+        cfg.get("kollektor.azimut"),
+        sp["apparent_zenith"],
+        sp["azimuth"],
+    )
+    return pd.Series(pvlib.iam.ashrae(winkel, b=b0), index=zeit_utc).fillna(0.0)
+
+
 def tmy_auf_ebene(cfg: Config, tmy: pd.DataFrame) -> pd.Series:
-    """TMY (ghi, dni, dhi) -> Globalstrahlung auf der Kollektorebene [W/m2], Index = Wetterjahr."""
+    """TMY (ghi, dni, dhi) -> wirksame Strahlung auf der Kollektorebene [W/m2], Index = Wetterjahr.
+
+    Wirksam = Direktstrahlung x Einfallswinkel-Faktor + Diffusstrahlung (``einfallswinkel_faktor``).
+    """
     import pvlib
 
     jahr = int(cfg.get("zeit.wetterjahr"))
@@ -99,15 +126,19 @@ def tmy_auf_ebene(cfg: Config, tmy: pd.DataFrame) -> pd.Series:
         model="perez",
         albedo=ALBEDO,
     )
+    k = einfallswinkel_faktor(cfg, mitte).to_numpy()
+    wirksam = pd.Series(irr["poa_direct"]).fillna(0.0) * k + pd.Series(irr["poa_diffuse"]).fillna(
+        0.0
+    )
     poa = pd.Series(
-        pd.Series(irr["poa_global"]).fillna(0.0).clip(lower=0).to_numpy(),
+        wirksam.clip(lower=0).to_numpy(),
         index=zeit.tz_localize(None).rename("zeit"),
     )
     return poa
 
 
 def strahlung_kollektorebene(cfg: Config) -> pd.DataFrame:
-    """Globalstrahlung auf Kollektorebene ``G_poa`` [W/m2], stündlich, Index = Wetterjahr."""
+    """Wirksame Strahlung auf Kollektorebene ``G_poa`` [W/m2] (Direktanteil mit Einfallswinkel-Faktor)."""
     path = pvgis_path(cfg)
     if not path.exists():
         raise FileNotFoundError(f"{path} fehlt -> `serts fetch-pvgis` (Netzzugang nötig)")
@@ -116,7 +147,8 @@ def strahlung_kollektorebene(cfg: Config) -> pd.DataFrame:
     df = df.sort_index()
     if cfg.get("kollektor.strahlungsquelle") == "pvgis_tmy":
         return pd.DataFrame({"G_poa": tmy_auf_ebene(cfg, df)})
-    poa = df[["poa_direct", "poa_sky_diffuse", "poa_ground_diffuse"]].sum(axis=1)
+    k = einfallswinkel_faktor(cfg, pd.DatetimeIndex(df.index)).to_numpy()
+    poa = df["poa_direct"] * k + df[["poa_sky_diffuse", "poa_ground_diffuse"]].sum(axis=1)
     out = pd.DataFrame({"G_poa": poa})
     # PVGIS-Zeitstempel liegen bei HH:10/HH:11 UTC -> auf Stundenbeginn legen
     out.index = pd.DatetimeIndex(out.index).tz_localize(None).floor("h").rename("zeit")

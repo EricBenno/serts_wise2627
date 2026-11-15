@@ -1,6 +1,6 @@
 """Kollektorfeld (AP 2, BRF §3.3).
 
-Kennlinie (EN ISO 9806, quasi-stationär, ohne Einfallswinkelkorrektur):
+Kennlinie (EN ISO 9806, quasi-stationär; G = wirksame Strahlung, Einfallswinkel in weather.py):
     eta = eta0 - a1 * (T_m - T_a) / G - a2 * (T_m - T_a)^2 / G,  eta >= 0
 
 Ausgabe als spezifische Leistung in kW/m2. Im PyPSA-Netz gilt dann

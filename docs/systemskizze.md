@@ -1,40 +1,48 @@
 # Systemskizze – so wie das Modell rechnet
 
 Diese Skizze entspricht 1:1 `src/serts/network.py` (Komponenten, Wirkungsgrade) und `src/serts/constraints.py`
-(Zusatzbedingungen), Stand nach E34 (Netz klein; Netz groß: Zahlen siehe `docs/eingangsparameter.md`). Rechtecke = Komponenten (PyPSA-Links/Generatoren), Stadien/Kreise = Knoten
+(Zusatzbedingungen), Stand nach E39 (Netz klein, Basislauf 6.000 m³; Netz groß: Zahlen siehe
+`docs/eingangsparameter.md`). Rechtecke = Komponenten (PyPSA-Links/Generatoren), Stadien/Kreise = Knoten
 (Busse), Zylinder = Speicher. **✱ = Größe wird vom Solver optimiert.** Die Optimierung läuft über alle 8760 Stunden
-gemeinsam (perfekte Voraussicht).
+gemeinsam (perfekte Voraussicht). Bild: `docs/systemskizze.png` (aus diesem Mermaid-Code erzeugt).
 
 ```mermaid
 flowchart LR
-    NS["Netzstrom<br/>30 ct/kWh, unbegrenzt<br/>(Generator netz_strom)"]
-    KOL["Kollektorfeld ✱<br/>Leistung je m² = P_solar(t)<br/>Normaljahr, 67,5 °C, Abregelung möglich<br/>(Generator kollektor)"]
+    NS["Netzstrom<br/>Arbeitspreis 30 ct/kWh<br/>(Generator netz_strom)"]
+    ANS["netzanschluss ✱<br/>Leistungspreis 15,50 €/kW·a<br/>auf den höchsten Bezug"]
+    KOL["Kollektorfeld ✱<br/>Leistung je m² = P_solar(t)<br/>Normaljahr, 67,5 °C, Einfallswinkel-Korrektur<br/>(Generator kollektor)"]
 
+    NETZB(["Knoten Netzstrom"])
     ELEC(["Knoten Strom"])
     SOLAR(["Knoten Solar"])
-    SPH[("Speicher HEISS ✱<br/>53 % der Energie: 85 °C bis Rücklauf<br/>Verlust 4·10⁻⁵ je Stunde<br/>Jahresende = Jahresanfang")]
-    SPK[("Speicher KALT<br/>47 % der Energie: Rücklauf bis 10 °C<br/>Verlust 4·10⁻⁵ je Stunde<br/>wächst mit dem heißen Teil")]
+    SPH[("Speicher KERN ✱<br/>heißes Wasser 85 °C<br/>53 % × 68 % der Energie")]
+    SPU[("ÜBERGANGSZONE<br/>Mischwasser 45–85 °C<br/>53 % × 32 % der Energie")]
+    SPK[("Speicher KALT<br/>Rücklauf 45 °C bis 10 °C<br/>47 % der Energie")]
     WPB(["Knoten WP-Wärme"])
     W(["Knoten Wärme<br/>Erzeugerstandort am Netz"])
     LAST["Last<br/>Gebäude + Netzverluste<br/>5.462 MWh/a, Spitze 1,59 MW"]
 
     SOLD["solar_direkt<br/>η = 1"]
-    LAD["laden<br/>1 MWh Solar = 0,53 heiß + 0,47 kalt<br/>0,1 EUR/MWh Hilfskosten"]
-    ENT["entladen_direkt<br/>heiß → Netz, η = 1<br/>nur bei dicker heißer Schicht"]
-    UML["umlagern<br/>heiß → kalt, η = 1<br/>(Wärme unter der Direkt-Grenze<br/>nur noch über die WP nutzbar)"]
-    HPL["hp_luft<br/>COP = 0,452 · T_VL / (T_VL − T_a)<br/>(KWW), 1,9 bei −5 °C bis 2,9 bei 25 °C<br/>nur wenn T_a ≥ -7 °C"]
+    LADH["laden_heiss<br/>45 → 85 °C<br/>0,1 EUR/MWh Hilfskosten"]
+    LADK["laden_kalt<br/>10 → 45 °C<br/>0,1 EUR/MWh Hilfskosten"]
+    ENT["entladen_direkt<br/>Kern → Netz, η = 1"]
+    VOR["vorwaermen<br/>Rücklauf 45 → 60 °C, η = 1"]
+    MIX["abbau / umlagern<br/>Mischen: Kern → Zone → kalt<br/>(ohne Energieverlust)"]
+    HPL["hp_luft<br/>COP = 0,452 · T_VL / (T_VL − T_a)<br/>(KWW), 1,9 bei −5 °C bis 2,9 bei 25 °C<br/>nur wenn T_a ≥ −7 °C"]
     HPS["hp_speicher<br/>COP 4,5, ganzjährig"]
     WPO["wp_out ✱<br/>gemeinsame WP-Leistung<br/>(Luft + Speicher)"]
     PTH["pth ✱<br/>η = 0,99<br/>Leistung ≥ Spitzenlast (n-1)"]
 
-    NS --> ELEC
+    NS --> NETZB --> ANS --> ELEC
     KOL --> SOLAR
     SOLAR --> SOLD --> W
-    SOLAR --> LAD
-    LAD --> SPH
-    LAD --> SPK
+    SOLAR --> LADH --> SPH
+    SOLAR --> LADK --> SPK
     SPH --> ENT --> W
-    SPH --> UML --> SPK
+    SPU --> VOR --> W
+    SPH --> MIX
+    MIX --> SPU
+    MIX --> SPK
     ELEC --> HPL --> WPB
     ELEC --> HPS --> WPB
     SPK -. "Quellwärme: 3,5 MWh je MWh Strom" .-> HPS
@@ -43,22 +51,22 @@ flowchart LR
     W --> LAST
 
     C1["Nebenbedingung 1: Fläche<br/>2,3 · A + V / 2,65 ≤ 13.000 m²"]
-    C2["Nebenbedingung 2: Größe Speicher<br/>kalt = 0,875 × heiß<br/>(gilt in jeder Stunde)"]
-    C3["Nebenbedingung 3: Luft-WP bei Kälte<br/>Wärmeleistung ≤ 100 % bis 80 % von P_WP<br/>(ab -1 bis -7 °C)"]
-    C4["Nebenbedingung 4: Temperaturkennlinie (2. Lauf)<br/>Direktentladung nur in Stunden mit heißer Schicht<br/>≥ 30 % des heißen Teils (Übergangszone)"]
-    C5["Nebenbedingung 5: Schichtung konsistent<br/>kalter Teil relativ ≥ heißer Teil<br/>(WP kühlt nur Wasser, das nicht mehr heiß ist)"]
+    C2["Nebenbedingung 2: Größe Speicher<br/>Kern, Zone und kalt wachsen<br/>im festen Verhältnis"]
+    C3["Nebenbedingung 3: Luft-WP bei Kälte<br/>Wärmeleistung ≤ 100 % bis 80 % von P_WP<br/>(ab −1 bis −7 °C)"]
+    C4["Nebenbedingung 4: Schichtung (jede Stunde)<br/>Füllstand Kern ≤ Zone ≤ kalt"]
+    C5["Nebenbedingung 5: Vorwärmen<br/>≤ 0,75 × (WP + PtH) in derselben Stunde"]
     C1 -.- KOL
     C1 -.- SPH
     C2 -.- SPH
+    C2 -.- SPU
     C2 -.- SPK
     C3 -.- HPL
     C3 -.- WPO
-    C4 -.- ENT
     C4 -.- SPH
+    C4 -.- SPU
     C4 -.- SPK
-    C5 -.- SPH
-    C5 -.- SPK
-    C5 -.- HPS
+    C5 -.- VOR
+    C5 -.- WPO
 
     NETZ["Verteilnetz - nicht optimiert<br/>Trasse 2.432 m + 159 Hausanschlüsse<br/>nur Kosten: Wärmepreis beim Kunden"]
     LAST -.- NETZ
@@ -69,10 +77,10 @@ flowchart LR
     classDef link fill:#ffffff,stroke:#888,color:#000
     classDef regel fill:#f3e8f7,stroke:#8e44ad,color:#000
     classDef last fill:#e1f2e1,stroke:#3b8a3b,color:#000
-    class ELEC,SOLAR,WPB,W bus
+    class NETZB,ELEC,SOLAR,WPB,W bus
     class NS,KOL quelle
-    class SPH,SPK speicher
-    class SOLD,LAD,ENT,UML,HPL,HPS,WPO,PTH link
+    class SPH,SPU,SPK speicher
+    class ANS,SOLD,LADH,LADK,ENT,VOR,MIX,HPL,HPS,WPO,PTH link
     class C1,C2,C3,C4,C5,NETZ regel
     class LAST last
 ```
@@ -80,19 +88,21 @@ flowchart LR
 ## Was die Skizze (nicht) enthält
 
 - **Zeitlich variabel je Stunde:** Last, Außentemperatur → COP und Leistungsfaktor der Luft-WP, Kollektorleistung,
-  (fester) Strompreis.
-- **Fest je Lauf:** alle Wirkungsgrade, Preise, T_oben/Rücklauf/T_unten, Verlustrate, Fläche.
+  Strompreis (fest oder Day-Ahead).
+- **Fest je Lauf:** alle Wirkungsgrade, Preise, T_oben/Rücklauf/T_unten, Fläche. Verlustrate und Anteil der
+  Übergangszone hängen von der Speichergröße ab (bei 6.000 m³: 8,6·10⁻⁵ je Stunde, 32 %; bei optimiertem Volumen
+  der Wert der Untergrenze des Kostensegments).
 - **Optimiert (✱):** Kollektorfläche, Speichervolumen (innerhalb des gewählten Kostensegments), WP-Leistung,
-  PtH-Leistung (mindestens Spitzenlast). Alle Verbindungen (Links) sind ansonsten nicht in der Leistung begrenzt.
-- **Speicher:** Beladen füllt immer beide Teile im Verhältnis 53 : 47 (Wasser von 10 auf 85 °C). Direkt ins Netz
-  geht nur der heiße Teil (und nur bei hohem Füllstand, E34), die Wärmepumpe holt ihre Quellwärme aus dem kalten Teil. Das ersetzt die frühere
-  Jahresregel („Direktanteil ≤ 53 %“) und die Monatsbeschränkung (E27).
-- **Temperaturkennlinie (E34):** Direkt ins Netz nur, wenn die heiße Schicht dicker als die Übergangszone ist
-  (`ptes.schicht_min` = 0,3; 0 = aus). Umgesetzt mit zwei Läufen (1. ohne, 2. Direktentladung nur in den Stunden mit
-  dicker Schicht aus Lauf 1, dort als Bedingung). Speichertemperaturen oben/Mittel folgen aus den Füllständen.
-- **Nicht im Modell:** Wärmeübertrager-Grenzen, Transmissionsleitung, zeitliche Mischung im Speicher (nur die Füllstands-Kennlinie),
-  WP lädt den Speicher (rechnet sich bei festem Strompreis nicht, siehe `docs/ausblick.md`), Teillast der WP,
-  Frostschutz des Kollektorfelds, Stagnation, Netzhydraulik, Leistungspreis für Strom.
+  PtH-Leistung (mindestens Spitzenlast), Netzanschlussleistung (= höchster Strombezug). Alle anderen
+  Verbindungen (Links) sind nicht in der Leistung begrenzt.
+- **Speicher (E39, `docs/speichermodell.md`):** Laden getrennt nach Temperaturband; direkt ins Netz geht nur der
+  heiße Kern, die Übergangszone wärmt vor oder geht über `umlagern` an die WP, der kalte Teil nur über die WP.
+  Speichertemperaturen oben/Mittel in den Grafiken folgen aus den Füllständen.
+- **Nur in Szenarien:** `laden_netz` (WP/PtH laden den Kern, Day-Ahead-Szenarien), gleitender Vorlauf
+  (`vl_gleitend`, wirkt auf den COP der Luft-WP).
+- **Nicht im Modell:** Wärmeübertrager-Grenzen, Transmissionsleitung, Abkühlen des heißen Wassers (Verluste
+  kosten Menge, nicht Temperatur), Laden des kalten Teils bei niedrigerer Kollektortemperatur, Teillast der WP,
+  Frostschutz des Kollektorfelds, Stagnation, Netzhydraulik.
 - **Kostenseite (nicht in der Skizze):** Jahreskosten nach VDI 2067 je Komponente (inkl. 10 % Nebenkosten) + Strom
-  (getrennt in Energie, Netzentgelt, Abgaben); Verteilnetz und Gas-Referenz werden in `kpi.py`/`economics.py`
-  zugerechnet (`docs/entscheidungen.md` E25, E28).
+  (getrennt in Energie, Netzentgelt, Abgaben, Leistungspreis); Verteilnetz und Gas-Referenz werden in
+  `kpi.py`/`economics.py` zugerechnet (`docs/entscheidungen.md` E25, E28, E39).

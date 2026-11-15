@@ -28,22 +28,25 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 | Luft-WP zu effizient (Lorenz, Gütegrad 0,5: Arbeitszahl 2,65) | Luft-WP-Referenz zu billig, Solar/Speicher zu unattraktiv | KWW-Ansatz (Arbeitszahl 2,22, E35); Wetterjahr 2022 nur ≈ 1 % günstiger als das Mittel |
 | Kostenquellen uneinheitlich (Dänemark, Einzelprojekte) | Rangfolge der Varianten unsicher | KWW-Technikkatalog für Kollektor, PTES, Trasse (E32); WP/PtH als Szenario |
 | Speicher max. „über 90 °C“ | – | Modell rechnet höchstens 85 °C (Liner-Grenze); Darstellung war missverständlich, jetzt eigenes Temperaturfeld |
+| (14.11.) Speicher fast nur WP-Quelle: festes Beladeverhältnis erzwang WP-Betrieb im Sommer, Kennlinie mit zwei Läufen sperrte zu viel | Speichernutzen unterschätzt (≈ 10 €/MWh), Direktanteil 21 % statt 52–63 % (Dronninglund) | Speicher in drei Teilen, ein Lauf, gegen Dronninglund geprüft (E39) |
 
 ## 3 Auslegung: was die Antwort noch verzerren kann (offen)
 
 | Punkt | Richtung | Vorschlag |
 |---|---|---|
-| **Strompreis 30 ct/kWh fest**, kein Leistungspreis | größter Hebel überhaupt (Tornado: 20 ct → 203, 40 ct → 284 €/MWh); Leistungspreis würde die PtH-Reserve verteuern | Preisblatt des Netzbetreibers; Day-Ahead-Szenarien liegen vor |
+| **Strompreis 30 ct/kWh fest** (Leistungspreis seit E39 enthalten, 15,50 €/kW·a) | größter Hebel überhaupt (Tornado: 20 ct → 203, 40 ct → 284 €/MWh) | Day-Ahead-Szenarien liegen vor; Höhe des Gesamtpreises klären |
 | **PtH-Reserve = Spitzenlast als Stundensumme** (1,59 / 15,5 MW) | Kosten leicht überschätzt (Gleichzeitigkeit 0,45 laut Netzberechnung) | `pth.redundanz` oder P_max mit GLF |
 | **WP-Kosten** jetzt 1.340 €/kW (unteres Ende KWW, E38); kleines Netz laut KWW eher 1.730 €/kW | Vorteil ggü. Gas schrumpft auf ≈ 6 €/MWh (Netz klein) | Tornado/Varianten mit 1.340 €/kW neu rechnen, wenn Zeit ist |
 | **Speicher-WP COP 4,5 konstant** | Herbst (warmer Speicher) unterschätzt, Frühjahr überschätzt | ok für Jahresmittel (Briefing §8) |
-| **Kennlinie** (Übergangszone 30 %) ist abgeschätzt, nicht gemessen | Speichernutzen ±; Tornado 0/0,15/0,5 | Messdaten Dronninglund (DTU-Datensatz) |
+| **Übergangszone** fester Anteil (15 % bei 60.000 m³, Messdaten Dronninglund), mit V^(−1/3) auf kleine Speicher umgerechnet; heißes Wasser kühlt im Modell nicht ab | Direktentladung eher optimistisch (71 % der Speicherentladung) | Tornado `ptes.uebergang_ref` 0/0,1/0,25 neu rechnen |
 | **Perfekte Voraussicht**, ein Wetterjahr | Betrieb/Solaranteil eher überschätzt | als Modellgrenze benennen |
 | **Fläche Netz groß bindet** (80.000 m²) | Solaranteil durch Fläche begrenzt, nicht durch Kosten | Flächen-Variante rechnen |
 | **BEW 40 % = Obergrenze**, Wirtschaftlichkeitslücke nicht geprüft; EE-Anteil ≥ 75 % (Modell 84–85 %) nur grob | Förderung eher überschätzt | BAFA-Berechnung im nächsten Schritt; Modul 4 ergänzen |
 | **Hausanschlüsse pauschal 10.000 €** | im großen Netz (54 % Nichtwohngebäude) eher zu niedrig | Kosten nach Anschlussleistung (KWW Tab. 40) |
 
 ## 4 Antwort auf die Leitfrage (Stand 10.11. nachts, WP 1.340 €/kW, beide Netze)
+
+**Nachtrag 14.11. (E39, neues Speichermodell):** Basis und Varianten beider Netze neu gerechnet (`docs/ergebnisse.md`, `docs/ergebnisse_netz_gross.md`). Wärmepreis inkl. Netz: klein 243 (Gas 261), groß 222 (Gas 236) €/MWh; Solar + Speicher spart gegenüber reiner WP + PtH ≈ 33–34 €/MWh. Die Aussagen unten gelten in der Richtung weiter, die Zahlen sind vom 10.11.
 
 * **Kollektor und Speicher senken Kosten und CO₂** gegenüber reiner WP + PtH (klein −18 €/MWh, groß −21 €/MWh;
   CO₂ −25 bis −32 %), ein Speicher lohnt sich gegenüber Solar ohne Speicher (−12 bzw. −15 €/MWh). Nur mit Solar und

@@ -55,3 +55,21 @@ def test_p_max_pu_luft(cfg):
     pu = p_max_pu_luft(cfg, T).to_numpy()
     # 1,0 ab -1 degC, linear auf 0,8 bei -7 degC, darunter konstant 0,8 (Luft-WP dort ohnehin aus)
     np.testing.assert_allclose(pu, [0.8, 0.8, 0.9, 1.0, 1.0])
+
+
+def test_vorlauf_konstant_und_gleitend(cfg):
+    from serts.heatpump import vorlauf
+
+    T_a = pd.Series([-15.0] * 48 + [2.5] * 48 + [20.0] * 48)
+    # Basis: konstant netz.T_VL
+    assert (vorlauf(cfg, T_a) == cfg.get("netz.T_VL")).all()
+    # gleitend 80 -> 70 degC zwischen -10 und 15 degC (Mittel der letzten 24 h)
+    c = cfg.variante("netz.T_VL_min", 70)
+    vl = vorlauf(c, T_a)
+    assert vl.iloc[47] == pytest.approx(80.0)
+    assert vl.iloc[95] == pytest.approx(75.0)  # 2,5 degC = Mitte der Heizkurve
+    assert vl.iloc[-1] == pytest.approx(70.0)
+    # niedrigerer Vorlauf -> besserer COP, bei kaltem Wetter unverändert
+    cop_fest, cop_gleit = cop_luft(cfg, T_a), cop_luft(c, T_a)
+    assert cop_gleit.iloc[47] == pytest.approx(cop_fest.iloc[47])
+    assert cop_gleit.iloc[-1] > cop_fest.iloc[-1] * 1.1

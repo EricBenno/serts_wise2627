@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 36, vorgabe 50, annahme 41, offen 0
+Status: belegt 39, vorgabe 53, annahme 45, offen 0
 
 
 ## standort
@@ -43,6 +43,9 @@ Status: belegt 36, vorgabe 50, annahme 41, offen 0
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
 | `netz.T_VL` | 80 | degC | vorgabe | TEAM: Netz bleibt bei 80 degC Vorlauf wie in der NB (ersetzt BRF-Wert 75 degC) | 75 |  |
+| `netz.T_VL_min` | 80 | degC | vorgabe | Basis = konstanter Vorlauf (TEAM). Kleiner als T_VL -> gleitender Vorlauf: T_VL bei Tagesmittel <= gleit_T_kalt, linear fallend auf T_VL_min bei >= gleit_T_warm (Szenario vl_gleitend) | 70 | Wirkt nur auf den COP der Luft-WP (heatpump.py). Speicher (Direktentladung ab T_VL + 5 K) und Netzverluste rechnen weiter mit T_VL -> eher vorsichtig. |
+| `netz.gleit_T_kalt` | -10 | degC | annahme | übliche Heizkurve Fernwärme: volle Vorlauftemperatur bei Auslegungs-Außentemperatur (Größenordnung -10 bis -12 °C) |  |  |
+| `netz.gleit_T_warm` | 15 | degC | annahme | übliche Heizkurve: Mindest-Vorlauf ab Heizgrenze ≈ 15 °C (Sommer: Trinkwarmwasser) |  |  |
 | `netz.T_RL` | 45 | degC | vorgabe | BRF §2 (TEAM: Rücklauf frei '80/x'); NB rechnet 50 degC | 40, 50 |  |
 | `netz.T_VL_netzberechnung` | 80 | degC | belegt | NB Zusammenfassung, Spalte Vorlauftemp |  |  |
 | `netz.T_RL_netzberechnung` | 50 | degC | belegt | NB Zusammenfassung, Spalte Ruecklauftemp |  |  |
@@ -61,8 +64,13 @@ Status: belegt 36, vorgabe 50, annahme 41, offen 0
 | `ptes.c_wasser` | 0.001163 | MWh/(m3 K) | belegt | rho*cp Wasser ≈ 1000 kg/m3 * 4,187 kJ/(kg K) = 1,163 kWh/(m3 K); BRF §3.2 |  | Bei 45-85 degC rho*cp ≈ 1,14-1,15 kWh/(m3 K) (-1...-2 %); vernachlässigt. |
 | `ptes.T_oben` | 85 | degC | vorgabe | BRF §3.1; Liner-Grenze (Xiang et al. 2022) | 90 | Direktentladung braucht T_oben >= T_VL + 5 K = 85 degC -> bei VL 80 genau an der Grenze. |
 | `ptes.T_unten` | 10 | degC | vorgabe | BRF §3.1; DRL Tmin 9-12 degC |  |  |
-| `ptes.verlustrate` | 4e-05 | 1/h | annahme | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) | 1.5e-05, 8e-05 | PTES hier ≈7x kleiner als DRL; Oberfläche/Volumen ~ V^(-1/3) -> Faktor ≈1,9 -> obere Sensitivität 8e-5 (docs E10). |
-| `ptes.schicht_min` | 0.3 | - | annahme | Temperaturkennlinie (Abschätzung): Übergangszone (Thermokline) zwischen heißem und kaltem Wasser ≈ 5 m bei 16 m Tiefe in Dronninglund (Größenordnung aus einer Simulationsstudie zu DRL: Schichtung 85 °C oben / 40 °C unten, Übergang 70-10 °C über ≈ 5 m; per Websuche gefunden, Volltext nicht geprüft) -> ≈ 0,3 des Volumens. Erst eine heiße Schicht dicker als diese Zone liefert oben T_oben. | 0, 0.15, 0.5 | Plausibilität Dronninglund Dezember (Füllstand gesamt 12-24 %, oben ≈ 50 °C, TEAM): z. B. kalt 25 % / heiß 5 % -> Kennlinie oben ≈ 46 °C. 0 = keine Kennlinie (ideale Schichtung). docs/entscheidungen.md E34. |
+| `ptes.verlustrate` | 4e-05 | 1/h | annahme | BRF §3.2 Startwert, abgeleitet aus DRL (Verluste / mittl. Inhalt ≈ 2.800 MWh) | 1.5e-05, 8e-05 | Gilt bei ptes.V_ref (60.000 m3 = DRL). Für andere Größen x (V/V_ref)^groessen_exponent: z. B. 7.400 m3 -> 8e-5, 1.750 m3 -> 1,3e-4 (docs E39). |
+| `ptes.groessen_exponent` | -0.3333 | - | annahme | Geometrie: Oberfläche/Volumen ~ V^(-1/3) (Verluste) und Tiefe ~ V^(1/3) (Dicke der Übergangszone bleibt in Metern gleich) bei ähnlicher Form; eigene Abschätzung (docs E10, E39) | 0 | Wirkt auf ptes.verlustrate und ptes.uebergang_ref. 0 = größenunabhängig (altes Verhalten). Bei optimiertem Volumen gilt die Untergrenze des Kostensegments (erstes Segment: Mitte). |
+| `ptes.uebergang_ref` | 0.15 | - | belegt | Messdaten Dronninglund 2014 (PitStorages/DronninglundData, 32 Temperaturfühler, eigene Auswertung docs/validierung_dronninglund.md): Wärme des heißen Bands (über 40 °C), die in Wasser unter 75-80 °C steckt = Median 12-16 % der Kapazität des heißen Teils (P10-P90: 5-30 %) | 0, 0.1, 0.25 | Anteil der Übergangszone am heißen Teil bei ptes.V_ref. Größenabhängig (groessen_exponent): 7.400 m3 -> 0,30. Direkt ins Netz geht nur der Kern darüber. 0 = ideale Schichtung. Ersetzt ptes.schicht_min (docs E39). |
+| `ptes.uebergang_max` | 0.8 | - | annahme | Obergrenze für sehr kleine/flache Speicher (unter ≈ 400 m3), damit ein Kern übrig bleibt; rechnerische Grenze |  |  |
+| `ptes.einschicht_anteil` | 0 | - | annahme | Anteil der heiß geladenen Wärme, der sich beim Einschichten mit der Übergangszone mischt. Kalibriergröße gegen den Direktanteil der Speicherentladung in Dronninglund (docs/validierung_dronninglund.md) | 0.1, 0.2 |  |
+| `ptes.vorwaermen` | True | - | vorgabe | Wasser der Übergangszone (≈ 65 °C) wärmt den Rücklauf auf ≈ 60 °C vor, WP/PtH heizen in derselben Stunde auf Vorlauf nach (übliche Betriebsweise). false = Übergangszone nur über die Speicher-WP nutzbar (docs E39) | False |  |
+| `ptes.laden_aus_netz` | False | - | vorgabe | false = der Speicher nimmt nur Solarwärme auf (docs E29). true = WP und PtH dürfen den heißen Teil laden; sinnvoll nur bei zeitvariablem Strompreis (Szenarien strom_day_ahead_*) | True |  |
 | `ptes.direkt_dT` | 5 | K | vorgabe | BRF §3.1: Direktentladung braucht T_oben >= T_VL + 5 K (Wärmeübertrager/Übergabe) |  |  |
 | `ptes.kosten_ref` | 67.77 | EUR/m3 | belegt | KWW Tab. 52 (Erdbeckenspeicher): Kostenkurve Invest = 1093,6 * V^0,7472 (2026, netto) bei V_ref = 60.000 m3 -> 67,8 EUR/m3; Stützwerte 20.000 m3 90, 50.000 m3 70, 100.000 m3 60, 200.000 m3 50 EUR/m3 |  | Frühere Basis (SIF/DRL 2014: 38,3 EUR/m3 bei 60.000 m3 x Index 1,5 = 57,5) liegt bei 60.000 m3 ≈ 15 % niedriger; bei 1.600 m3 praktisch gleich (175 vs. 168 EUR/m3). docs/entscheidungen.md E32. |
 | `ptes.V_ref` | 60000 | m3 | belegt | Bezugsgröße der Kostenkurve (innerhalb der KWW-Stützwerte 20.000-200.000 m3) |  |  |
@@ -82,6 +90,7 @@ Status: belegt 36, vorgabe 50, annahme 41, offen 0
 | `kollektor.a1` | 2.4 | W/(m2 K) | annahme | BRF-Bandbreite 2-2,5 W/(m2 K), oberes Drittel (konservativ) |  |  |
 | `kollektor.a2` | 0.012 | W/(m2 K2) | annahme | BRF-Bandbreite 0,01-0,016 W/(m2 K2) |  |  |
 | `kollektor.T_m` | 67.5 | degC | vorgabe | BRF §3.3: mittlere Kollektortemperatur 50 -> 85 degC; ein Niveau für Direktnutzung und Speicherladen (docs E20) |  |  |
+| `kollektor.iam_b0` | 0.1 | - | annahme | Einfallswinkel-Korrektur der Direktstrahlung nach ASHRAE: K = 1 - b0 * (1/cos(Winkel) - 1); b0 ≈ 0,1 ist der übliche Wert für einfach verglaste Flachkollektoren (K ≈ 0,94 bei 50°). Durch Keymark-Wert K(50°) ersetzen | 0, 0.15 | 0 = keine Korrektur (altes Verhalten). Diffusstrahlung bleibt unkorrigiert (einfach gehalten). |
 | `kollektor.feldverluste` | 0.1 | - | annahme | BRF §3.3 Startwert | 0.05, 0.15 |  |
 | `kollektor.neigung` | 35 | deg | annahme | TEAM: einfache Annahme; 35 deg = übliche Neigung großer Freiflächenfelder in DE/DK (Kompromiss Ertrag/Reihenabstand) | 25, 45 |  |
 | `kollektor.azimut` | 180 | deg | annahme | Südausrichtung (pvlib-Konvention 180 = Süd), Standard bei Freifeldanlagen |  |  |
@@ -140,7 +149,8 @@ Status: belegt 36, vorgabe 50, annahme 41, offen 0
 |---|---|---|---|---|---|---|
 | `strom.tarif` | fest | - | vorgabe | BRF §3.5 / TEAM: Basis fester Tarif; Option day_ahead (Zeitreihe) über Szenarien strom_day_ahead_*.yaml | day_ahead |  |
 | `strom.preis_fest` | 300 | EUR/MWh | vorgabe | TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto) | 200, 400 | Gesamtpreis beim festen Tarif; Beschaffung+Vertrieb = Gesamt - Netzentgelt - Abgaben. Bandbreite ±1/3 als Annahme. BDEW-Strompreisanalyse nennt für Industrie 2025 ≈ 16-18 ct/kWh (ohne Gewerbeaufschläge) -> 30 ct ist eher hoch, 20 ct plausibel (docs/ausblick.md). |
-| `strom.netzentgelt` | 93 | EUR/MWh | annahme | Aufteilung der 30 ct nach BDEW-Komponenten (Jan 2026, Netzentgelt ≈ 9,3 ct/kWh; Kategorie nicht geklärt); Summe aus Beschaffung 15,4 + Netz 9,3 + Abgaben 5,7 ≈ 30,4 ct passt zu TEAM-Preis | 60, 110 | Arbeitspreis-Anteil. Ein Leistungspreis (EUR/kW und Jahr auf die höchste Netzbezugsleistung) ist NICHT modelliert; bei PtH-Reserve = Spitzenlast relevant. Netzbetreiber-Preisblatt (Bad Lippspringe) nachtragen. |
+| `strom.netzentgelt` | 79.9 | EUR/MWh | belegt | Westfalen Weser Netz, Preisblatt Netznutzung Strom gültig ab 01.01.2025 (Stand 19.12.2024), lastganggemessene Kunden, Mittelspannung, Benutzungsdauer < 2.500 h/a: Arbeitspreis 7,99 ct/kWh | 60, 110 | Arbeitspreis. Vorher 93 EUR/MWh (BDEW-Durchschnitt). Benutzungsdauer hier ≈ 1.000-1.500 h/a (Strombezug / höchste Leistung). Ab 2.500 h/a gälte 163,73 EUR/kW und 2,06 ct/kWh. Preisblatt 2026 war am 14.11.2026 nur vorläufig veröffentlicht. |
+| `strom.leistungspreis` | 15.5 | EUR/(kW a) | belegt | Westfalen Weser Netz, Preisblatt Netznutzung Strom ab 01.01.2025, Mittelspannung, < 2.500 h/a: Leistungspreis 15,50 EUR/kWa (auf die höchste Bezugsleistung des Jahres) | 0, 163.73 | Im Modell: Kosten der Anschlussleistung (Link netzanschluss) = höchster Strombezug einer Stunde. Zusätzlich zu strom.preis_fest. 163,73 EUR/kWa gehört zur Preisregelung ab 2.500 h/a (dann Arbeitspreis 2,06 ct/kWh) und ist als alleinige Variante nur ein Grenzfall. |
 | `strom.abgaben` | 57 | EUR/MWh | annahme | Stromsteuer 2,05 + Konzessionsabgabe 1,67 + KWKG-Umlage 0,45 + §19-Aufschlag 1,56 ct/kWh (BDEW/Versorger-Preisblätter 2026, uneinheitlich); Offshore-Umlage 0,94 ct nicht enthalten; evtl. Entlastungen für WP (§22 EnFG) ungeprüft | 40, 70 |  |
 | `strom.vertriebsmarge` | 25 | EUR/MWh | annahme | Spot-Tarife leistungsgemessener Gewerbekunden: Aufschlag auf den Spotpreis inkl. Vertrieb und Ausgleichsenergie z. B. 2,50 ct/kWh (Stadtwerke Radolfzell, RLM Niederspannung), 5,80 ct/kWh (Mainova, RLM ab 100.000 kWh/a, Ersatzversorgung), 7,1 ct/kWh (Bad Belzig); Spanne 2,5-7 ct -> untere Spanne 2,5 ct angesetzt | 10, 60 | Nur für tarif day_ahead: Energie(t) = Day-Ahead(t) + Marge. Bei Großabnehmern (>1 GWh/a, Mittelspannung) verhandelbar und oft niedriger. |
 | `strom.preisjahr` | 2024 | a | annahme | Day-Ahead-Stundenpreise DE-LU, Bundesnetzagentur / SMARD.de (CC BY 4.0) über Energy-Charts-API. Jahresmittel: 2022 = 235 (Krise), 2023 = 95, 2024 = 78,5 EUR/MWh. 2024 als ruhiges, aktuelles Jahr | 2023, 2022 | Preisjahr ist unabhängig vom Wetterjahr 2022 (Stunde i -> Stunde i); Zusammenhang kalt <-> teuer nur statistisch. Daten laden: serts fetch-strompreise. |
@@ -199,10 +209,10 @@ Status: belegt 36, vorgabe 50, annahme 41, offen 0
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
 | `heatmap.A_m2` | [1000, 2000, 3000, 4000, 5000] | m2 | vorgabe | Raster Kollektorfläche für serts heatmap (BRF §1 Pflicht 6), um das Optimum ≈ 3.700 m2 (Netz klein) |  |  |
-| `heatmap.V_m3` | [0, 2000, 4000, 7000, 10000] | m3 | vorgabe | Raster Speichervolumen für serts heatmap, um das Optimum ≈ 4.600 m3 (Netz klein); Punkte über der Fläche entfallen |  |  |
+| `heatmap.V_m3` | [0, 1000, 2000, 4000, 5500, 7000, 10000] | m3 | vorgabe | Raster Speichervolumen für serts heatmap, um das Optimum ≈ 4.600 m3 (Netz klein); Punkte über der Fläche entfallen |  |  |
 
 ## tornado
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.schicht_min', 'waermepumpe.COP_ptes', 'waermepumpe.guetegrad_faktor', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |
+| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.uebergang_ref', 'ptes.groessen_exponent', 'ptes.vorwaermen', 'strom.leistungspreis', 'kollektor.iam_b0', 'waermepumpe.COP_ptes', 'waermepumpe.guetegrad_faktor', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

@@ -4,3 +4,6 @@ meta:
 strom:
   tarif: day_ahead
   preisjahr: 2024
+# Bei zeitvariablem Preis duerfen WP und PtH den Speicher laden (docs E39)
+ptes:
+  laden_aus_netz: true

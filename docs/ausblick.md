@@ -7,15 +7,16 @@ Sortiert nach Nutzen für die Aussage und Aufwand (Aufwand: ● klein, ●● mi
 | Vorschlag | Warum | Aufwand |
 |---|---|---|
 | **Förderung genauer** (Wirtschaftlichkeitslücke statt pauschal 40 %, Modul 4 als Gutschrift, PtH/Hausanschluss klären) | BEW verschiebt das Optimum zu mehr Solar/Speicher | ●● |
-| **Strompreisstruktur** (Arbeits-/Leistungspreis, reduzierte Netzentgelte, Day-Ahead-Zeitreihe) | größter Hebel überhaupt (±40 €/MWh) | ●● |
-| **Validierung Dronninglund** (M4 bisher ausgelassen) | belegt Speicher-/Solarlogik gegen Messwerte (Referenzwerte liegen in `data/reference/`) | ●●● |
+| **Strompreisstruktur** (reduzierte Netzentgelte, Höhe des Gesamtpreises; Leistungspreis und Day-Ahead sind umgesetzt) | größter Hebel überhaupt (±40 €/MWh) | ● |
+| **Validierung Dronninglund** – erledigt für den Speicher (`validierung_dronninglund.md`, E39); offen: eigenes Wetter/Lastprofil für Nordjütland | belegt Speicher-/Solarlogik gegen Messwerte | ●● |
+| **Kollektor lädt den kalten Teil bei niedriger Temperatur** (zweite Kollektor-Zeitreihe + Flächenbedingung je Stunde) | Ertrag im Winter/Übergang etwa doppelt so hoch wie bei 67,5 °C; größte verbleibende Vereinfachung am Speicher | ●● |
 
 ## B Technische Varianten
 
 | Variante | Idee | Erwartung / Hinweis | Aufwand |
 |---|---|---|---|
 | **PV für die Wärmepumpe** (Briefing 5c) | PV-Feld auf der Fläche, WP nutzt Eigenstrom | Grobe Rechnung (PVGIS-Normaljahr, 85 % PR): 1 MWp ≈ 1.100 MWh/a, deckt **zeitgleich nur ≈ 17 %** des WP-/PtH-Stroms (≈ 1.850 MWh/a), 2 MWp ≈ 23 %. Winter: **nur 25 %** des PV-Jahresertrags fällt in Okt–Mär, aber **78 %** des Strombedarfs. PV hilft bilanziell, ersetzt aber den Speicher/Kollektor nicht; Flächenkonkurrenz (13.000 m²). Mit Batterie/dynamischem Tarif deutlich besser. | ●● |
-| **WP/PtH lädt den Speicher** (Sommer-Wärme für den Winter, Briefing-Variante) | COP Sommer ≈ 3,2 statt Winter ≈ 2,3 | bei festem Preis ≈ 2–3 €/m³·a Ersparnis gegenüber ≈ 10–11 €/m³·a Speicherkosten → rechnet sich nicht; mit Day-Ahead-Preisen prüfen (E29) | ●● |
+| **WP/PtH lädt den Speicher** (Sommer-Wärme für den Winter, Briefing-Variante) | COP Sommer ≈ 3,2 statt Winter ≈ 2,3 | bei festem Preis ≈ 2–3 €/m³·a Ersparnis gegenüber ≈ 10–11 €/m³·a Speicherkosten → rechnet sich nicht (E29). Für Day-Ahead umgesetzt (`ptes.laden_aus_netz`, E39): ≈ −3 €/MWh bei fester Auslegung | ●● |
 | **Biomassekessel statt PtH** (Spitze/Reserve) | Preis 10 ct/kWh liegt vor | BEW-förderfähig mit Auflagen; PtH fällt weg | ● |
 | **Erdwärme/Abwärme als Quelle** | KWP-NRW-Daten für Bad Lippspringe liegen vor (oberflächennahe/mitteltiefe Geothermie, Solarthermie-Freiflächen) | stabile Quelle im Winter, könnte Luft-WP und Speicher entlasten | ●●● |
 | **Teillast/Mindestlast der Luft-WP** | Frostleistung ist jetzt abgebildet (80 % bei -7 °C, E27); Teillastverluste/Taktung fehlen | Modell bei Teillast noch optimistisch; Herstellerdaten nötig | ●● |
@@ -27,7 +28,7 @@ Sortiert nach Nutzen für die Aussage und Aufwand (Aufwand: ● klein, ●● mi
   Programm) und Fläche mit V^(1/3)-Geometrie (`docs/ptes_obergrenze.md`).
 - **Monte-Carlo-Sensitivität** statt Einzelvariation: zeigt Wahrscheinlichkeit „System billiger als Gas“.
 - **Mehrere Wetterjahre** (kalt/warm, strahlungsarm) nacheinander statt Normaljahr; Klimawandel-Trend.
-- **Nichtlineare Speicherphysik** (Temperaturschichten) nur, wenn die Zwei-Teile-Näherung des Speichers (E27) als zu grob kritisiert wird.
+- **Nichtlineare Speicherphysik** (Temperaturschichten) nur, wenn die Drei-Teile-Näherung des Speichers (E39) als zu grob kritisiert wird; sie trifft die Jahreswerte von Dronninglund bereits.
 - **Stündlicher CO₂-Faktor** des Strommix statt Jahresmittel (relevant für Day-Ahead-Betrieb der WP).
 - **CO₂-Bilanz vervollständigen** (`docs/unsicherheiten.md` §3a), ●: Strom-Emissionsfaktor als Mittel des KWW-Pfads über
   20 a (Tab. 1, ≈ 100 g/kWh), Erdgas mit Vorkette (240 g/kWh); graue Emissionen nur mit belegten Literaturwerten
@@ -40,7 +41,7 @@ Sortiert nach Nutzen für die Aussage und Aufwand (Aufwand: ● klein, ●● mi
 
 Börsenpreise (Day-Ahead) sind **keine Endkundenpreise**. Üblicher Weg: Preis(t) = Day-Ahead(t) + Vertriebsmarge +
 Netzentgelt (Arbeitspreis) + Abgaben/Steuern; dazu ein **Leistungspreis** auf die höchste Bezugsleistung.
-Das Modell hat dafür bereits den Tarif `day_ahead` (`prices.py`, Parameter `strom.vertriebsmarge` offen).
+Das Modell hat dafür den Tarif `day_ahead` (`prices.py`) und seit E39 den Leistungspreis (`strom.leistungspreis`).
 
 | Baustein | Quelle |
 |---|---|

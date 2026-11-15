@@ -1,4 +1,4 @@
-"""Mini-Netz 48 h mit synthetischen Zeitreihen: Bilanzen und die zwei Zusatzbedingungen.
+"""Mini-Netz 48 h mit synthetischen Zeitreihen: Bilanzen und die Zusatzbedingungen.
 
 Synthetische Werte sind Testwerte, keine Modellannahmen. Laufen ohne Rohdaten.
 """
@@ -50,31 +50,45 @@ def netz_fest(cfg, ts):
 def test_energiebilanz_waermeknoten(cfg, ts, netz_fest):
     p0 = netz_fest.links_t.p0
     zu = p0["solar_direkt"] + p0["entladen_direkt"] + p0["wp_out"] + p0["pth"] * cfg.get("pth.eta")
+    zu = zu + p0["vorwaermen"]
     np.testing.assert_allclose(zu.sum(), ts["last_gesamt"].sum(), rtol=1e-3)
 
 
 def test_speicherbilanz_geschlossen(cfg, ts, netz_fest):
     p0 = netz_fest.links_t.p0
     e = netz_fest.stores_t.e
-    zu = p0["laden"].sum()
-    ab = p0["entladen_direkt"].sum() + p0["hp_speicher"].sum() * (
-        cfg.get("waermepumpe.COP_ptes") - 1
+    zu = p0["laden_heiss"].sum() + p0["laden_kalt"].sum()
+    ab = (
+        p0["entladen_direkt"].sum()
+        + p0["vorwaermen"].sum()
+        + p0["hp_speicher"].sum() * (cfg.get("waermepumpe.COP_ptes") - 1)
     )
     # PyPSA: Verlust je Stunde = standing_loss * Inhalt der Vorstunde (zyklisch), je Speicherteil
-    lam = cfg.get("ptes.verlustrate")
-    verlust = sum(
-        (lam * e[n].shift(1, fill_value=e[n].iloc[-1])).sum() for n in ("ptes_heiss", "ptes_kalt")
-    )
+    lam = netz_fest.meta["verlustrate"]
+    assert lam == pytest.approx(network.verlustrate(cfg, 3000.0))
+    verlust = sum((lam * e[n].shift(1, fill_value=e[n].iloc[-1])).sum() for n in e.columns)
     assert zu - ab - verlust == pytest.approx(0.0, abs=1e-3 * max(zu, 1.0))
 
 
-def test_laden_fuellt_heiss_und_kalt_im_festen_verhaeltnis(cfg, ts, netz_fest):
-    f = network.anteil_heiss(cfg)
-    p0 = netz_fest.links_t.p0
-    # 1 MWh Solarwärme -> f in den heißen, (1-f) in den kalten Teil (Link-Ausgänge)
-    assert netz_fest.links.at["laden", "efficiency"] == pytest.approx(f)
-    assert netz_fest.links.at["laden", "efficiency2"] == pytest.approx(1.0 - f)
-    assert p0["laden"].sum() > 0  # der Test prüft nur sinnvoll, wenn geladen wird
+def _mit_startinhalt(n, kern: float, ueb: float, kalt: float):
+    """Startfüllstände (0..1) erzwingen, nicht zyklisch."""
+    for name, anteil in (("ptes_heiss", kern), ("ptes_ueb", ueb), ("ptes_kalt", kalt)):
+        n.stores.loc[name, "e_cyclic"] = False
+        n.stores.loc[name, "e_initial"] = anteil * n.stores.at[name, "e_nom"]
+
+
+def test_sommerzyklus_ohne_waermepumpe(cfg, ts):
+    """Kalter Teil voll (Speicher unten auf Rücklauftemperatur): der heiße Teil lädt und entlädt ohne WP.
+
+    Früher füllte ``laden`` heiß und kalt im festen Verhältnis -> bei vollem kalten Teil kein Nachladen (E39).
+    """
+    n = network.build_network(cfg, ts, A_m2=3000.0, V_m3=3000.0)
+    _mit_startinhalt(n, kern=0.0, ueb=1.0, kalt=1.0)
+    n.links.loc["hp_speicher", "p_nom"] = 0.0  # Speicher-WP aus
+    network.optimize(n, cfg, ts)
+    p0 = n.links_t.p0
+    assert p0["laden_heiss"].sum() > 1.0
+    assert p0["entladen_direkt"].sum() > 1.0
 
 
 def test_speicherteile_wachsen_im_festen_verhaeltnis(cfg, ts):
@@ -83,68 +97,116 @@ def test_speicherteile_wachsen_im_festen_verhaeltnis(cfg, ts):
     )  # A und V optimiert
     network.optimize(n, cfg, ts)
     h = n.stores.at["ptes_heiss", "e_nom_opt"]
-    kalt = n.stores.at["ptes_kalt", "e_nom_opt"]
     f = network.anteil_heiss(cfg)
-    assert kalt == pytest.approx((1 - f) / f * h, abs=1e-6)
-
-
-def test_temperaturkennlinie_werte(cfg):
-    # Füllstände (heiß, kalt) -> Temperatur oben / Mittel; Übergangszone 0,3
-    s_h = pd.Series([0.0, 0.0, 0.05, 0.3, 1.0])
-    s_k = pd.Series([0.0, 1.0, 0.25, 1.0, 1.0])
-    oben, mittel = network.temperaturen_speicher(cfg, s_h, s_k)
-    # leer 10 °C; nur kalter Teil voll -> 45 °C (kein heißes Wasser!); Dronninglund-Dezember ≈ 46 °C
-    np.testing.assert_allclose(
-        oben, [10.0, 45.0, 10 + 35 * 0.25 / 0.3 + 40 * 0.05 / 0.3, 85.0, 85.0]
+    s = n.meta["uebergang_anteil"]
+    assert s == pytest.approx(network.anteil_uebergang(cfg, 2500.0))  # Segmentmitte
+    assert n.stores.at["ptes_kalt", "e_nom_opt"] == pytest.approx(
+        (1 - f) / (f * (1 - s)) * h, abs=1e-6
     )
-    np.testing.assert_allclose(mittel, [10.0, 45.0, 10 + 35 * 0.25 + 40 * 0.05, 57.0, 85.0])
-    # T_VL 80 + 5 K = T_oben -> heiße Schicht muss die volle Übergangszone überdecken
-    assert network.fuellstand_direkt(cfg) == pytest.approx(0.3)
-    # kälteres Netz (VL 60): oben 65 °C genügt -> dünnere heiße Schicht reicht
-    assert network.fuellstand_direkt(cfg.variante("netz.T_VL", 60)) == pytest.approx(0.3 * 20 / 40)
+    assert n.stores.at["ptes_ueb", "e_nom_opt"] == pytest.approx(s / (1 - s) * h, abs=1e-6)
 
 
-def test_direktentladung_nur_bei_dicker_heisser_schicht(cfg, ts, netz_fest):
-    s_min = network.fuellstand_direkt(cfg)
-    e_h = netz_fest.stores_t.e["ptes_heiss"]
-    start = e_h.shift(1, fill_value=float(e_h.iloc[-1]))
-    duenn = start < s_min * netz_fest.stores.at["ptes_heiss", "e_nom"] * (1 - 1e-6)
-    p = netz_fest.links_t.p0["entladen_direkt"]
-    assert (p[duenn] <= 1e-6).all()
-    # der Speicher darf trotzdem unter die Grenze entladen werden (über die WP) - kein Mindestinhalt
-    assert netz_fest.meta["kennlinie_rest_MWh"] == pytest.approx(0.0, abs=1e-3)
+def test_uebergangszone_und_verlust_haengen_von_der_groesse_ab(cfg):
+    # bei V_ref (Dronninglund, 60.000 m3) die Config-Werte
+    assert network.anteil_uebergang(cfg, 60_000) == pytest.approx(cfg.get("ptes.uebergang_ref"))
+    assert network.verlustrate(cfg, 60_000) == pytest.approx(cfg.get("ptes.verlustrate"))
+    # 8-mal kleiner -> halbe Tiefe, doppelte Oberfläche je m3 -> beides doppelt
+    assert network.anteil_uebergang(cfg, 7_500) == pytest.approx(2 * 0.15, rel=1e-3)
+    assert network.verlustrate(cfg, 7_500) == pytest.approx(2 * 4.0e-5, rel=1e-3)
+    # sehr kleine Speicher: Obergrenze; Exponent 0 = größenunabhängig
+    assert network.anteil_uebergang(cfg, 100) == pytest.approx(cfg.get("ptes.uebergang_max"))
+    c0 = cfg.variante("ptes.groessen_exponent", 0.0)
+    assert network.anteil_uebergang(c0, 1_000) == pytest.approx(0.15)
+    assert network.verlustrate(c0, 1_000) == pytest.approx(4.0e-5)
+    # kälteres Netz (VL 60): Direktentladung ab 65 °C -> nur die halbe Zone (45-65 von 45-85 °C) zählt
+    assert network.anteil_uebergang(cfg.variante("netz.T_VL", 60), 60_000) == pytest.approx(0.075)
 
 
-def test_kalter_teil_hebt_direktentladung_nicht(cfg, ts):
-    """Voller kalter Teil + fast leerer heißer Teil: keine Direktentladung (früherer 'Ballast'-Fehler)."""
-    n = network.build_network(cfg, ts, A_m2=0.0, V_m3=3000.0)
-    E_h = n.stores.at["ptes_heiss", "e_nom"]
-    E_k = n.stores.at["ptes_kalt", "e_nom"]
-    # Startinhalt erzwingen: kalt voll, heiß 10 % (unter der Grenze 30 %); nicht zyklisch
-    n.stores.loc[["ptes_heiss", "ptes_kalt"], "e_cyclic"] = False
-    n.stores.loc["ptes_heiss", "e_initial"] = 0.1 * E_h
-    n.stores.loc["ptes_kalt", "e_initial"] = E_k
-    network.optimize(n, cfg, ts)
-    assert n.links_t.p0["entladen_direkt"].sum() <= 1e-6
-    # die Wärme ist trotzdem nutzbar: über die Speicher-WP (umlagern -> kalt -> WP)
-    assert n.links_t.p0["hp_speicher"].sum() > 0
+def test_speichertemperaturen_anzeige(cfg):
+    # Füllstände (Kern, Übergangszone, kalt) -> Temperatur oben / Mittel; Anteil Übergangszone 0,3
+    kern = pd.Series([0.0, 0.0, 0.0, 0.5, 1.0])
+    ueb = pd.Series([0.0, 0.0, 0.5, 1.0, 1.0])
+    kalt = pd.Series([0.0, 1.0, 1.0, 1.0, 1.0])
+    oben, mittel = network.temperaturen_speicher(cfg, kern, ueb, kalt, 0.3)
+    # leer 10 °C; nur kalter Teil voll -> 45 °C; halbe Übergangszone -> 65 °C; mit Kern immer 85 °C
+    np.testing.assert_allclose(oben, [10.0, 45.0, 65.0, 85.0, 85.0])
+    np.testing.assert_allclose(mittel, [10.0, 45.0, 45 + 40 * 0.15, 45 + 40 * 0.65, 85.0])
 
 
-def test_schichtung_konsistent(cfg, ts, netz_fest):
-    """Kalter Teil relativ mindestens so voll wie der heiße (heißes Wasser enthält seinen 10-45-°C-Anteil)."""
+def test_schichtung_kern_uebergang_kalt(cfg, ts, netz_fest):
+    """Füllstand Kern <= Übergangszone <= kalt in jeder Stunde (heißes Wasser liegt auf seiner Zone)."""
     e = netz_fest.stores_t.e
     E = netz_fest.stores.e_nom
-    s_h = e["ptes_heiss"] / E["ptes_heiss"]
-    s_k = e["ptes_kalt"] / E["ptes_kalt"]
-    assert (s_k >= s_h - 1e-6).all()
+    s = {n: e[n] / E[n] for n in ("ptes_heiss", "ptes_ueb", "ptes_kalt")}
+    assert (s["ptes_ueb"] >= s["ptes_heiss"] - 1e-6).all()
+    assert (s["ptes_kalt"] >= s["ptes_ueb"] - 1e-6).all()
+    assert netz_fest.links_t.p0["entladen_direkt"].sum() > 0  # sonst prüft der Test nichts
 
 
-def test_kennlinie_aus_ist_altes_verhalten(cfg, ts):
-    c = cfg.variante("ptes.schicht_min", 0.0)
+def test_ohne_kern_keine_direktentladung(cfg, ts):
+    """Kalter Teil voll, Übergangszone halb voll, kein Kern: nichts geht direkt ins Netz (kein Ballast)."""
+    n = network.build_network(cfg, ts, A_m2=0.0, V_m3=3000.0)
+    _mit_startinhalt(n, kern=0.0, ueb=0.5, kalt=1.0)
+    network.optimize(n, cfg, ts)
+    p0 = n.links_t.p0
+    assert p0["entladen_direkt"].sum() <= 1e-6
+    # die Wärme ist trotzdem nutzbar: Vorwärmen oder Speicher-WP
+    assert p0["vorwaermen"].sum() + p0["hp_speicher"].sum() > 0
+
+
+def test_vorwaermen_braucht_nachheizen(cfg, ts):
+    n = network.build_network(cfg, ts, A_m2=0.0, V_m3=3000.0)
+    _mit_startinhalt(n, kern=0.0, ueb=1.0, kalt=1.0)
+    network.optimize(n, cfg, ts)
+    p0 = n.links_t.p0
+    k = network.vorwaerm_verhaeltnis(cfg)
+    assert k == pytest.approx(0.75)  # 45 -> 60 °C aus dem Speicher, 60 -> 80 °C Nachheizung
+    assert p0["vorwaermen"].sum() > 1.0
+    nachheizen = p0["wp_out"] + p0["pth"] * cfg.get("pth.eta")
+    assert (p0["vorwaermen"] <= k * nachheizen + 1e-6).all()
+    # abgeschaltet: kein Link
+    aus = network.build_network(cfg.variante("ptes.vorwaermen", False), ts, A_m2=0.0, V_m3=3000.0)
+    assert "vorwaermen" not in aus.links.index
+
+
+def test_ideale_schichtung_ohne_uebergangszone(cfg, ts):
+    c = cfg.variante("ptes.uebergang_ref", 0.0)
     n = network.build_network(c, ts, A_m2=3000.0, V_m3=3000.0)
-    assert "umlagern" not in n.links.index
+    assert "ptes_ueb" not in n.stores.index
+    assert not {"umlagern", "abbau", "vorwaermen"} & set(n.links.index)
     network.optimize(n, c, ts)
-    assert n.meta["kennlinie_aktiv"] is False
+    e, E = n.stores_t.e, n.stores.e_nom
+    assert (e["ptes_kalt"] / E["ptes_kalt"] >= e["ptes_heiss"] / E["ptes_heiss"] - 1e-6).all()
+
+
+def test_einschichtanteil_geht_in_die_uebergangszone(cfg, ts):
+    c = cfg.variante("ptes.einschicht_anteil", 0.2)
+    n = network.build_network(c, ts, A_m2=1000.0, V_m3=3000.0)
+    assert n.links.at["laden_heiss", "efficiency"] == pytest.approx(0.8)
+    assert n.links.at["laden_heiss", "bus2"] == "ueb"
+    assert n.links.at["laden_heiss", "efficiency2"] == pytest.approx(0.2)
+
+
+def test_laden_aus_netz_nur_auf_wunsch(cfg, ts):
+    assert "laden_netz" not in network.build_network(cfg, ts, 1000.0, 3000.0).links.index
+    n = network.build_network(cfg.variante("ptes.laden_aus_netz", True), ts, 1000.0, 3000.0)
+    assert n.links.at["laden_netz", "bus0"] == "waerme"  # WP und PtH speisen in den Wärmeknoten
+    assert n.links.at["laden_netz", "bus1"] == "heiss"
+
+
+def test_leistungspreis_auf_hoechsten_strombezug(cfg, ts):
+    c = cfg.variante("strom.leistungspreis", 100.0)
+    n, k, r = loese(c, ts, A_m2=2000.0, V_m3=2000.0)
+    # gebaute Anschlussleistung = höchster Bezug; Kosten = EUR/kW * kW
+    assert n.links.at["netzanschluss", "p_nom_opt"] == pytest.approx(
+        r["strom_netz"].max(), abs=1e-4
+    )
+    assert k["kosten_a_strom_leistung"] == pytest.approx(r["strom_netz"].max() * 1000 * 100.0)
+    assert k["kosten_a_strom"] > k["kosten_a_strom_leistung"] > 0
+    # ohne Leistungspreis ist die Spitze mindestens so hoch
+    _, k0, r0 = loese(cfg.variante("strom.leistungspreis", 0.0), ts, A_m2=2000.0, V_m3=2000.0)
+    assert k0["kosten_a_strom_leistung"] == 0.0
+    assert r0["strom_netz"].max() >= r["strom_netz"].max() - 1e-6
 
 
 def test_bew_ausweis(cfg, ts):

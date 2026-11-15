@@ -1,4 +1,4 @@
-# Ergebnisse Netz groß (Stand 10.11.2026 nachts, nach E32–E38)
+# Ergebnisse Netz groß (oben Stand 14.11.2026 nach E39, darunter Stand 10.11.2026)
 
 Netzfall `gross` (`config/netze/gross.yaml`, Aufruf `uv run serts run --netz gross`, Ergebnisse in `results/gross/`):
 877 Gebäude, davon 54 % der Wärme in Nichtwohngebäuden (GMK/GKO), 42.782 MWh/a Gebäude + 5.440 MWh/a Netzverluste,
@@ -6,7 +6,41 @@ Spitze 15,5 MW (Stundensumme), Trasse 14.291 m, Freifläche 80.000 m². Alle and
 (`docs/eingangsparameter.md` zeigt beide nebeneinander). Kollektor 276 €/m² Brutto (KWW, Klasse ≥ 15.000 m²
 Apertur), Trasse 1.140/640 €/m (KWW, größere Rohre), Luft-WP nach KWW-Gütegrad, Speicher mit Kennlinie (E34–E36).
 
-## Basislauf im Vergleich (WP 1.340 €/kW, E38)
+## Stand 14.11.2026 nach E39 (neues Speichermodell)
+
+Geändert wie Netz klein (`docs/ergebnisse.md`, E39). **Die Abschnitte ab „Basislauf im Vergleich alt“ (Heatmap,
+weitere Tabellen) sind noch mit dem alten Speicher gerechnet.** Ergebnisordner
+`results/gross/20261114-174233_base_opt` und `…-174238_base_varianten`.
+
+| Kennzahl | Netz groß alt (10.11.) | **Netz groß neu** | Netz klein neu |
+|---|---|---|---|
+| Kollektor / Speicher | 28.400 m² / 38.900 m³ | **29.800 m² / 30.300 m³** | 4.670 m² / 6.000 m³ |
+| Fläche belegt / verfügbar | 80.000 / 80.000 m² | 80.000 / 80.000 m² (Grenze bindet) | 13.000 / 13.000 m² |
+| Wärmepumpe / PtH | 9,1 / 15,5 MW (PtH 990 MWh/a) | 9,3 / 15,5 MW (PtH 280 MWh/a) | 0,95 / 1,59 MW (0) |
+| Strombezug / höchste Leistung | 17.020 MWh/a / – | 15.630 MWh/a / 4,7 MW | 1.520 MWh/a / 0,46 MW |
+| Speicher: Zyklen / Winteranteil / Charakter | 2,5 / 41 % / gemischt | 4,3 / 31 % / kurzzeit | 3,2 / 37 % / gemischt |
+| Speicher: Verlustrate / Übergangszone / Wirkungsgrad | 4·10⁻⁵ / 30 % / – | 5·10⁻⁵ / 19 % / 95 % | 8,6·10⁻⁵ / 32 % / 89 % |
+| LCOH Erzeugung (Gas-Referenz 165,3) | 158,8 | **152,3** | 150,0 |
+| Wärmepreis inkl. Netz (Gas-Fernwärme 236,2) | 228,9 | **221,6** (−6 %) | 243,4 (Gas 261,4) |
+| mit BEW Modul 2, gleiche Auslegung | 201 | 193,3, Zuschuss ≤ 16,7 Mio. € | 209,3 |
+| Solaranteil / CO₂ (Gas-Referenz 10.200 t/a) | 30 % / 6.180 t/a | 31 % / 5.670 t/a | 40,5 % / 551 t/a |
+
+**Kostensegmente** (LCOH, V, A): 0–2.500 m³ 160,8; 2.500–10.000 m³ 157,6; 10.000–30.000 m³ 153,0 (28.700 m³);
+**30.000–70.000 m³ 152,3 (30.300 m³, 29.800 m²)**; 70.000–130.000 m³ 156,8 €/MWh.
+
+| Varianten neu | Basis | ohne Speicher | nur WP + PtH | mit BEW Modul 2 (optimiert) | Gas-Fernwärme |
+|---|---|---|---|---|---|
+| Kollektor / Speicher | 29.800 m² / 30.300 m³ | 11.200 m² / – | – | 29.900 m² / 30.000 m³ | – |
+| Solaranteil / EE-Anteil | 31 % / 85 % | 9 % / 80 % | 0 % / 79 % | 31 % / 85 % | 0 |
+| CO₂ [t/a] | 5.670 | 7.640 | 8.250 | 5.620 | 10.200 |
+| LCOH Erzeugung [€/MWh] | 152,3 | 176,6 | 181,5 | 135,8 | 165,3 |
+| Wärmepreis inkl. Netz [€/MWh] | **221,6** | 249,0 | 254,5 | **193,0** | **236,2** |
+
+* Der Speicher wird im großen Netz kleiner (30.300 statt 38.900 m³) und häufiger umgeschlagen (4,3 Zyklen): er
+  arbeitet als Kurzzeitspeicher. Mehr Fläche geht an den Kollektor.
+* Vorteil gegenüber Gas-Fernwärme 14,6 €/MWh (vorher 7,3); Solar + Speicher spart 33 €/MWh gegenüber reiner WP + PtH.
+
+## Basislauf im Vergleich alt (Stand 10.11.2026, WP 1.340 €/kW, E38)
 
 | Kennzahl | Netz groß | Netz klein |
 |---|---|---|

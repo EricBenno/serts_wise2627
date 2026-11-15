@@ -1,20 +1,44 @@
-# M4 Validierungslauf Dronninglund (BRF §6). Größen und Last aus Solites 2019.
-# Benötigt eigene Wetter- und Lastdaten für Nordjütland -> noch offen.
+# Validierungslauf Dronninglund (BRF §6): prüft das SPEICHERmodell gegen Solites 2019 (2015-2017).
+# Aufruf: uv run serts run --szenario validierung_dronninglund --A 37573 --V 60000
+# Vergleich und Ergebnis: docs/validierung_dronninglund.md, Zielwerte data/reference/dronninglund_solites2019_*.csv
+# Näherungen (kein Nachbau der Anlage): Wetter und Lastprofil von Bad Lippspringe, auf die Jahreswerte von
+# Dronninglund skaliert; Absorptions-WP als WP mit COP 1,7, deren Antrieb (dort Kesselwärme) hier wie die
+# Kesselwärme selbst bepreist ist (PtH = Kessel); keine Luft-WP.
 meta:
   beschreibung: "Nachrechnung Dronninglund 2015-2017 (A = 37.573 m2, V = 60.000 m3)"
   A_koll_m2: 37573          # Solites 2019 / BRF §6
   V_m3: 60000               # Solites 2019 / BRF §6
-  hinweis: >-
-    Absorptions-WP 2014-2021 (COP 1,6-1,8, Antrieb Bio-Öl-Kessel): hp_ptes mit COP 1,7 und
-    Antriebswärme statt Strom rechnen oder nur Speicher-/Solargrößen vergleichen.
-    Zielkorridore: data/reference/dronninglund_solites2019_*.csv
+last:
+  skalierung:
+    wert: 7.86
+    status: belegt
+    quelle: "Solites 2019: Wärme ans Netz 35.447-37.184 MWh/a -> (36.500 - 937 Netzverluste NB) / 4.525 MWh Gebäude"
 netz:
-  T_VL:
-    wert: 80
+  T_RL:
+    wert: 40
     status: belegt
     quelle: "DRL Auslegung ≈ 80/40 degC (SCH A2)"
+kollektor:
+  strahlung_skalierung:
+    wert: 0.84
+    status: belegt
+    quelle: "Solites 2019: Einstrahlung Kollektorebene 38.674-40.631 MWh / 37.573 m2 ≈ 1.060 kWh/m2 gegenüber 1.287 kWh/m2 (PVGIS-TMY Bad Lippspringe, vor Einfallswinkel-Korrektur)"
 waermepumpe:
   COP_ptes:
     wert: 1.7
     status: belegt
     quelle: "Solites 2019: Absorptions-WP COP 1,6-1,8"
+  T_min_luft:
+    wert: 99
+    status: vorgabe
+    quelle: "Dronninglund hat keine Luft-WP -> im Modell immer aus"
+ptes:
+  vorwaermen:
+    wert: false
+    status: vorgabe
+    quelle: "Dronninglund nutzt Wasser unter Vorlauftemperatur als Quelle der Absorptions-WP -> im Vergleich zählt alles außer der Direktentladung als WP-Quellwärme"
+strom:
+  leistungspreis:
+    wert: 0.0
+    status: vorgabe
+    quelle: "Strom steht hier für Kesselwärme"

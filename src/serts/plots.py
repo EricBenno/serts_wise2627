@@ -44,6 +44,7 @@ def monatsbilanz(r: pd.DataFrame, out: Path) -> Path:
     quellen = {
         "Solar direkt": r["solar_direkt"],
         "Speicher direkt": r["entladen_direkt"],
+        "Speicher Vorwärmen": r["vorwaermen"],
         "WP aus Speicher": r["wp_waerme_speicher"],
         "WP Luft": r["wp_waerme_luft"],
         "PtH": r["pth_waerme"],

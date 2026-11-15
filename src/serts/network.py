@@ -1,24 +1,30 @@
-"""PyPSA-Netz – bewusst einfach gehalten (docs E20, E27).
+"""PyPSA-Netz – bewusst einfach gehalten (docs E20, E27, E39).
 
-                 ┌──────────── solar_direkt ─────────────┐
-    Kollektor ──>│ solar                                 ▼
-                 └── laden ──> [Speicher heiß | kalt] ──> entladen_direkt ──> waerme ──> Last
-                                  │  (53 % | 47 %)  └── Quellwärme ──┐          ▲   ▲
-    Netzstrom ──> hp_luft ───────────────────────────────> wp ───────┴> wp_out ─┘   │
-             └──> hp_speicher (holt Quellwärme aus dem kalten Teil) ┘               │
-             └──> pth ──────────────────────────────────────────────────────────────┘
+    Kollektor ──> solar ──┬── solar_direkt ─────────────────────────────────────────────> waerme ──> Last
+                          ├── laden_heiss ─> [ heiß (Kern)   85 °C ] ── entladen_direkt ──>   ▲
+                          │                  [ Übergangszone       ] ── vorwaermen ───────>   │ (+ Nachheizen)
+                          └── laden_kalt ──> [ kalt        10-45 °C] ── Quellwärme ─┐         │
+    Netzstrom ──> hp_luft ──────────────────────────────> wp ── wp_out ─────────────┴────────>┤
+             └──> hp_speicher (holt Quellwärme aus dem kalten Teil) ┘                         │
+             └──> pth ────────────────────────────────────────────────────────────────────────┘
 
 - Ein Wärmeknoten ``waerme`` (Erzeugung liegt am Netz, TEAM). Last = Gebäude + Netzverluste.
-- Speicher in zwei Teilen (Energie in MWh, bezogen auf T_unten):
-    heiß  = Wärme zwischen T_oben und Netz-Rücklauf (40 K = 53 %)  -> kann direkt ins Netz
-    kalt  = Wärme zwischen Rücklauf und T_unten (35 K = 47 %)      -> nur über die Wärmepumpe
-  Beladen füllt beide Teile immer im Verhältnis 53 : 47 (Wasser wird von T_unten auf T_oben erwärmt).
-  Verlust = verlustrate * Inhalt je Stunde und Teil. Größe: nur das Volumen wird optimiert, die Teile
-  folgen dem festen Verhältnis (constraints.py).
-- Größen werden mitoptimiert (linear): Kollektorfläche, Speicher, WP- und PtH-Leistung.
+- Speicher = ein Wasservolumen, Energie in MWh bezogen auf T_unten, in drei Teilen:
+    kalt      = Wärme zwischen T_unten und Netz-Rücklauf (47 %)   -> nur über die Wärmepumpe
+    heiß      = Wärme zwischen Rücklauf und T_oben (53 %), davon
+      Kern          (heißes Wasser oben)                           -> direkt ins Netz
+      Übergangszone (Mischwasser zwischen heiß und kalt)           -> Rücklauf vorwärmen oder über die WP
+  Laden: ``laden_kalt`` erwärmt Wasser von T_unten auf Rücklauf, ``laden_heiss`` von Rücklauf auf T_oben.
+  Schichtung (constraints.py): Kern relativ <= Übergangszone relativ <= kalt relativ. Damit braucht jede
+  heiße Schicht ihre Übergangszone und ihr 10-45-°C-Wasser darunter; ein Lauf, keine Schwelle.
+  ``abbau`` (Kern -> Übergangszone) und ``umlagern`` (Übergangszone -> kalt) sind Mischen ohne Energieverlust.
+  Verlust = Verlustrate * Inhalt je Stunde und Teil. Verlustrate und Anteil der Übergangszone hängen von der
+  Speichergröße ab (kleine Speicher: mehr Oberfläche je m3, weniger Tiefe).
+- Größen werden mitoptimiert (linear): Kollektorfläche, Speicher, WP-, PtH- und Netzanschlussleistung.
   Kollektor-p_nom in MW bei 1 kW/m2 -> A [m2] = p_nom * 1000.
 - WP: zwei Quellen (Luft, Speicher) teilen sich die thermische Leistung ``wp_out``; die Luft-WP verliert
   bei Kälte Leistung (constraints.py).
+- Strom: Arbeitspreis am Generator ``netz_strom``, Leistungspreis als Kosten der Leistung ``netzanschluss``.
 """
 
 from __future__ import annotations
@@ -51,39 +57,61 @@ def anteil_heiss(cfg: Config) -> float:
     return (t_o - t_r) / (t_o - t_u)
 
 
-def fuellstand_direkt(cfg: Config) -> float:
-    """Mindest-Füllstand des HEISSEN Teils (Inhalt / Kapazität) für Direktentladung (Temperaturkennlinie).
+def groessenfaktor(cfg: Config, V_m3: float) -> float:
+    """(V / V_ref)^Exponent: kleine Speicher haben je m3 mehr Oberfläche und weniger Tiefe (Exponent -1/3)."""
+    if V_m3 <= 0:
+        return 1.0
+    return (V_m3 / cfg.get("ptes.V_ref")) ** cfg.get("ptes.groessen_exponent")
 
-    Heißes Wasser liegt oben, darunter eine Übergangszone (Thermokline). Erst wenn die heiße Schicht dicker
-    ist als ``ptes.schicht_min`` (Anteil am Volumen), erreicht die Entnahme oben T_oben. Direkt ins Netz
-    geht es ab T_VL + dT -> Grenze = schicht_min * (T_VL + dT - T_RL) / (T_oben - T_RL). 0 = Kennlinie aus.
-    Der kalte Teil zählt hier bewusst nicht: Wasser mit 45 °C hebt die Temperatur oben nicht über 45 °C.
+
+def verlustrate(cfg: Config, V_m3: float) -> float:
+    """Verlustrate [1/h] bei Volumen V: Wert bei V_ref (Dronninglund) * Größenfaktor."""
+    return cfg.get("ptes.verlustrate") * groessenfaktor(cfg, V_m3)
+
+
+def anteil_uebergang(cfg: Config, V_m3: float) -> float:
+    """Anteil der Übergangszone am heißen Teil (0..uebergang_max); 0 = ideale Schichtung.
+
+    ``ptes.uebergang_ref`` ist der Anteil bei V_ref (Dronninglund 2014, Messdaten). Die Zone ist eine Dicke
+    in Metern, kein Anteil -> bei flacheren (kleineren) Speichern größer (Größenfaktor). Braucht das Netz
+    weniger als T_oben (T_VL + dT < T_oben), zählt nur der Teil der Zone unter dieser Temperatur.
     """
-    s_min = cfg.get("ptes.schicht_min")
-    if s_min <= 0:
+    s = cfg.get("ptes.uebergang_ref")
+    if s <= 0:
         return 0.0
     t_o, t_r = cfg.get("ptes.T_oben"), cfg.get("netz.T_RL")
     t_noetig = cfg.get("netz.T_VL") + cfg.get("ptes.direkt_dT")
-    return s_min * min(1.0, max(0.0, (t_noetig - t_r) / (t_o - t_r)))
+    temperatur = min(1.0, max(0.0, (t_noetig - t_r) / (t_o - t_r)))
+    return min(cfg.get("ptes.uebergang_max"), s * groessenfaktor(cfg, V_m3) * temperatur)
 
 
-def temperaturen_speicher(cfg: Config, s_heiss, s_kalt):
-    """(Temperatur oben, mittlere Temperatur) in degC aus den Füllständen 0..1 des heißen und kalten Teils.
+def vorwaerm_verhaeltnis(cfg: Config) -> float:
+    """Vorwärmleistung je MW Nachheizung (WP/PtH), 0 = Vorwärmen aus.
 
-    Mittel = Energieinhalt / Wasser. Oben: jede Schicht (kalt 10-45 °C, heiß 45-85 °C) zählt erst voll,
-    wenn sie dicker ist als ``ptes.schicht_min`` (Übergangszone) - sonst anteilig (Kennlinie, E34).
+    Wasser der Übergangszone (Mittel zwischen Rücklauf und T_oben) wärmt den Rücklauf bis auf
+    T_mittel - dT vor; den Rest bis zum Vorlauf muss WP oder PtH in derselben Stunde liefern.
+    Basis: 65 °C - 5 K = 60 °C -> 15 K Vorwärmen, 20 K Nachheizen -> 0,75.
+    """
+    if not cfg.get("ptes.vorwaermen"):
+        return 0.0
+    t_o, t_r, t_vl = cfg.get("ptes.T_oben"), cfg.get("netz.T_RL"), cfg.get("netz.T_VL")
+    t_vor = min(t_vl, (t_o + t_r) / 2.0 - cfg.get("ptes.direkt_dT"))
+    if t_vor <= t_r:
+        return 0.0
+    return (t_vor - t_r) / (t_vl - t_vor) if t_vl > t_vor else 1e3
+
+
+def temperaturen_speicher(cfg: Config, s_kern, s_ueb, s_kalt, anteil_ueb: float):
+    """(Temperatur oben, mittlere Temperatur) in degC aus den Füllständen 0..1 der drei Teile (nur Anzeige).
+
+    Mittel = Energieinhalt / Wasser. Oben: T_oben, solange der Kern heißes Wasser enthält; sonst die
+    Mischtemperatur aus kaltem Teil und Übergangszone (beide voll = T_oben, beide leer = T_unten).
     """
     t_o, t_r, t_u = (cfg.get(k) for k in ("ptes.T_oben", "netz.T_RL", "ptes.T_unten"))
-    s_min = cfg.get("ptes.schicht_min")
-    mittel = t_u + (t_r - t_u) * s_kalt + (t_o - t_r) * s_heiss
-    if s_min <= 0:
-        return mittel * 0 + t_o, mittel
-    oben = (
-        t_u
-        + (t_r - t_u) * (s_kalt / s_min).clip(upper=1.0)
-        + (t_o - t_r) * (s_heiss / s_min).clip(upper=1.0)
-    )
-    return oben, mittel
+    heiss = (1.0 - anteil_ueb) * s_kern + anteil_ueb * s_ueb
+    mittel = t_u + (t_r - t_u) * s_kalt + (t_o - t_r) * heiss
+    ohne_kern = t_u + (t_r - t_u) * s_kalt + (t_o - t_r) * s_ueb
+    return ohne_kern.where(s_kern < 1e-3, t_o), mittel
 
 
 def build_network(
@@ -97,6 +125,7 @@ def build_network(
 
     Bei optimiertem Speicher gibt ``segment`` = (V von, V bis, Grenzkosten EUR/m3, Fixkosten EUR) das
     Kostensegment vor (economics.ptes_segmente); das Volumen bleibt in diesem Bereich (siehe run.loese).
+    Verlustrate und Übergangszone gelten dann für die Untergrenze des Segments (vorsichtig).
 
     ``ts`` braucht: last_gesamt [MW], T_a [degC], COP_luft, P_solar [kW/m2], strompreis [EUR/MWh].
     """
@@ -106,10 +135,9 @@ def build_network(
     n.set_snapshots(ts.index)
     n.add("Carrier", ["strom", "waerme"])
     for bus, car in [
+        ("netz", "strom"),
         ("elec", "strom"),
         ("solar", "waerme"),
-        ("heiss", "waerme"),
-        ("kalt", "waerme"),
         ("wp", "waerme"),
         ("waerme", "waerme"),
     ]:
@@ -119,14 +147,23 @@ def build_network(
     f_strom = economics.preisdynamik(zins, T, cfg.get("oekonomie.preisaenderung.strom"))
     eps = cfg.get("solver.tie_breaker")
 
-    # Strom
+    # Strom: Arbeitspreis je MWh; Leistungspreis je kW höchster Bezug (= gebaute Anschlussleistung)
     n.add(
         "Generator",
         "netz_strom",
-        bus="elec",
+        bus="netz",
         carrier="strom",
         p_nom=1e3,
         marginal_cost=ts["strompreis"] * f_strom,
+    )
+    n.add(
+        "Link",
+        "netzanschluss",
+        bus0="netz",
+        bus1="elec",
+        carrier="strom",
+        p_nom_extendable=True,
+        capital_cost=cfg.get("strom.leistungspreis") * 1000.0 * f_strom,
     )
 
     # Kollektorfeld (Kosten je m2 -> je MW p_nom)
@@ -142,7 +179,7 @@ def build_network(
     )
     n.add("Link", "solar_direkt", bus0="solar", bus1="waerme", carrier="waerme", p_nom=1e3)
 
-    # Speicher in zwei Teilen heiß/kalt (Kosten je m3 -> je MWh heiß, da V = E_heiß / (f * kap))
+    # Speicher in drei Teilen: heiß (Kern), Übergangszone, kalt
     mit_speicher = V_m3 is None or V_m3 > 0
     if mit_speicher:
         kap = mwh_je_m3(cfg)
@@ -151,20 +188,31 @@ def build_network(
             if segment is None:
                 raise ValueError("Speicher optimieren braucht ein Kostensegment (segment=...)")
             v_von, v_bis, steigung, fix = segment
+            # vorsichtig: Werte des kleinsten Volumens im Segment (erstes Segment: Mitte)
+            v_bezug = v_von if v_von > 0 else v_bis / 2.0
         else:
-            v_von = v_bis = V_m3
+            v_von = v_bis = v_bezug = V_m3
             steigung, fix = economics.ptes_invest(cfg, V_m3) / V_m3, 0.0
+        s = anteil_uebergang(cfg, v_bezug)
+        verlust = verlustrate(cfg, v_bezug)
         n.meta = {
             **dict(getattr(n, "meta", {}) or {}),
             "speicher_steigung": steigung,
             "speicher_fix": fix,
+            "uebergang_anteil": s,
+            "verlustrate": verlust,
         }
         v_fix = V_m3 or 0.0
-        verlust = cfg.get("ptes.verlustrate")
-        for name, bus, anteil, kosten in (
-            ("ptes_heiss", "heiss", f, annualisiert(cfg, "ptes", steigung) / (kap * f)),
+        # Kosten nur am Kern (V = E_Kern / (f * (1 - s) * kap)); die anderen Teile folgen per Constraint
+        kosten_kern = annualisiert(cfg, "ptes", steigung) / (kap * f * (1.0 - s))
+        teile = [
+            ("ptes_heiss", "heiss", f * (1.0 - s), kosten_kern),
             ("ptes_kalt", "kalt", 1.0 - f, 0.0),
-        ):
+        ]
+        if s > 0:
+            teile.append(("ptes_ueb", "ueb", f * s, 0.0))
+        for name, bus, anteil, kosten in teile:
+            n.add("Bus", bus, carrier="waerme")
             n.add(
                 "Store",
                 name,
@@ -176,27 +224,46 @@ def build_network(
                 e_nom_extendable=V_m3 is None,
                 e_nom_min=v_von * kap * anteil,
                 e_nom_max=v_bis * kap * anteil,
-                capital_cost=kosten,  # Kosten nur am heißen Teil; kalter Teil folgt per Constraint
+                capital_cost=kosten,
             )
-        # Laden: 1 MWh Solarwärme füllt heiß und kalt im Verhältnis f : (1-f).
+        # Laden: kalt = Wasser von T_unten auf Rücklauf, heiß = von Rücklauf auf T_oben. Beim Einschichten
+        # vermischt sich ein fester Anteil mit der Übergangszone (einschicht_anteil).
         # Tie-Breaker: Laden minimal teurer als Direktnutzung (docs E16)
+        m = cfg.get("ptes.einschicht_anteil") if s > 0 else 0.0
+        heiss_ziel = {"bus1": "heiss", "efficiency": 1.0 - m}
+        if m > 0:
+            heiss_ziel.update(bus2="ueb", efficiency2=m)
+        lade_quellen = [("laden_heiss", "solar", eps)]
+        if cfg.get("ptes.laden_aus_netz"):
+            # WP/PtH dürfen den Speicher laden (für zeitvariable Strompreise, docs E29/E39).
+            # Doppelter Tie-Breaker: Solarwärme nimmt den direkten Weg (laden_heiss), nicht den über das Netz.
+            lade_quellen.append(("laden_netz", "waerme", 2 * eps))
+        for name, quelle, kosten in lade_quellen:
+            n.add(
+                "Link",
+                name,
+                bus0=quelle,
+                carrier="waerme",
+                p_nom=1e3,
+                marginal_cost=kosten,
+                **heiss_ziel,
+            )
         n.add(
             "Link",
-            "laden",
+            "laden_kalt",
             bus0="solar",
-            bus1="heiss",
-            bus2="kalt",
+            bus1="kalt",
             carrier="waerme",
             p_nom=1e3,
-            efficiency=f,
-            efficiency2=1.0 - f,
             marginal_cost=eps,
         )
         n.add("Link", "entladen_direkt", bus0="heiss", bus1="waerme", carrier="waerme", p_nom=1e3)
-        if fuellstand_direkt(cfg) > 0:
-            # Kühlt sich der Inhalt unter die Direkt-Grenze ab, ist die Wärme des heißen Bands nur noch über
-            # die Wärmepumpe nutzbar: Umbuchung heiß -> kalt (verlustfrei, Energie bleibt im Speicher).
-            n.add("Link", "umlagern", bus0="heiss", bus1="kalt", carrier="waerme", p_nom=1e3)
+        if s > 0:
+            # Mischen ohne Energieverlust: heißes Wasser wird Mischwasser, Mischwasser kühlt unter Rücklauf
+            n.add("Link", "abbau", bus0="heiss", bus1="ueb", carrier="waerme", p_nom=1e3)
+            n.add("Link", "umlagern", bus0="ueb", bus1="kalt", carrier="waerme", p_nom=1e3)
+            if vorwaerm_verhaeltnis(cfg) > 0:
+                n.add("Link", "vorwaermen", bus0="ueb", bus1="waerme", carrier="waerme", p_nom=1e3)
 
     # Wärmepumpe: Luft (COP je Stunde, aus unter T_min) und Speicher (COP konstant)
     luft_aus = ts["T_a"] < cfg.get("waermepumpe.T_min_luft")
@@ -262,57 +329,15 @@ def optimize(n, cfg: Config, ts: pd.DataFrame, threads: int | None = None):
 
     from serts.constraints import extra_functionality
 
-    def _loesen(direkt_stunden=None):
-        status, cond = n.optimize(
-            solver_name=cfg.get("solver.name"),
-            extra_functionality=partial(
-                extra_functionality, cfg=cfg, ts=ts, direkt_stunden=direkt_stunden
-            ),
-            include_objective_constant=False,
-            log_to_console=False,
-            progress=False,
-            **dict(cfg.get("solver.optionen")),
-            **({"threads": threads} if threads else {}),
-        )
-        if status != "ok":
-            raise RuntimeError(f"Optimierung fehlgeschlagen: {status} / {cond}")
-        return status, cond
-
-    def _schicht():
-        """(Inhalt heiß zu Beginn jeder Stunde, Grenze für Direktentladung)."""
-        e = n.stores_t.e["ptes_heiss"]
-        zyklisch = bool(n.stores.at["ptes_heiss", "e_cyclic"])
-        anfang = float(e.iloc[-1]) if zyklisch else float(n.stores.at["ptes_heiss", "e_initial"])
-        start = e.shift(1, fill_value=anfang)
-        return start, s_min * float(n.stores.at["ptes_heiss", "e_nom_opt"])
-
-    # Schritt 1: ohne Temperaturkennlinie
-    status, cond = _loesen()
-    s_min = fuellstand_direkt(cfg)
-    n.meta = {**dict(getattr(n, "meta", {}) or {}), "kennlinie_aktiv": False}
-    if s_min <= 0 or "entladen_direkt" not in n.links.index:
-        return status, cond
-    # Schritt 2 (E34): Direktentladung nur in den Stunden, in denen sie in Schritt 1 bei dicker heißer
-    # Schicht lief; dort wird die dicke Schicht verlangt (constraints.py). Eine Schwelle ist im LP nicht
-    # linear - so ist das Ergebnis mit zwei Läufen physikalisch gültig (leicht konservativ).
-    start, grenze = _schicht()
-    p = n.links_t.p0["entladen_direkt"]
-    erlaubt = (p > 1e-6) & (start >= grenze * (1 - 1e-6))
-    if not bool(n.stores.at["ptes_heiss", "e_cyclic"]):
-        erlaubt.iloc[0] = (
-            False  # erste Stunde: Inhalt davor ist e_initial (konstant), nicht geprüft
-        )
-    n.meta.update(
-        {
-            "kennlinie_aktiv": True,
-            "kennlinie_direkt_h_lauf1": int((p > 1e-6).sum()),
-            "kennlinie_direkt_MWh_lauf1": float(p.sum()),
-            "kennlinie_direkt_h": int(erlaubt.sum()),
-        }
+    status, cond = n.optimize(
+        solver_name=cfg.get("solver.name"),
+        extra_functionality=partial(extra_functionality, cfg=cfg, ts=ts),
+        include_objective_constant=False,
+        log_to_console=False,
+        progress=False,
+        **dict(cfg.get("solver.optionen")),
+        **({"threads": threads} if threads else {}),
     )
-    n.links_t.p_max_pu["entladen_direkt"] = erlaubt.astype(float)
-    status, cond = _loesen(direkt_stunden=erlaubt[erlaubt].index)
-    start, grenze = _schicht()
-    p = n.links_t.p0["entladen_direkt"]
-    n.meta["kennlinie_rest_MWh"] = float(p[(p > 1e-6) & (start < grenze * (1 - 1e-4))].sum())
+    if status != "ok":
+        raise RuntimeError(f"Optimierung fehlgeschlagen: {status} / {cond}")
     return status, cond

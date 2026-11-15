@@ -92,10 +92,10 @@ GRUPPEN: list[tuple[str, list[Zeile]]] = [
             ("ptes.T_unten", "PTES: min. Temperatur", 1, None),
             ("ptes.verlustrate", "PTES: Wärmeverlust (Speicherinhalt)", 1, None),
             (
-                "ptes.schicht_min",
-                "PTES: Übergangszone (Direktentladung erst darüber)",
+                "ptes.uebergang_ref",
+                "PTES: Übergangszone bei 60.000 m³ (Anteil am heißen Teil)",
                 100,
-                "% Vol.",
+                "%",
             ),
             ("ptes.volumen_je_grundflaeche", "PTES: Volumen je Grundfläche", 1, None),
             (

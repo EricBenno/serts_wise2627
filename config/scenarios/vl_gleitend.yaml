@@ -1,0 +1,6 @@
+# Gleitender Vorlauf: 80 °C bei Tagesmittel <= -10 °C, linear fallend auf 70 °C ab 15 °C (netz.gleit_T_*).
+# Wirkt nur auf den COP der Luft-WP; Speicher und Netzverluste rechnen weiter mit 80 °C (vorsichtig).
+meta:
+  beschreibung: "Gleitender Vorlauf 80 -> 70 degC nach Außentemperatur"
+netz:
+  T_VL_min: 70

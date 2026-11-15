@@ -16,6 +16,7 @@ import pandas as pd  # noqa: E402
 QUELLEN = {
     "solar_direkt": ("Solar direkt", "#f2c12e"),
     "entladen_direkt": ("Speicher direkt", "#f28e2b"),
+    "vorwaermen": ("Speicher Vorwärmen", "#ffbe7d"),
     "wp_waerme_speicher": ("WP aus Speicher", "#59a14f"),
     "wp_waerme_luft": ("WP Luft", "#4e79a7"),
     "pth_waerme": ("PtH", "#e15759"),
@@ -37,7 +38,7 @@ def _stapel(ax, df: pd.DataFrame) -> None:
 
 
 def jahresverlauf(r: pd.DataFrame, out: Path) -> Path:
-    """Oben: Wärmeherkunft (Tagesmittel) + Last. Mitte: Speicherinhalt heiß/kalt. Unten: Speichertemperaturen."""
+    """Oben: Wärmeherkunft (Tagesmittel) + Last. Mitte: Speicherinhalt je Teil. Unten: Speichertemperaturen."""
     q = _quellen(r).resample("D").mean()
     fig, (a1, a2, a3) = plt.subplots(
         3, 1, figsize=(12, 9), sharex=True, gridspec_kw={"height_ratios": [2, 1, 1]}
@@ -50,9 +51,14 @@ def jahresverlauf(r: pd.DataFrame, out: Path) -> Path:
     a2.stackplot(
         r.index,
         r["speicher_kalt"],
-        r["speicher_heiss"],
-        labels=["kalter Teil (10-45 °C, nur über WP)", "heißer Teil (45-85 °C, direkt nutzbar)"],
-        colors=["#9ecae1", "#f28e2b"],
+        r["speicher_uebergang"],
+        r["speicher_kern"],
+        labels=[
+            "kalter Teil (nur über WP)",
+            "Übergangszone (Vorwärmen oder WP)",
+            "heißer Kern (direkt nutzbar)",
+        ],
+        colors=["#9ecae1", "#ffbe7d", "#f28e2b"],
         alpha=0.8,
         linewidth=0,
     )
@@ -63,7 +69,7 @@ def jahresverlauf(r: pd.DataFrame, out: Path) -> Path:
             r["T_speicher_oben"].resample("D").mean(),
             color="#d62728",
             lw=1.0,
-            label="oben (Kennlinie, Tagesmittel)",
+            label="oben (Tagesmittel)",
         )
         a3.plot(r["T_speicher_mittel"].resample("D").mean(), color="#555", lw=1.0, label="Mittel")
     if "T_direkt_noetig" in r.attrs:

@@ -16,7 +16,7 @@ from serts.config import Config
 @dataclass(frozen=True)
 class Speicherbilanz:
     q_in: float  # MWh Beladung
-    q_out: float  # MWh Entladung (direkt + WP-Quellwärme)
+    q_out: float  # MWh Entladung (direkt + Vorwärmen + WP-Quellwärme)
     dq: float  # MWh Inhaltsänderung Ende - Anfang (zyklisch: 0)
 
     @property
@@ -57,8 +57,14 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     r["P_solar_spez"] = ts["P_solar"]  # kW/m2, nur für Plots
     r["kollektor"] = g["kollektor"]
     r["solar_direkt"] = p0["solar_direkt"]
-    r["laden"] = p0.get("laden", leer)
+    r["laden"] = p0.get("laden_heiss", leer) + p0.get(
+        "laden_kalt", leer
+    )  # Solarwärme in den Speicher
+    r["laden_netz"] = p0.get(
+        "laden_netz", leer
+    )  # WP/PtH-Wärme in den Speicher (nur ptes.laden_aus_netz)
     r["entladen_direkt"] = p0.get("entladen_direkt", leer)
+    r["vorwaermen"] = p0.get("vorwaermen", leer)  # Übergangszone wärmt den Rücklauf vor
     r["wp_strom_luft"] = p0["hp_luft"]
     r["wp_waerme_luft"] = p0["hp_luft"] * ts["COP_luft"]
     r["wp_strom_speicher"] = p0.get("hp_speicher", leer)
@@ -67,21 +73,36 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     r["pth_waerme"] = p0["pth"] * cfg.get("pth.eta")
     r["strom_netz"] = g["netz_strom"]
     if "ptes_heiss" in n.stores.index:
-        e = n.stores_t.e
-        r["speicher_heiss"], r["speicher_kalt"] = e["ptes_heiss"], e["ptes_kalt"]
-        r["speicherinhalt"] = e["ptes_heiss"] + e["ptes_kalt"]
-        kap_h = float(n.stores.at["ptes_heiss", "e_nom_opt"])
-        kap_k = float(n.stores.at["ptes_kalt", "e_nom_opt"])
-        if kap_h > 1e-6 and kap_k > 1e-6:
+        e, nom = n.stores_t.e, n.stores.e_nom_opt
+        ueb = e["ptes_ueb"] if "ptes_ueb" in e else leer
+        r["speicher_kern"], r["speicher_uebergang"] = e["ptes_heiss"], ueb
+        r["speicher_heiss"], r["speicher_kalt"] = e["ptes_heiss"] + ueb, e["ptes_kalt"]
+        r["speicherinhalt"] = r["speicher_heiss"] + r["speicher_kalt"]
+        if float(nom["ptes_heiss"]) > 1e-6:
             from serts.network import temperaturen_speicher
 
+            s_ueb = (
+                (getattr(n, "meta", {}) or {}).get("uebergang_anteil", 0.0)
+                if "ptes_ueb" in e
+                else 0.0
+            )
+            fuell_ueb = (ueb / float(nom["ptes_ueb"])).clip(0, 1) if s_ueb > 0 else leer + 1.0
             r["T_speicher_oben"], r["T_speicher_mittel"] = temperaturen_speicher(
                 cfg,
-                (r["speicher_heiss"] / kap_h).clip(0, 1),
-                (r["speicher_kalt"] / kap_k).clip(0, 1),
+                (e["ptes_heiss"] / float(nom["ptes_heiss"])).clip(0, 1),
+                fuell_ueb,
+                (e["ptes_kalt"] / float(nom["ptes_kalt"])).clip(0, 1),
+                s_ueb,
             )
     else:
-        r["speicher_heiss"] = r["speicher_kalt"] = r["speicherinhalt"] = leer
+        for c in (
+            "speicher_kern",
+            "speicher_uebergang",
+            "speicher_heiss",
+            "speicher_kalt",
+            "speicherinhalt",
+        ):
+            r[c] = leer
     r["abregelung"] = (
         n.generators.at["kollektor", "p_nom_opt"] * ts["P_solar"].clip(0, 1) - r["kollektor"]
     ).clip(lower=0)
@@ -97,6 +118,9 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     from serts import economics, prices
     from serts.network import M2_JE_MW, annualisiert, anteil_heiss, mwh_je_m3
 
+    meta = getattr(n, "meta", {}) or {}
+    s_ueb = float(meta.get("uebergang_anteil", 0.0)) if "ptes_ueb" in n.stores.index else 0.0
+
     r = zeitreihen_ergebnis(n, cfg, ts)
     skal = 8760.0 / len(n.snapshots)
     S = {
@@ -111,14 +135,13 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
 
     # Größen
     A = float(n.generators.at["kollektor", "p_nom_opt"]) * M2_JE_MW
-    # Speicher-Energie gesamt = heißer Teil / Anteil heiß
+    # Speicher-Energie gesamt = Kern / (Anteil heiß * (1 - Anteil Übergangszone))
     E = (
-        float(n.stores.at["ptes_heiss", "e_nom_opt"]) / anteil_heiss(cfg)
+        float(n.stores.at["ptes_heiss", "e_nom_opt"]) / (anteil_heiss(cfg) * (1.0 - s_ueb))
         if "ptes_heiss" in n.stores.index
         else 0.0
     )
     V = E / mwh_je_m3(cfg)
-    meta = getattr(n, "meta", {}) or {}
     invest_speicher = (
         float(meta.get("speicher_steigung", 0.0)) * V + float(meta.get("speicher_fix", 0.0))
         if V > 1e-6
@@ -134,10 +157,9 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         "P_PtH_MW": float(n.links.at["pth", "p_nom_opt"]) * cfg.get("pth.eta"),
         "stunden": len(n.snapshots),
         "anteil_heiss": anteil_heiss(cfg),
-        "kennlinie_aktiv": bool(meta.get("kennlinie_aktiv", False)),
-        "kennlinie_direkt_h_lauf1": int(meta.get("kennlinie_direkt_h_lauf1", 0)),
-        "kennlinie_direkt_h": int(meta.get("kennlinie_direkt_h", 0)),
-        "kennlinie_rest_MWh": float(meta.get("kennlinie_rest_MWh", 0.0)),
+        "uebergang_anteil": s_ueb,
+        "verlustrate_1_h": float(meta.get("verlustrate", 0.0)),
+        "P_netzanschluss_MW": float(r["strom_netz"].max()),
     }
     k.update(
         {
@@ -147,7 +169,9 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
                 "kollektor",
                 "solar_direkt",
                 "laden",
+                "laden_netz",
                 "entladen_direkt",
+                "vorwaermen",
                 "wp_quelle_speicher",
                 "wp_waerme_luft",
                 "wp_waerme_speicher",
@@ -164,9 +188,17 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     )
 
     # Speicher
-    if E > 0 and S["laden"] > 0:
+    q_in = S["laden"] + S["laden_netz"]
+    q_out = S["entladen_direkt"] + S["vorwaermen"] + S["wp_quelle_speicher"]
+    if E > 0 and q_in > 0:
         dq = float(r["speicherinhalt"].iloc[-1] - r["speicherinhalt"].iloc[0])
-        sb = Speicherbilanz(S["laden"], S["entladen_direkt"] + S["wp_quelle_speicher"], dq)
+        sb = Speicherbilanz(q_in, q_out, dq)
+        # Anteil der Entladung, der mit voller Temperatur direkt ins Netz geht (Dronninglund 2015-2017:
+        # 52-63 %; dort zählt alles andere als WP-Quellwärme) und Anteil ganz ohne Speicher-WP
+        k["speicher_direktanteil"] = S["entladen_direkt"] / q_out if q_out else 0.0
+        k["speicher_anteil_ohne_wp"] = (
+            (S["entladen_direkt"] + S["vorwaermen"]) / q_out if q_out else 0.0
+        )
         k.update(
             {
                 "speicher_wirkungsgrad": sb.wirkungsgrad,
@@ -177,7 +209,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
 
     # Speichercharakter: saisonal = wenige Zyklen und Entladung überwiegend im Winter (Nov-Mär)
     if E > 0:
-        aus = r["entladen_direkt"] + r["wp_quelle_speicher"]
+        aus = r["entladen_direkt"] + r["vorwaermen"] + r["wp_quelle_speicher"]
         winter = aus[aus.index.month.isin([11, 12, 1, 2, 3])].sum()
         k["speicher_winteranteil"] = float(winter / aus.sum()) if aus.sum() > 1e-6 else float("nan")
         z = k.get("speicher_zyklen", float("nan"))
@@ -191,7 +223,16 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             )
 
     # Anteile
-    k.update(solaranteil(S["solar_direkt"], S["entladen_direkt"], S["wp_quelle_speicher"], Q))
+    # Speicherwärme zählt als solar, soweit der Speicher mit Solarwärme geladen wurde
+    solar_im_speicher = S["laden"] / q_in if q_in > 0 else 1.0
+    k.update(
+        solaranteil(
+            S["solar_direkt"],
+            (S["entladen_direkt"] + S["vorwaermen"]) * solar_im_speicher,
+            S["wp_quelle_speicher"] * solar_im_speicher,
+            Q,
+        )
+    )
     k["ee_anteil"] = 1.0 - S["strom_netz"] * (1.0 - cfg.get("strom.ee_anteil")) / Q
 
     # Kosten (Jahreswerte, real)
@@ -204,6 +245,16 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     mc = n.get_switchable_as_dense("Generator", "marginal_cost")["netz_strom"]
     strom = float((r["strom_netz"] * mc).sum()) * skal
     k.update({f"kosten_a_{x}": v for x, v in capex.items()})
+    # Leistungspreis auf den höchsten Strombezug (im LP: Kosten der Anschlussleistung)
+    leistung = k["P_netzanschluss_MW"] * 1000.0 * cfg.get("strom.leistungspreis")
+    leistung *= economics.preisdynamik(
+        cfg.get("oekonomie.zins"),
+        cfg.get("oekonomie.betrachtungszeitraum"),
+        cfg.get("oekonomie.preisaenderung.strom"),
+    )
+    k["kosten_a_strom_leistung"] = leistung
+    strom_arbeit = strom
+    strom = strom_arbeit + leistung  # Stromkosten gesamt
     k["kosten_a_strom"] = strom
     # Strompreis-Komponenten getrennt (Netzentgelt Arbeitspreis, Abgaben, Rest = Energie)
     netz_e, abgaben = prices.netz_und_abgaben(cfg)
@@ -215,11 +266,11 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     k["kosten_a_strom_netzentgelt"] = S["strom_netz"] * netz_e * f_strom
     k["kosten_a_strom_abgaben"] = S["strom_netz"] * abgaben * f_strom
     k["kosten_a_strom_energie"] = (
-        strom - k["kosten_a_strom_netzentgelt"] - k["kosten_a_strom_abgaben"]
+        strom_arbeit - k["kosten_a_strom_netzentgelt"] - k["kosten_a_strom_abgaben"]
     )
     k["strompreis_mittel_EUR_MWh"] = float(mc.mean()) / f_strom  # Jahresmittel (ungewichtet)
     k["strompreis_gewichtet_EUR_MWh"] = (  # tatsächlich bezahlt: nach Strommenge gewichtet
-        strom / S["strom_netz"] / f_strom if S["strom_netz"] > 1e-9 else float("nan")
+        strom_arbeit / S["strom_netz"] / f_strom if S["strom_netz"] > 1e-9 else float("nan")
     )
     k["kosten_a_gesamt"] = sum(capex.values()) + strom
     k["invest_EUR"] = (1.0 + cfg.get("oekonomie.nebenkosten")) * (

@@ -1,5 +1,9 @@
 # Warum lohnt sich der Saisonspeicher in Dänemark – und im Modell für Bad Lippspringe nicht?
 
+**Nachtrag 14.11.2026 (E39, neues Speichermodell):** Basis jetzt 6.000 m³, 3,2 Zyklen, 37 % Winteranteil (Mischspeicher).
+Auch bei Speicherkosten × 0,35 bleibt das Optimum ≈ 6.000 m³; erzwungen ≥ 12.000 m³ wird der Speicher saisonal
+(1,4 Zyklen, 63 % Winteranteil), kostet aber 6 €/MWh mehr. Der Text unten ist der Stand vom 09.11.
+
 Stand 09.11.2026. Modell: Basislauf mit stetiger Speicherkostenkurve (E30). Zahlen aus Rechnungen mit dem
 Modell (Raster 24 Läufe, 12 Szenarien) und aus Recherchen (Quellen unten).
 

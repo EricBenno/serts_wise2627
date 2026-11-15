@@ -115,9 +115,12 @@ def _cmd_run(a):
         ("Speicher-Wirkungsgrad", "speicher_wirkungsgrad", "{:.1%}"),
         ("Speicher Zyklen pro Jahr", "speicher_zyklen", "{:.1f}"),
         ("Speicher Entladung im Winter", "speicher_winteranteil", "{:.0%}"),
+        ("Speicher Entladung direkt (85 °C)", "speicher_direktanteil", "{:.0%}"),
         ("Speicher-Charakter", "speicher_charakter", "{}"),
         ("Strompreis gewichtet [EUR/MWh]", "strompreis_gewichtet_EUR_MWh", "{:.0f}"),
         ("Strompreis Jahresmittel [EUR/MWh]", "strompreis_mittel_EUR_MWh", "{:.0f}"),
+        ("Höchster Strombezug [MW]", "P_netzanschluss_MW", "{:.2f}"),
+        ("  Leistungspreis [EUR/a]", "kosten_a_strom_leistung", "{:,.0f}"),
         ("Flächenbedarf [m2]", "flaeche_m2", "{:,.0f}"),
     ]
     for text, key, fmt in zeilen:
