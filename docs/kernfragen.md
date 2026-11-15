@@ -14,8 +14,8 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 | 4 LCOH und CO₂; Pareto EE-Anteil vs. LCOH | ✔ / teilweise | LCOH, Wärmepreis inkl. Netz, CO₂; Pareto aus den Varianten (`pareto.png`), keine Kurve über alle Größen |
 | 5a ohne Speicher, 5b nur WP + PtH, 5d Gas-Referenz | ✔ | `serts varianten` (beide Netze) |
 | 5c PV für die WP | ✘ (zurückgestellt, TEAM) | nur Abschätzung (`docs/ausblick.md`) |
-| 6 Tornado: Speicherkosten, Solar, Strompreis, Last (+ Fläche) | ✔ (Netz klein, Stand 15.11. nach E39) | `docs/ergebnisse.md`; Netz groß nicht gerechnet |
-| 6 Heatmap LCOH über Fläche × Volumen | ✔ (klein 15.11. nach E39; groß noch altes Speichermodell) | `serts heatmap` (≈ 12/40 min), `docs/ergebnisse*.md` |
+| 6 Tornado: Speicherkosten, Solar, Strompreis, Last (+ Fläche) | ✔ (beide Netze, Stand 15.11. nach E39) | `docs/ergebnisse*.md` |
+| 6 Heatmap LCOH über Fläche × Volumen | ✔ (beide Netze, 15.11. nach E39) | `serts heatmap` (≈ 12/40 min), `docs/ergebnisse*.md` |
 | Förderung (TEAM) | ✔ | BEW Modul 2 in jedem Lauf ausgewiesen + Szenario `bew_modul2` (E37) |
 
 ## 2 Auslegung: was am 10.11. falsch oder zu optimistisch war und korrigiert ist
@@ -51,7 +51,10 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 **Nachtrag 15.11. (Tornado, Heatmap, Strom neu, Netz klein):** Das System bleibt im Krisenjahr 2022 jetzt günstiger
 als Gas (248 statt 261 €/MWh), weil WP/PtH den Speicher in billigen Stunden laden. **Neu und wichtig:** Ohne
 Flächengrenze wird ein Saisonspeicher (33.400 m³, 11.400 m² Kollektor, 92 % solar) die günstigste Lösung (226 €/MWh,
-−18 €/MWh). Die Aussage „saisonal nur teurer“ gilt also nur für die verfügbaren 13.000 m².
+−18 €/MWh). Die Aussage „saisonal nur teurer“ gilt also nur für die verfügbaren 13.000 m². **Netz groß** (Tornado
+und Heatmap 15.11.): Basis 221,6 €/MWh (Gas 236,2); ohne Flächengrenze wächst der Speicher bis an die Gültigkeitsgrenze
+der Kostenkurve (200.000 m³, 72.900 m², 73 % solar, saisonal, 186 €/MWh, 24 ha statt 8 ha) – ein Optimum innerhalb
+gibt es dort nicht. Die verfügbare Fläche ist damit in beiden Netzen die entscheidende Größe für Saisonspeicher.
 
 * **Kollektor und Speicher senken Kosten und CO₂** gegenüber reiner WP + PtH (klein −18 €/MWh, groß −21 €/MWh;
   CO₂ −25 bis −32 %), ein Speicher lohnt sich gegenüber Solar ohne Speicher (−12 bzw. −15 €/MWh). Nur mit Solar und

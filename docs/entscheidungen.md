@@ -427,3 +427,6 @@ kostet im Modell nichts (keine Pacht, kein Kauf), die Variante ist also eine Obe
 Fläche. Heatmap-Raster Volumen auf das neue Optimum gelegt (5.500/7.000 → 6.000/8.000 m³).
 **Ergebnis (15.11., Netz klein):** ohne Grenze 11.400 m² / 33.400 m³, Saisonspeicher (1,45 Zyklen, 70 % Winter),
 Solaranteil 92 %, Wärmepreis 226 statt 243 €/MWh, Flächenbedarf ≈ 38.900 m² (`docs/ergebnisse.md`, Tornado).
+**Netz groß (15.11.):** ohne Grenze kein inneres Optimum – das Volumen läuft an die letzte Stützstelle (130.000 m³,
+nachgerechnet bis 200.000 m³ = Gültigkeitsgrenze KWW: 72.900 m², 73 % solar, 186 statt 222 €/MWh, 24 ha).
+`ptes.segmente_m3` Netz groß bleibt bei 130.000 m³ (Basis bindet die Fläche ohnehin).

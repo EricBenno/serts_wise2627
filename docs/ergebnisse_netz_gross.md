@@ -8,8 +8,8 @@ Apertur), Trasse 1.140/640 €/m (KWW, größere Rohre), Luft-WP nach KWW-Güteg
 
 ## Stand 14.11.2026 nach E39 (neues Speichermodell)
 
-Geändert wie Netz klein (`docs/ergebnisse.md`, E39). **Die Abschnitte ab „Basislauf im Vergleich alt“ (Heatmap,
-weitere Tabellen) sind noch mit dem alten Speicher gerechnet.** Ergebnisordner
+Geändert wie Netz klein (`docs/ergebnisse.md`, E39). Heatmap und Tornado am 15.11. neu gerechnet (unten). **„Basislauf
+im Vergleich alt“, die alte Variantentabelle und „Lesart“ zeigen den Stand vom 10.11.** Ergebnisordner
 `results/gross/20261114-174233_base_opt` und `…-174238_base_varianten`.
 
 | Kennzahl | Netz groß alt (10.11.) | **Netz groß neu** | Netz klein neu |
@@ -60,7 +60,7 @@ weitere Tabellen) sind noch mit dem alten Speicher gerechnet.** Ergebnisordner
 **Kostensegmente des Speichers** (LCOH, V, A): 0–2.500 m³ 164,8; 2.500–10.000 m³ 163,5; 10.000–30.000 m³ 159,6;
 **30.000–70.000 m³ 158,8 (38.900 m³, 28.400 m²)**; 70.000–130.000 m³ 161,8 €/MWh (70.000 m³, nur 23.300 m² Kollektor).
 
-## Vergleichsvarianten (`uv run serts varianten --netz gross`)
+## Vergleichsvarianten alt (Stand 10.11.2026; neu: oben)
 
 | | Basis | ohne Speicher | nur WP + PtH | mit BEW Modul 2 (optimiert) | Gas-Fernwärme |
 |---|---|---|---|---|---|
@@ -70,35 +70,78 @@ weitere Tabellen) sind noch mit dem alten Speicher gerechnet.** Ergebnisordner
 | LCOH Erzeugung [€/MWh] | 158,8 | 172,0 | 177,3 | 142,1 | 165,3 |
 | Wärmepreis inkl. Netz [€/MWh] | **228,9** | 243,8 | 249,8 | **200,1** | **236,2** |
 
-## Heatmaps (`uv run serts heatmap --netz gross`, ≈ 40 min)
+## Heatmaps (`uv run serts heatmap --netz gross`, Stand 15.11.2026 nach E39, ≈ 12 min)
 
-`heatmap_alle.png` im Ergebnisordner (neun Kennzahlen). Wärmepreis inkl. Netz [€/MWh], Gas-Fernwärme 236:
+`results/gross/20261115-152947_base_heatmap`, `heatmap_alle.png` (neun Kennzahlen). Wärmepreis inkl. Netz [€/MWh],
+Gas-Fernwärme 236; Basis-Optimum 29.800 m² / 30.300 m³ = 221,6:
 
 | V \ A [m²] | 5.000 | 10.000 | 15.000 | 20.000 | 25.000 | 30.000 |
 |---|---|---|---|---|---|---|
-| 0 m³ | 246 | 244 | 244 | 245 | 247 | 249 |
-| 5.000 m³ | 244 | 240 | 237 | 235 | 235 | 235 |
-| 10.000 m³ | 244 | 240 | 237 | 234 | 234 | 235 |
-| 20.000 m³ | 245 | 240 | 237 | 234 | 232 | 232 |
-| 35.000 m³ | 247 | 241 | 237 | 233 | 231 | – |
-| 50.000 m³ | 250 | 242 | 238 | 233 | **230** | – |
+| 0 m³ | 250 | 249 | 249 | 251 | 252 | 254 |
+| 5.000 m³ | 247 | 242 | 237 | 233 | 231 | 230 |
+| 10.000 m³ | 246 | 241 | 236 | 232 | 229 | 228 |
+| 20.000 m³ | 246 | 240 | 235 | 231 | 226 | **224** |
+| 35.000 m³ | 247 | 240 | 235 | 230 | 225 | – |
+| 50.000 m³ | 248 | 240 | 235 | 230 | 225 | – |
 
-* Erst ab ≈ 20.000 m² Kollektor ist das System günstiger als Gas-Fernwärme; das Optimum liegt am Flächenrand
-  (25.000–30.000 m², 20.000–50.000 m³) – **mehr Fläche würde helfen**.
-* Saisonaler Betrieb (≤ 1 Zyklus, > 90 % Winteranteil) nur bei großem Speicher mit wenig Kollektor (5.000–10.000 m²
-  mit ≥ 20.000 m³, 15.000 m² mit ≥ 35.000 m³) – dort teurer als Gas. Am günstigsten Rasterpunkt (25.000 m²,
-  35.000–50.000 m³): 1,6–2,3 Zyklen, 44–62 % Winteranteil – auf dem Weg zum Saisonspeicher.
-* Ohne Speicher hilft mehr Kollektor nicht (244–249 €/MWh, PtH ≈ 1.900 MWh/a).
+* **Mehr Kollektor lohnt sich bis zum Flächenrand**, solange Speicher dabei ist (je +5.000 m² ≈ −2 bis −5 €/MWh);
+  günstiger als Gas ab ≈ 15.000 m². Gegenüber dem 10.11. ist das Feld mit Speicher 3–8 €/MWh günstiger, ohne
+  Speicher ≈ 5 €/MWh teurer (Leistungspreis, Einfallswinkel).
+* **Volumen**: ab 20.000 m³ flach (bei 25.000 m²: 226 → 225 €/MWh bis 50.000 m³).
+* **Charakter**: bei 25.000 m² / 35.000 m³ 3,4 Zyklen, 36 % Winteranteil (Mischspeicher). Saisonal (< 1 Zyklus,
+  > 70 % Winter) nur mit wenig Kollektor (5.000–10.000 m² mit ≥ 20.000 m³) – dort teurer als Gas.
 
-**Ohne Flächengrenze (Abschätzung aus der Heatmap, kein Lauf):** Bei 25.000 m² wird es mit mehr Speicher noch
-billiger (232 → 230 €/MWh von 20.000 auf 50.000 m³), +5.000 m² Kollektor bringen −5, dann −3 €/MWh. Geschätztes
-Optimum ≈ 35.000–40.000 m² / 60.000–90.000 m³ (≈ 12–14 ha statt 8 ha), Wärmepreis ≈ 225–227 €/MWh (**−2 bis
-−4 €/MWh**), Solaranteil ≈ 35–40 %, Speicher deutlich saisonaler (< 1,5 Zyklen, > 60 % Winteranteil). Obergrenze,
-denn Fläche kostet im Modell nichts; schon eine geringe Pacht zehrt den Vorteil auf. **Vorsicht (15.11.):** im
-kleinen Netz lag dieselbe Abschätzung weit daneben (geschätzt −1–2, gerechnet −18 €/MWh mit Saisonspeicher); für
-das große Netz neu rechnen (`uv run serts tornado --netz gross` oder Szenario mit `standort.flaeche_verfuegbar: .inf`).
+## Sensitivitäten (`uv run serts tornado --netz gross`, 50 Varianten, Stand 15.11.2026 nach E39)
 
-## Lesart
+`results/gross/20261115-154127_base_tornado` (≈ 2,4 h). Wärmepreis inkl. Netz (Basis 221,6 €/MWh) und Vorteil
+gegenüber Gas-Fernwärme (Basis **+13,0 €/MWh**, LCOH Erzeugung):
+
+| Parameter (Variante) | Wärmepreis inkl. Netz | Vorteil ggü. Gas | Kollektor / Speicher |
+|---|---|---|---|
+| Gaspreis 8 / 16 ct/kWh | – | **−34 / +60** | – |
+| Strompreis 20 / 40 ct/kWh | 185 / 258 | **+46 / −19** | gleich |
+| **keine Flächenbegrenzung** (80.000 m² → unbegrenzt) | **198** | **+34** | **57.900 m² / 130.000 m³** (Segmentgrenze!), Solar 58 % |
+| Förderung BEW 40 % | 193 | +29 | gleich |
+| CO₂-Preis 55 / 200 €/t | – | +3 / +34 | – |
+| Gütegrad Luft-WP × 0,85 / × 1,15 | 240 / 208 | **−3,7 / +25** | gleich |
+| Zins 3 / 7 % (real) | 203 / 241 | +20 / +5 | gleich |
+| Strompreis +2 %/a real | 241 | **−4,4** | gleich |
+| Leistungspreis 0 / 163,73 €/kW·a (≥ 2.500 h) | 220 / 237 | +15 / **−0,7** | 29.200 / 34.200 |
+| WP-Kosten 1,0 / 1,73 Mio. €/MW | 213 / 231 | +21 / +4 | gleich |
+| Nebenkosten 0 / 20 % | 212 / 232 | +18 / +8 | gleich |
+| Ankerkunde + 20 / 40 % | 208 / 199 | +14 / +15 | 32.500 / 13.800; 32.800 / 12.000 |
+| Last × 0,8 / × 1,2 | 233 / 214 | +18 / +9 | 28.900 / 35.600; gleich |
+| Strahlung − / + 10 % | 228 / 216 | +7 / +18 | gleich; 28.500 / 38.100 |
+| Kollektor 220 / 350 €/m² | 218 / 226 | +16 / +9 | gleich |
+| Hausanschluss 5.000 / 15.000 €; Trasse 730 / 1.560 €/m; Anteil Straße 50 / 100 % | 211–232 | unverändert | gleiches Netz |
+| η₀, Feldverluste, Speicherverluste, PtH-Reserve, Speicherkosten ±30 % | 218–226 | +9 … +16 | 29.300–29.900 / 30.000–33.400 |
+| Vorwärmen, Größenabhängigkeit, Übergangszone, COP Speicher-WP, Rücklauf, Einfallswinkel | 220–223 | ±1 | gleich |
+
+**Lesart:**
+* Wie im kleinen Netz entscheiden **Gas- und Strompreis**, dann **WP-Gütegrad**, Zins und Förderung. Im großen Netz
+  kippt der Vorteil schon bei 15 % schlechterem Gütegrad, +2 %/a realem Strompreisanstieg oder dem hohen
+  Leistungspreis (≥ 2.500 Benutzungsstunden).
+* **Fläche ist auch hier der größte Auslegungshebel**: siehe unten. Speicherparameter wirken ≤ 2 €/MWh.
+
+**Ohne Flächengrenze:** Im Tornado landet das Volumen genau auf der Obergrenze der Kostensegmente (130.000 m³).
+Nachgerechnet mit Stützstellen bis 200.000 m³ (Gültigkeitsgrenze der KWW-Kostenkurve), ebenfalls am Rand:
+
+| Größtes Segment bis | Kollektor / Speicher | Solaranteil | Zyklen / Winteranteil | Wärmepreis inkl. Netz | Fläche |
+|---|---|---|---|---|---|
+| Basis (Fläche 80.000 m²) | 29.800 m² / 30.300 m³ | 31 % | 4,3 / 31 % | 221,6 | 8 ha |
+| 130.000 m³ | 57.900 m² / 130.000 m³ | 58 % | – | 197,9 | 18 ha |
+| 200.000 m³ | 72.900 m² / 200.000 m³ | 73 % | 1,7 / 66 % (saisonal) | **186,2** (mit BEW 147,6) | 24 ha |
+
+Jedes größere Segment ist ≈ 10 €/MWh günstiger (LCOH 152 → 143 → 131 → 121 €/MWh); ein Optimum innerhalb des
+gültigen Kostenbereichs gibt es nicht. Im großen Netz begrenzt also allein die Fläche (und die Gültigkeit der
+Kostenkurve) Saisonspeicher und Solaranteil. CO₂ sinkt auf 2.510 t/a (Basis 5.670). Fläche kostet im Modell
+nichts; Wärmeverluste und Kosten der Zuleitung zu einer weiter entfernten Fläche fehlen ebenfalls.
+
+## Basis-Abschätzung ohne Flächengrenze vom 10.11. (überholt)
+
+~~Geschätzt −2 bis −4 €/MWh bei 35.000–40.000 m² / 60.000–90.000 m³.~~ Gerechnet: siehe Tornado oben.
+
+## Lesart (Stand 10.11.)
 
 * **Die Fläche begrenzt das System**, nicht die Kosten: Kollektor (2,3 m² Grund je m²) und Speicher (2,65 m³ je m²)
   teilen sich die 8 ha vollständig; mit BEW ändert sich die Auslegung deshalb kaum.
@@ -115,6 +158,6 @@ Neu rechnen mit `uv run serts run --netz gross --szenario kww_komplett_gross`.
 
 ## Offen / nicht gerechnet
 
-- Sensitivitäten (Tornado) für das große Netz: `uv run serts tornado --netz gross` (≈ 1–2 h, nicht gelaufen).
-- Mehr Fläche, andere Aufteilung der Fläche, Ankerkunde: Szenario mit `standort.flaeche_verfuegbar`.
+- Day-Ahead-Szenarien und `vl_gleitend` für das große Netz (nur Netz klein gerechnet).
+- Flächenkosten (Pacht/Kauf) fehlen; ohne sie ist die Variante „keine Flächenbegrenzung“ eine Obergrenze.
 - Hausanschlüsse: pauschal 10.000 € wie im kleinen Netz; bei 54 % Nichtwohngebäuden eher oberes Ende (E32).
