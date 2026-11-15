@@ -418,3 +418,12 @@ Zeitreihe und eine Flächenbedingung je Stunde).
 **Folge:** Alle Ergebnisse vor dem 14.11.2026 (Heatmap, Varianten, Tornado, Netz groß) sind mit dem alten Speicher
 gerechnet und müssen neu laufen; `kpi.json` enthält statt `kennlinie_*` jetzt `uebergang_anteil`,
 `verlustrate_1_h`, `speicher_direktanteil`, `P_netzanschluss_MW`, `kosten_a_strom_leistung`.
+
+## E40 Tornado-Variante „keine Flächenbegrenzung" (15.11.2026)
+
+`standort.flaeche_verfuegbar` hat `sens: [.inf]`; bei `.inf` entfällt die Flächenbedingung (constraints.py, Test
+`test_ohne_flaechenbegrenzung`). Das Volumen bleibt durch das letzte Kostensegment auf 35.000 m³ begrenzt. Fläche
+kostet im Modell nichts (keine Pacht, kein Kauf), die Variante ist also eine Obergrenze für den Nutzen von mehr
+Fläche. Heatmap-Raster Volumen auf das neue Optimum gelegt (5.500/7.000 → 6.000/8.000 m³).
+**Ergebnis (15.11., Netz klein):** ohne Grenze 11.400 m² / 33.400 m³, Saisonspeicher (1,45 Zyklen, 70 % Winter),
+Solaranteil 92 %, Wärmepreis 226 statt 243 €/MWh, Flächenbedarf ≈ 38.900 m² (`docs/ergebnisse.md`, Tornado).

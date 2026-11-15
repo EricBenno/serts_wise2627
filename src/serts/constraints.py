@@ -4,7 +4,8 @@ f = Anteil des heißen Teils (T_oben - T_RL) / (T_oben - T_unten) ≈ 53 %, s = 
 heißen Teil (network.anteil_uebergang), Kern = heißer Teil ohne Übergangszone.
 
 1. Fläche:   A_Koll * flaechenfaktor + V / volumen_je_grundflaeche <= flaeche_verfuegbar
-             (V = E_Kern / (f * (1 - s) * kap); nur wenn A oder V optimiert wird, sonst Check in kpi.py)
+             (V = E_Kern / (f * (1 - s) * kap); nur wenn A oder V optimiert wird, sonst Check in kpi.py;
+             flaeche_verfuegbar = .inf schaltet die Bedingung ab)
 2. Speichergröße: die drei Teile gehören zu demselben Wasser und wachsen im festen Verhältnis
              E_Übergang = s / (1 - s) * E_Kern,  E_kalt = (1 - f) / (f * (1 - s)) * E_Kern
              (nur wenn das Volumen optimiert wird)
@@ -21,6 +22,7 @@ heißen Teil (network.anteil_uebergang), Kern = heißer Teil ohne Übergangszone
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from serts.config import Config
@@ -48,7 +50,7 @@ def extra_functionality(n, snapshots, *, cfg: Config, ts: pd.DataFrame) -> None:
     # 1 Fläche
     a_var = bool(n.generators.at["kollektor", "p_nom_extendable"])
     v_var = hat_speicher and bool(n.stores.at["ptes_heiss", "e_nom_extendable"])
-    if a_var or v_var:
+    if (a_var or v_var) and np.isfinite(cfg.get("standort.flaeche_verfuegbar")):
         a = (
             _sel(m["Generator-p_nom"], "kollektor")
             if a_var

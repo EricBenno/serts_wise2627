@@ -13,7 +13,8 @@ erklärt: `docs/speichermodell.md`.
 
 Geändert: Speicher in drei Teilen mit getrennten Ladelinks, Vorwärmen, größenabhängige Verluste/Übergangszone,
 Leistungspreis Strom, Einfallswinkel am Kollektor (E39; Prüfung `docs/validierung_dronninglund.md`).
-**Alle Abschnitte ab „Basislauf alt“ (Varianten, Heatmap, Strom, Tornado) sind noch mit dem alten Speicher gerechnet.**
+Heatmap, Strom-Vergleich und Tornado sind am 15.11. neu gerechnet (unten). **Nur „Basislauf alt“, „Was die
+Änderungen vom 10.11. bewirkt haben“ und die alte Variantentabelle zeigen den Stand vor E39** (zum Vergleich).
 
 | Kennzahl | alt (10.11.) | **Basis neu** | gleitender Vorlauf (`vl_gleitend`) | Day-Ahead 2024 (WP/PtH laden Speicher) |
 |---|---|---|---|---|
@@ -42,7 +43,7 @@ Ergebnisordner: `results/klein/20261114-172557_base_opt`, `…-170407_vl_gleiten
   LCOH 151,4). Das wahre Optimum liegt bei ≈ 6.000 m³; das Tal ist flach.
 * **Gleitender Vorlauf** (nur COP der Luft-WP): −6,7 €/MWh. **Day-Ahead 2024:** −19 €/MWh gegenüber fest 30 ct;
   davon bringt das Laden des Speichers durch WP/PtH ≈ 3 €/MWh (bei fester Auslegung 133,5 → 130,6).
-* Noch nicht neu gerechnet: Heatmap, Tornado, Strom-Vergleich (außer Day-Ahead 2024).
+* Heatmap, Tornado und Strom-Vergleich: neu gerechnet am 15.11. (unten).
 
 **Vergleichsvarianten neu** (`uv run serts varianten`, `results/klein/20261114-173001_base_varianten`):
 
@@ -85,10 +86,8 @@ Kollektorertrag).
 im November/Dezember gehalten und im Januar zuerst direkt (Oberschicht ≈ 85 °C), danach über die Speicher-WP bis
 10 °C entladen. Direktentladung gibt es nur bei dicker heißer Schicht (`kennlinie_rest_MWh` = 0).
 
-**Ohne Flächengrenze (Abschätzung aus der Heatmap, kein Lauf):** Die 13.000 m² binden, kosten aber wenig. Bei 4.000 m²
-bringen +1.000 m² Kollektor nur noch 3–5 €/MWh weniger, Tendenz fallend. Geschätztes Optimum ohne Grenze ≈ 5.000 m² /
-8.000–10.000 m³, Wärmepreis **höchstens 1–2 €/MWh** niedriger, Solaranteil ≈ 45 %. Obergrenze, denn Fläche kostet im
-Modell nichts (keine Pacht/kein Kauf).
+~~Ohne Flächengrenze (Abschätzung aus der Heatmap, kein Lauf): höchstens 1–2 €/MWh niedriger.~~ Überholt: mit dem
+neuen Speicher gerechnet sind es −18 €/MWh und ein Saisonspeicher (Tornado unten).
 
 ## Was die Änderungen vom 10.11. bewirkt haben (Netz klein)
 
@@ -103,7 +102,7 @@ Der größte Sprung (+21 €/MWh) kommt von der realistischeren Luft-WP (Arbeits
 machen Solar und Speicher wieder attraktiver (mehr Fläche, mehr Speicher), der Vorteil gegenüber Gas schrumpft aber
 auf ≈ 6 €/MWh.
 
-## Vergleichsvarianten (`uv run serts varianten`, Briefing Pflicht 5)
+## Vergleichsvarianten alt (Stand 10.11.2026, vor E39; neu: oben)
 
 | | Basis | ohne Speicher | nur WP + PtH | mit BEW Modul 2 (optimiert) | Gas-Fernwärme |
 |---|---|---|---|---|---|
@@ -119,83 +118,111 @@ auf ≈ 6 €/MWh.
 * **Mit BEW** ändert sich die Auslegung kaum (die Fläche bindet schon), der Wärmepreis sinkt um ≈ 35 €/MWh.
   40 % ist die Obergrenze; die BAFA begrenzt auf die Wirtschaftlichkeitslücke (E37).
 
-## Heatmaps Kollektorfläche × Speichervolumen (`uv run serts heatmap`, ≈ 25 min)
+## Heatmaps Kollektorfläche × Speichervolumen (`uv run serts heatmap`, Stand 15.11.2026 nach E39, ≈ 12 min)
 
-`heatmap_alle.png` im Ergebnisordner zeigt neun Kennzahlen (Wärmepreis, mit BEW, Vorteil ggü. Gas, Solaranteil, CO₂,
-Speicherzyklen, Winteranteil, WP-Leistung, PtH-Wärme). Wärmepreis inkl. Netz [€/MWh], Gas-Fernwärme 261:
+`results/klein/20261115-142814_base_heatmap`; `heatmap_alle.png` zeigt neun Kennzahlen (Wärmepreis, mit BEW,
+Vorteil ggü. Gas, Solaranteil, CO₂, Speicherzyklen, Winteranteil, WP-Leistung, PtH-Wärme). Feste Größen, WP und PtH
+je Punkt optimiert. Wärmepreis inkl. Netz [€/MWh], Gas-Fernwärme 261; Basis-Optimum 4.670 m² / 6.000 m³ = 243,4:
 
 | V \ A [m²] | 1.000 | 2.000 | 3.000 | 4.000 | 5.000 |
 |---|---|---|---|---|---|
-| 0 m³ | 267 | 268 | 272 | 276 | 282 |
-| 1.000 m³ | 266 | 260 | 258 | 259 | 262 |
-| 2.000 m³ | 267 | 261 | 257 | 259 | 261 |
-| 4.000 m³ | 270 | 262 | 258 | 256 | – |
-| 5.500 m³ | 273 | 264 | 259 | **256** | – |
-| 7.000 m³ | 276 | 267 | 260 | 256 | – |
-| 10.000 m³ | 283 | 272 | 264 | 259 | – |
+| 0 m³ | 272 | 273 | 277 | 282 | 287 |
+| 1.000 m³ | 268 | 259 | 253 | 251 | 252 |
+| 2.000 m³ | 269 | 260 | 253 | 249 | 250 |
+| 4.000 m³ | 272 | 262 | 254 | **247** | – |
+| 6.000 m³ | 275 | 264 | 256 | 248 | – |
+| 8.000 m³ | 278 | 267 | 258 | 250 | – |
+| 10.000 m³ | 280 | 270 | 260 | 251 | – |
 
-* **Flaches Tal**: 3.000–4.000 m² mit 1.000–7.000 m³ liegen innerhalb ≈ 4 €/MWh; günstiger als Gas nur rechts der
-  Diagonale (genug Kollektor je m³ Speicher).
-* **Wann wird der Speicher saisonal?** Bei großem Speicher und wenig Kollektor: ≤ 1 Zyklus und > 95 % Winteranteil
-  (z. B. 1.000–2.000 m² mit 5.500–10.000 m³) – aber genau dort ist das System am teuersten (bis +21 €/MWh über Gas).
-  Im kostengünstigen Bereich ist der Speicher ein Mischspeicher (2–3 Zyklen, 35–50 % Winteranteil).
-* Ohne Speicher wird mehr Kollektor teurer (der Sommerüberschuss bleibt ungenutzt); PtH-Wärme sinkt mit Speicher.
+(– = passt nicht auf 13.000 m²)
 
-## Strom: fest gegen Day-Ahead (Szenarien `strom_day_ahead_*`, Stand E38: WP 1.340 €/kW)
+* **Mehr Kollektor lohnt sich, solange Speicher dabei ist**: entlang jeder Speicherzeile fällt der Preis bis an die
+  Flächengrenze. Ohne Speicher steigt er mit der Kollektorfläche (Sommerüberschuss bleibt ungenutzt).
+* **Flaches Tal beim Volumen**: bei 4.000 m² liegen 2.000–10.000 m³ innerhalb ≈ 4 €/MWh. Gegenüber dem 10.11. ist
+  das ganze Feld mit Speicher 5–10 €/MWh günstiger, ohne Speicher ≈ 5 €/MWh teurer (Leistungspreis, Einfallswinkel).
+* **Charakter des Speichers** (Zyklen / Winteranteil): bei 4.000 m² und 6.000 m³ 2,9 / 39 %; saisonal (< 1 Zyklus,
+  ≈ 65 % Winter) nur bei viel Speicher und wenig Kollektor (1.000–2.000 m² mit ≥ 6.000 m³) – dort ist es am teuersten.
+  Auf 13.000 m² ist kein saisonaler Betrieb wirtschaftlich (siehe Tornado: erst ohne Flächengrenze).
 
-Preis(t) = Day-Ahead(t) + Marge 25 + Netzentgelt 93 + Abgaben 57 €/MWh; Preisjahr unabhängig vom Wetterjahr 2022.
+## Strom: fest gegen Day-Ahead (Szenarien `strom_day_ahead_*`, Stand 15.11.2026 nach E39)
+
+Preis(t) = Day-Ahead(t) + Marge 25 + Netzentgelt 79,9 + Abgaben 57 €/MWh, dazu Leistungspreis 15,50 €/kW·a;
+Preisjahr unabhängig vom Wetterjahr 2022. In den Day-Ahead-Szenarien dürfen WP/PtH den Speicher laden (E39).
 
 | | fest 30 ct | Day-Ahead 2024 | Day-Ahead 2024 normiert (Ø wie fest) | Day-Ahead 2022 (Krise) |
 |---|---|---|---|---|
-| Strompreis Ø / gewichtet bezahlt [€/MWh] | 300 / 300 | 254 / 252 | 300 / 294 | 410 / 345 |
-| Kollektor / Speicher | 4.440 m² / 7.400 m³ | 3.630 / 4.270 | 4.440 / 7.400 | 4.460 / 7.260 |
-| Speicher-Zyklen / Winteranteil | 2,3 / 46 % | 3,3 / 35 % | 2,4 / 46 % | 2,6 / 46 % |
-| Solaranteil | 41 % | 34 % | 41 % | 42 % |
-| Strombezug [MWh/a] | 1.720 | 1.850 | 1.710 | 1.690 |
-| LCOH Erzeugung / Wärmepreis inkl. Netz [€/MWh] | 160 / 255 | **144 / 237** | 159 / 254 | 176 / **274** |
-| Gas-Fernwärme inkl. Netz / mit BEW | 261 / 221 | 261 / 205 | 261 / 219 | 261 / 239 |
+| Strompreis Ø / gewichtet bezahlt [€/MWh] | 300 / 300 | 240 / 232 | 300 / 281 | 397 / 303 |
+| Kollektor / Speicher | 4.670 m² / 6.000 m³ | 4.660 / 6.040 | 4.640 / 6.160 | 4.670 / 6.000 |
+| Speicher-Zyklen / Winteranteil | 3,2 / 37 % | 4,1 / 42 % | 4,2 / 44 % | 4,7 / 48 % |
+| Speicher aus WP/PtH geladen [MWh/a] | 0 | 480 | 570 | 770 |
+| Solaranteil | 40,5 % | 41 % | 41 % | 42 % |
+| Strombezug [MWh/a] / höchste Leistung [MW] | 1.520 / 0,46 | 1.520 / 0,46 | 1.520 / 0,48 | 1.520 / 0,52 |
+| LCOH Erzeugung / Wärmepreis inkl. Netz [€/MWh] | 150,0 / 243,4 | **130,6 / 220,0** | 145,5 / 238,0 | 153,7 / **247,9** |
+| mit BEW, gleiche Auslegung (Gas-Fernwärme 261) | 209,3 | 186,1 | 203,7 | 212,8 |
 
-* **Preisniveau** entscheidet: mit Day-Ahead 2024 (Ø 25 ct) ist das System 24 €/MWh günstiger als Gas-Fernwärme,
-  im Krisenjahr 2022 (Ø 41 ct) 13 €/MWh teurer.
-* **Zeitliche Struktur** allein (normiert) senkt den bezahlten Preis um 2 % und den Wärmepreis um ≈ 1 €/MWh: der
-  Speicher nimmt nur Solarwärme auf (die WP lädt ihn nicht, E29), Preisspitzen werden kaum ausgenutzt.
-* Die Auslegung reagiert kaum auf die Preisstruktur (Kollektor/Speicher fast gleich), nur auf das Preisniveau.
-* Nicht modelliert: Leistungspreis; Korrelation Preis ↔ Wetter (Preis- und Wetterjahr verschieden).
+`results/klein/20261114-171910_strom_day_ahead_2024_opt`, `…/20261115-151050_strom_day_ahead_normiert_opt`,
+`…/20261115-151009_strom_day_ahead_2022_opt`.
 
-## Sensitivitäten (`uv run serts tornado`, 48 Varianten, **Stand E37: WP noch 1.000 €/kW**, Größen jeweils neu optimiert)
+* **Preisniveau** entscheidet weiter: Day-Ahead 2024 (Ø 24 ct) ist 41 €/MWh günstiger als Gas-Fernwärme; selbst
+  das Krisenjahr 2022 (Ø 40 ct) bleibt jetzt 14 €/MWh darunter (am 10.11.: 13 €/MWh darüber).
+* **Zeitliche Struktur wirkt jetzt**: normiert sinkt der bezahlte Strompreis um 6 % (vorher 2 %) und der Wärmepreis
+  um 5 €/MWh (vorher 1). 2022 bezahlt das System nur 303 statt Ø 397 €/MWh. Grund: WP/PtH laden den Speicher in
+  billigen Stunden (bis 770 MWh/a), der Speicher macht dafür mehr Zyklen.
+* Die Auslegung bleibt bei ≈ 4.650 m² / 6.000 m³ (Fläche bindet), die Strommenge ist überall gleich.
+* Nicht modelliert: Korrelation Preis ↔ Wetter (Preis- und Wetterjahr verschieden).
 
-Wärmepreis inkl. Netz (Basis 247 €/MWh) und Vorteil gegenüber Gas-Fernwärme (Basis **+14,5 €/MWh**):
+## Sensitivitäten (`uv run serts tornado`, 50 Varianten, Stand 15.11.2026 nach E39, Größen jeweils neu optimiert)
 
-| Parameter (Variante) | Wärmepreis inkl. Netz | Vorteil ggü. Gas |
-|---|---|---|
-| Gaspreis 8 / 16 ct/kWh | – | **−42 / +71** |
-| Strompreis 20 / 40 ct/kWh | 203 / 284 | **+59 / −23** |
-| Gütegrad Luft-WP × 0,85 / × 1,15 | 262 / 233 | **−0,4 / +29** |
-| Förderung BEW 40 % (mit Förderung optimiert) | 214 | **+47** (4.440 m², 7.420 m³, Solar 41 %) |
-| CO₂-Preis 55 / 200 €/t | – | +3 / +40 |
-| Zins 3 / 7 % (real) | 224 / 268 | +26 / +6 |
-| Strompreis +2 %/a real | 267 | −5 |
-| WP-Kosten 0,7 / 1,4 Mio. €/MW | 239 / 257 | +23 / +5 |
-| Nebenkosten 0 / 20 % | 235 / 258 | +21 / +9 |
-| Kollektor 240 / 380 €/m² | 241 / 252 | +20 / +10 |
-| Übergangszone (Kennlinie) 0 / 0,15 / 0,5 | 236 / 245 / 248 | +25 / +17 / +13 |
-| Speicherkosten × 0,7 / × 1,3 | 242 / 249 | +19 / +12 |
-| COP Speicher-WP 3,5 / 5,5 | 250 / 244 | +11 / +18 |
-| Strahlung − / + 10 % | 251 / 243 | +11 / +19 |
-| Ankerkunde + 20 / 40 % | 226 / 211 | +19 / +23 |
-| Last × 0,8 / × 1,2 | 269 / 232 | +16 / +14 |
-| PtH-Reserve 0 (statt Spitzenlast) | 244 | +17 |
-| Hausanschluss 5.000 / 15.000 € | 229 / 265 | unverändert (gleiches Netz) |
-| Trasse Straße 370 / 940 €/m; Anteil Straße 50 / 100 % | 237–257 | unverändert |
-| Rücklauf 40 / 50 °C; Luft-WP-Leistung bei −7 °C 60 / 100 % | 246–248 | ±1 |
+`results/klein/20261115-115003_base_tornado` (≈ 2,6 h mit 4 Läufen parallel). Wärmepreis inkl. Netz (Basis
+243,4 €/MWh) und Vorteil gegenüber Gas-Fernwärme (Basis **+14,9 €/MWh**, LCOH Erzeugung):
 
-**Lesart:** Ob das System günstiger ist als Gas-Fernwärme, entscheiden **Gas- und Strompreis**, danach die
-**Effizienz der Luft-WP** (bei 15 % schlechterem Gütegrad ist der Vorteil weg), Förderung, CO₂-Preis und Zins.
-Die Größen von Kollektorfeld und Speicher springen mit den Kosten (Speicher 540–8.840 m³, Solaranteil 20–40 %),
-ohne dass der Wärmepreis stark reagiert (flaches Optimum). Ohne Kennlinie (ideale Schichtung) wäre der Speicher
-größer (7.000 m³) und das System 11 €/MWh günstiger – die Kennlinie ist also ergebnisrelevant.
+| Parameter (Variante) | Wärmepreis inkl. Netz | Vorteil ggü. Gas | Kollektor / Speicher |
+|---|---|---|---|
+| Gaspreis 8 / 16 ct/kWh | – | **−32 / +62** | – |
+| Strompreis 20 / 40 ct/kWh | 210 / 277 | **+43 / −13** | gleich |
+| **keine Flächenbegrenzung** (13.000 m² → unbegrenzt) | **226** | **+30** | **11.420 m² / 33.440 m³**, Solar 92 % |
+| Förderung BEW 40 % | 209 | +36 | gleich |
+| CO₂-Preis 55 / 200 €/t | – | +5 / +36 | – |
+| Gütegrad Luft-WP × 0,85 / × 1,15 | 261 / 231 | **+0,5 / +26** | gleich |
+| Zins 3 / 7 % (real) | 220 / 268 | +25 / +5 | gleich |
+| Strompreis +2 %/a real | 261 | −0,1 | gleich |
+| Ankerkunde + 20 / 40 % | 224 / 210 | +18 / +20 | 5.040 / 3.710; 5.240 / 2.500 |
+| Last × 0,8 / × 1,2 | 263 / 232 | +18 / +12 | 4.550 / 6.730; gleich |
+| Leistungspreis 0 / 163,73 €/kW·a (≥ 2.500 h) | 242 / 258 | +16 / +3 | gleich |
+| Nebenkosten 0 / 20 % | 231 / 256 | +21 / +9 | gleich |
+| WP-Kosten 1,0 / 1,73 Mio. €/MW | 235 / 253 | +22 / +7 | gleich |
+| Strahlung − / + 10 % | 252 / 237 | +8 / +20 | 4.940 / 4.340; 4.450 / 7.330 |
+| Kollektor 240 / 380 €/m² | 237 / 251 | +20 / +9 | gleich |
+| Speicherverluste 1,5 / 8 ·10⁻⁵ 1/h | 240 / 249 | +18 / +10 | 4.610 / 6.330; gleich |
+| η₀ 0,75 / 0,82; Feldverluste 5 / 15 % | 249 / 242; 241 / 247 | +10 / +16; +17 / +12 | η₀ 0,75: 4.850 / 4.890 |
+| Speicherkosten × 0,7 / × 1,3 | 239 / 247 | +18 / +12 | gleich |
+| PtH-Reserve 0 | 240 | +18 | gleich |
+| Vorwärmen aus | 246 | +12 | gleich |
+| Größenabhängigkeit aus (Exponent 0) | 240 | +17 | 4.630 / 6.230 |
+| Einfallswinkel b₀ 0 / 0,15; Rücklauf 40 / 50 °C | 242–245 | ±1,5 | – |
+| Übergangszone 0 / 0,1 / 0,25; COP Speicher-WP 3,5 / 5,5 | 243–244 | ±0,6 | gleich |
+| Hausanschluss 5.000 / 15.000 €; Trasse 370 / 940 €/m; Anteil Straße 50 / 100 % | 225–262 | unverändert | gleiches Netz |
+
+**Lesart:**
+* Ob das System günstiger ist als Gas-Fernwärme, entscheiden **Gas- und Strompreis**, danach die **Effizienz der
+  Luft-WP** (bei 15 % schlechterem Gütegrad ist der Vorteil weg), Zins und Förderung.
+* **Die Fläche ist die wichtigste Stellschraube der Auslegung.** Ohne Grenze baut das Modell 11.400 m² Kollektor und
+  einen **Saisonspeicher** mit 33.400 m³ (1,45 Zyklen, 70 % der Entladung im Winter, Wirkungsgrad 83 %), Solaranteil
+  92 %, Strombezug 375 statt 1.520 MWh/a, CO₂ 136 statt 551 t/a. Wärmepreis 226 €/MWh (−18 €/MWh), mit BEW 169.
+  Dafür werden ≈ 38.900 m² gebraucht, dreimal so viel wie verfügbar; Fläche kostet im Modell nichts (Obergrenze des
+  Nutzens). Die Abschätzung vom 10.11. („höchstens 1–2 €/MWh“) war damit falsch: Mit dem neuen Speichermodell
+  rechnet sich der große Speicher, wenn genug Kollektor dazukommt. Die Kostensegmente steigen monoton bis zum
+  größten (6.000 m³ 151,2 → 12.000 m³ 145,3 → 33.400 m³ 135,3 €/MWh LCOH).
+* **Speicherparameter wirken wenig** (Übergangszone, COP Speicher-WP, Speicherkosten ±30 % je ≤ 4 €/MWh). Viele
+  Varianten landen genau bei 4.670 m² / 6.000 m³: Fläche und Segmentgrenze (Speicherwerte gelten für die Untergrenze
+  des Segments, E39) halten die Auslegung fest. Der Tornado unterschätzt daher, wie stark die Größen reagieren
+  würden.
+* Netzkosten (Hausanschluss, Trasse) verschieben den Wärmepreis um bis zu ±18 €/MWh, aber nicht den Vergleich mit
+  Gas (gleiches Netz).
 
 **Kernaussage (vorläufig, Netz klein):** Luft-WP + Speicher-WP mit Solarthermie, PTES und PtH-Reserve ist unter den
-Basisannahmen ≈ 6 % günstiger als Gas-Fernwärme, mit BEW Modul 2 (Obergrenze) ≈ 18 %. Der Vorteil ist knapp und hängt
-vor allem an Energiepreisen und WP-Effizienz. Der kostenoptimale Speicher ist ein Mischspeicher (≈ 4.600 m³,
-≈ 3 Zyklen), kein Saisonspeicher. Netz groß: `docs/ergebnisse_netz_gross.md`, Prüfung: `docs/kernfragen.md`.
+Basisannahmen ≈ 7 % günstiger als Gas-Fernwärme (243 statt 261 €/MWh), mit BEW Modul 2 (Obergrenze) ≈ 20 %. Der
+Vorteil hängt vor allem an Energiepreisen und WP-Effizienz. Auf 13.000 m² ist der kostenoptimale Speicher ein
+Mischspeicher (6.000 m³, ≈ 3 Zyklen). **Mit ≈ 39.000 m² Fläche wird ein Saisonspeicher (≈ 33.000 m³, 92 % solar)
+die günstigste Lösung** – die Flächenfrage ist damit zentral für den Bericht. Netz groß:
+`docs/ergebnisse_netz_gross.md`, Prüfung: `docs/kernfragen.md`.

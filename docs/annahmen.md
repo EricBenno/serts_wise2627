@@ -15,7 +15,7 @@ Status: belegt 39, vorgabe 53, annahme 45, offen 0
 | `standort.lat` | 51.7854 | deg | belegt | DWD Metadaten_Geographie_03028.txt (gültig ab 02.08.2006) |  |  |
 | `standort.lon` | 8.8388 | deg | belegt | DWD Metadaten_Geographie_03028.txt |  |  |
 | `standort.hoehe` | 157 | m | belegt | DWD Metadaten_Geographie_03028.txt |  |  |
-| `standort.flaeche_verfuegbar` | 13000 | m2 | vorgabe | TEAM: ca. 13.000 m2 Grundstück am Erzeugerstandort, annähernd quadratisch |  | Muss Kollektorfeld (inkl. Reihenabstand, Technik) UND PTES aufnehmen -> Flächencheck je Rasterpunkt. |
+| `standort.flaeche_verfuegbar` | 13000 | m2 | vorgabe | TEAM: ca. 13.000 m2 Grundstück am Erzeugerstandort, annähernd quadratisch | inf | Muss Kollektorfeld (inkl. Reihenabstand, Technik) UND PTES aufnehmen -> Flächencheck je Rasterpunkt. Sensitivität .inf = keine Flächenbegrenzung (Speicher dann nur durch ptes.segmente_m3 bis 35.000 m3 begrenzt). |
 
 ## zeit
 
@@ -209,10 +209,10 @@ Status: belegt 39, vorgabe 53, annahme 45, offen 0
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
 | `heatmap.A_m2` | [1000, 2000, 3000, 4000, 5000] | m2 | vorgabe | Raster Kollektorfläche für serts heatmap (BRF §1 Pflicht 6), um das Optimum ≈ 3.700 m2 (Netz klein) |  |  |
-| `heatmap.V_m3` | [0, 1000, 2000, 4000, 5500, 7000, 10000] | m3 | vorgabe | Raster Speichervolumen für serts heatmap, um das Optimum ≈ 4.600 m3 (Netz klein); Punkte über der Fläche entfallen |  |  |
+| `heatmap.V_m3` | [0, 1000, 2000, 4000, 6000, 8000, 10000] | m3 | vorgabe | Raster Speichervolumen für serts heatmap, um das Optimum ≈ 6.000 m3 (Netz klein, E39); Punkte über der Fläche entfallen |  |  |
 
 ## tornado
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `tornado.parameter` | ['ptes.kosten_faktor', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.uebergang_ref', 'ptes.groessen_exponent', 'ptes.vorwaermen', 'strom.leistungspreis', 'kollektor.iam_b0', 'waermepumpe.COP_ptes', 'waermepumpe.guetegrad_faktor', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |
+| `tornado.parameter` | ['ptes.kosten_faktor', 'standort.flaeche_verfuegbar', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.uebergang_ref', 'ptes.groessen_exponent', 'ptes.vorwaermen', 'strom.leistungspreis', 'kollektor.iam_b0', 'waermepumpe.COP_ptes', 'waermepumpe.guetegrad_faktor', 'netz.T_RL', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'waermepumpe.luft_leistung_bei_tmin', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis', 'gas_referenz.co2_preis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

@@ -4,6 +4,12 @@
 Auch bei Speicherkosten × 0,35 bleibt das Optimum ≈ 6.000 m³; erzwungen ≥ 12.000 m³ wird der Speicher saisonal
 (1,4 Zyklen, 63 % Winteranteil), kostet aber 6 €/MWh mehr. Der Text unten ist der Stand vom 09.11.
 
+**Nachtrag 15.11.2026 (Tornado):** Der Engpass ist die **Fläche**, nicht die Speicherkosten. Ohne Flächengrenze
+(bei Basiskosten!) wählt das Modell 11.400 m² Kollektor und 33.400 m³ Speicher: 1,45 Zyklen, 70 % Winteranteil,
+Solaranteil 92 %, Wärmepreis 226 statt 243 €/MWh, Flächenbedarf ≈ 39.000 m² (dreimal die verfügbare Fläche).
+Mit dem neuen Speichermodell lohnt der Saisonspeicher also, sobald genug Kollektor dazukommt – wie in Dänemark,
+wo die Felder groß sind. Fläche kostet im Modell nichts; das Ergebnis ist eine Obergrenze.
+
 Stand 09.11.2026. Modell: Basislauf mit stetiger Speicherkostenkurve (E30). Zahlen aus Rechnungen mit dem
 Modell (Raster 24 Läufe, 12 Szenarien) und aus Recherchen (Quellen unten).
 

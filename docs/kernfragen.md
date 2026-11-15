@@ -14,8 +14,8 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 | 4 LCOH und CO₂; Pareto EE-Anteil vs. LCOH | ✔ / teilweise | LCOH, Wärmepreis inkl. Netz, CO₂; Pareto aus den Varianten (`pareto.png`), keine Kurve über alle Größen |
 | 5a ohne Speicher, 5b nur WP + PtH, 5d Gas-Referenz | ✔ | `serts varianten` (beide Netze) |
 | 5c PV für die WP | ✘ (zurückgestellt, TEAM) | nur Abschätzung (`docs/ausblick.md`) |
-| 6 Tornado: Speicherkosten, Solar, Strompreis, Last | ✔ (Netz klein, Stand E37) | `docs/ergebnisse.md`; Netz groß nicht gerechnet |
-| 6 Heatmap LCOH über Fläche × Volumen | ✔ (beide Netze, 9 Kennzahlen) | `serts heatmap` (≈ 25/40 min), `docs/ergebnisse*.md` |
+| 6 Tornado: Speicherkosten, Solar, Strompreis, Last (+ Fläche) | ✔ (Netz klein, Stand 15.11. nach E39) | `docs/ergebnisse.md`; Netz groß nicht gerechnet |
+| 6 Heatmap LCOH über Fläche × Volumen | ✔ (klein 15.11. nach E39; groß noch altes Speichermodell) | `serts heatmap` (≈ 12/40 min), `docs/ergebnisse*.md` |
 | Förderung (TEAM) | ✔ | BEW Modul 2 in jedem Lauf ausgewiesen + Szenario `bew_modul2` (E37) |
 
 ## 2 Auslegung: was am 10.11. falsch oder zu optimistisch war und korrigiert ist
@@ -34,19 +34,24 @@ das Ergebnis gegenüber Speicherkosten, Solarressource, Strompreis und Lastprofi
 
 | Punkt | Richtung | Vorschlag |
 |---|---|---|
-| **Strompreis 30 ct/kWh fest** (Leistungspreis seit E39 enthalten, 15,50 €/kW·a) | größter Hebel überhaupt (Tornado: 20 ct → 203, 40 ct → 284 €/MWh) | Day-Ahead-Szenarien liegen vor; Höhe des Gesamtpreises klären |
+| **Strompreis 30 ct/kWh fest** (Leistungspreis seit E39 enthalten, 15,50 €/kW·a) | größter Hebel überhaupt (Tornado: 20 ct → 210, 40 ct → 277 €/MWh) | Day-Ahead-Szenarien liegen vor; Höhe des Gesamtpreises klären |
 | **PtH-Reserve = Spitzenlast als Stundensumme** (1,59 / 15,5 MW) | Kosten leicht überschätzt (Gleichzeitigkeit 0,45 laut Netzberechnung) | `pth.redundanz` oder P_max mit GLF |
-| **WP-Kosten** jetzt 1.340 €/kW (unteres Ende KWW, E38); kleines Netz laut KWW eher 1.730 €/kW | Vorteil ggü. Gas schrumpft auf ≈ 6 €/MWh (Netz klein) | Tornado/Varianten mit 1.340 €/kW neu rechnen, wenn Zeit ist |
+| **WP-Kosten** jetzt 1.340 €/kW (unteres Ende KWW, E38); kleines Netz laut KWW eher 1.730 €/kW | Tornado 1,0 / 1,73 Mio. €/MW: 235 / 253 €/MWh (Vorteil ggü. Gas +22 / +7) | erledigt (15.11.) |
 | **Speicher-WP COP 4,5 konstant** | Herbst (warmer Speicher) unterschätzt, Frühjahr überschätzt | ok für Jahresmittel (Briefing §8) |
-| **Übergangszone** fester Anteil (15 % bei 60.000 m³, Messdaten Dronninglund), mit V^(−1/3) auf kleine Speicher umgerechnet; heißes Wasser kühlt im Modell nicht ab | Direktentladung eher optimistisch (71 % der Speicherentladung) | Tornado `ptes.uebergang_ref` 0/0,1/0,25 neu rechnen |
+| **Übergangszone** fester Anteil (15 % bei 60.000 m³, Messdaten Dronninglund), mit V^(−1/3) auf kleine Speicher umgerechnet; heißes Wasser kühlt im Modell nicht ab | Direktentladung eher optimistisch (71 % der Speicherentladung) | Tornado 0/0,1/0,25: < 1 €/MWh – unkritisch (15.11.) |
 | **Perfekte Voraussicht**, ein Wetterjahr | Betrieb/Solaranteil eher überschätzt | als Modellgrenze benennen |
-| **Fläche Netz groß bindet** (80.000 m²) | Solaranteil durch Fläche begrenzt, nicht durch Kosten | Flächen-Variante rechnen |
+| **Fläche bindet in beiden Netzen** (13.000 / 80.000 m²) | Netz klein ohne Grenze: Saisonspeicher 33.400 m³, Solar 92 %, −18 €/MWh bei ≈ 39.000 m² (Tornado 15.11.); Fläche kostet im Modell nichts | Pacht/Kauf der Fläche als Kosten; Flächen-Variante Netz groß |
 | **BEW 40 % = Obergrenze**, Wirtschaftlichkeitslücke nicht geprüft; EE-Anteil ≥ 75 % (Modell 84–85 %) nur grob | Förderung eher überschätzt | BAFA-Berechnung im nächsten Schritt; Modul 4 ergänzen |
 | **Hausanschlüsse pauschal 10.000 €** | im großen Netz (54 % Nichtwohngebäude) eher zu niedrig | Kosten nach Anschlussleistung (KWW Tab. 40) |
 
 ## 4 Antwort auf die Leitfrage (Stand 10.11. nachts, WP 1.340 €/kW, beide Netze)
 
 **Nachtrag 14.11. (E39, neues Speichermodell):** Basis und Varianten beider Netze neu gerechnet (`docs/ergebnisse.md`, `docs/ergebnisse_netz_gross.md`). Wärmepreis inkl. Netz: klein 243 (Gas 261), groß 222 (Gas 236) €/MWh; Solar + Speicher spart gegenüber reiner WP + PtH ≈ 33–34 €/MWh. Die Aussagen unten gelten in der Richtung weiter, die Zahlen sind vom 10.11.
+
+**Nachtrag 15.11. (Tornado, Heatmap, Strom neu, Netz klein):** Das System bleibt im Krisenjahr 2022 jetzt günstiger
+als Gas (248 statt 261 €/MWh), weil WP/PtH den Speicher in billigen Stunden laden. **Neu und wichtig:** Ohne
+Flächengrenze wird ein Saisonspeicher (33.400 m³, 11.400 m² Kollektor, 92 % solar) die günstigste Lösung (226 €/MWh,
+−18 €/MWh). Die Aussage „saisonal nur teurer“ gilt also nur für die verfügbaren 13.000 m².
 
 * **Kollektor und Speicher senken Kosten und CO₂** gegenüber reiner WP + PtH (klein −18 €/MWh, groß −21 €/MWh;
   CO₂ −25 bis −32 %), ein Speicher lohnt sich gegenüber Solar ohne Speicher (−12 bzw. −15 €/MWh). Nur mit Solar und

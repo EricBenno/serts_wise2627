@@ -94,7 +94,9 @@ weitere Tabellen) sind noch mit dem alten Speicher gerechnet.** Ergebnisordner
 billiger (232 → 230 €/MWh von 20.000 auf 50.000 m³), +5.000 m² Kollektor bringen −5, dann −3 €/MWh. Geschätztes
 Optimum ≈ 35.000–40.000 m² / 60.000–90.000 m³ (≈ 12–14 ha statt 8 ha), Wärmepreis ≈ 225–227 €/MWh (**−2 bis
 −4 €/MWh**), Solaranteil ≈ 35–40 %, Speicher deutlich saisonaler (< 1,5 Zyklen, > 60 % Winteranteil). Obergrenze,
-denn Fläche kostet im Modell nichts; schon eine geringe Pacht zehrt den Vorteil auf.
+denn Fläche kostet im Modell nichts; schon eine geringe Pacht zehrt den Vorteil auf. **Vorsicht (15.11.):** im
+kleinen Netz lag dieselbe Abschätzung weit daneben (geschätzt −1–2, gerechnet −18 €/MWh mit Saisonspeicher); für
+das große Netz neu rechnen (`uv run serts tornado --netz gross` oder Szenario mit `standort.flaeche_verfuegbar: .inf`).
 
 ## Lesart
 

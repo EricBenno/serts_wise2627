@@ -84,7 +84,9 @@ def tornado(
     for p, g in var.groupby("parameter"):
         g = g.sort_values("wert")
         bw = float(g["basiswert"].iloc[0])
-        werte = " / ".join(f"{w:g}" for w in g["wert"])
+        werte = " / ".join(
+            "unbegrenzt" if np.isinf(float(w)) else f"{float(w):g}" for w in g["wert"]
+        )
         label = f"{p}\n(Basis {bw:g}; Variante {werte})"
         # größter Ausschlag zuerst zeichnen, damit kleinere Balken sichtbar bleiben
         g = g.reindex(g["delta"].abs().sort_values(ascending=False).index)

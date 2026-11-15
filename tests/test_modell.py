@@ -264,6 +264,22 @@ def test_flaeche_begrenzt_optimierte_groessen(cfg, ts):
         )
 
 
+def test_ohne_flaechenbegrenzung(cfg, ts):
+    """flaeche_verfuegbar = .inf schaltet die Flächenbedingung ab (Tornado-Variante)."""
+
+    def kollektor(c):
+        n = network.build_network(c, ts, V_m3=0.0)
+        network.optimize(n, c, ts)
+        return n.generators.at["kollektor", "p_nom_opt"] * network.M2_JE_MW
+
+    billig = cfg.variante("kollektor.kosten_spez", 1.0)  # Kollektor lohnt sich sicher
+    eng = billig.variante("standort.flaeche_verfuegbar", 50.0)
+    a_eng = kollektor(eng)
+    assert a_eng * cfg.get("kollektor.flaechenfaktor") <= 50.0 * (1 + 1e-6)
+    a_frei = kollektor(billig.variante("standort.flaeche_verfuegbar", float("inf")))
+    assert a_frei > a_eng + 1.0
+
+
 def test_speicherkosten_stetig_monoton_und_degressiv(cfg):
     vs = [500, 2500, 5000, 5001, 11999, 12000, 12001, 35000]
     invest = [economics.ptes_invest(cfg, v) for v in vs]
