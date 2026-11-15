@@ -1,6 +1,8 @@
 # Demo: ab welchen Speicherkosten wird der Speicher saisonal? (Raster 09.11.2026, docs/saisonaler_speicher.md)
 # Speicherkostenkurve x0,35 (≈ 35 EUR/m3 bei 10.000 m3, Niveau Dronninglund/Marstal); alles andere wie Basis.
+# Seit E39 (14.11.2026): Optimum bleibt Mischspeicher ≈ 6.000 m3 (3,2 Zyklen, LCOH 142,8); erzwungen >= 12.000 m3
+# wird er saisonal (1,4 Zyklen/a, 63 % Winteranteil), kostet aber 148,8 EUR/MWh (Notebook Abschnitt 8).
 meta:
-  beschreibung: "Speicherkosten x0,35 -> saisonaler Speicher (≈ 10.500 m3, 1,5 Zyklen/a, 75 % Winteranteil)"
+  beschreibung: "Speicherkosten x0,35 (seit E39: Optimum weiter Mischspeicher ≈ 6.000 m3; saisonal erst ab ≈ 12.000 m3 erzwungen)"
 ptes:
   kosten_faktor: 0.35
