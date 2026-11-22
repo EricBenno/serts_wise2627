@@ -42,3 +42,6 @@ desktop.ini
 .idea/
 ~$*
 
+
+# Claude Code: lokale Einstellungen nicht versionieren
+.claude/settings.local.json

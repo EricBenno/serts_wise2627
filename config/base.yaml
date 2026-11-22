@@ -145,15 +145,15 @@ netz:
     einheit: "degC"
     status: vorgabe
     quelle: "TEAM: Netz bleibt bei 80 degC Vorlauf wie in der NB (ersetzt BRF-Wert 75 degC)"
-    sens: [70, 75, 85, 90]
-    hinweis: "Wirkt auf COP Luft- und Speicher-WP, Direktentladung (über 80 °C Boosting, da T_oben 85), Übergangszone und Vorwärmen. Netzverluste bleiben die der Netzberechnung (80/50 °C) -> Vorteil niedriger Vorläufe eher unterschätzt. Sensitivität: uv run serts tornado --parameter netz.T_VL netz.T_VL_min"
+    sens: [70, 90]
+    hinweis: "Wirkt auf COP Luft- und Speicher-WP, Direktentladung (über 80 °C Boosting, da T_oben 85), Übergangszone und Vorwärmen. Netzverluste bleiben die der Netzberechnung (80/50 °C) -> Vorteil niedriger Vorläufe eher unterschätzt. Im Tornado 70/90 °C fest; 75/85 °C einzeln (Stand 21.11. in docs/ergebnisse*.md)."
   T_VL_min:
     wert: 80
     einheit: "degC"
     status: vorgabe
     quelle: "Basis = konstanter Vorlauf (TEAM). Kleiner als T_VL -> gleitender Vorlauf: T_VL bei Tagesmittel <= gleit_T_kalt, linear fallend auf T_VL_min bei >= gleit_T_warm (Szenario vl_gleitend)"
     sens: [60, 70]
-    hinweis: "Wirkt stündlich auf den COP von Luft- und Speicher-WP und das Boosting (heatpump.vorlauf). Übergangszone, Vorwärmen und Netzverluste rechnen weiter mit T_VL -> eher vorsichtig."
+    hinweis: "Wirkt stündlich auf den COP von Luft- und Speicher-WP und das Boosting (heatpump.vorlauf). Übergangszone, Vorwärmen und Netzverluste rechnen weiter mit T_VL -> eher vorsichtig. Im Tornado: gleitend 80 -> 60 / 80 -> 70 °C."
   gleit_T_kalt:
     wert: -10
     einheit: "degC"
@@ -898,6 +898,7 @@ tornado:
       - last.skalierung
       - last.ankerkunde_anteil
       - ptes.verlustrate
+      - ptes.groessen_exponent
       - ptes.vorwaermen
       - ptes.T_oben
       - ptes.austauschrate
@@ -907,6 +908,8 @@ tornado:
       - waermepumpe.kosten_spez_speicher
       - waermepumpe.guetegrad_faktor
       - netz.T_RL
+      - netz.T_VL
+      - netz.T_VL_min
       - kollektor.kosten_spez
       - waermepumpe.kosten_spez
       - oekonomie.zins

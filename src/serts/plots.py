@@ -88,6 +88,8 @@ def tornado(
             "unbegrenzt" if np.isinf(float(w)) else f"{float(w):g}" for w in g["wert"]
         )
         label = f"{p}\n(Basis {bw:g}; Variante {werte})"
+        if p == "netz.T_VL_min":  # sonst als fester Vorlauf missverständlich
+            label = f"{p} (gleitender Vorlauf)\n(Basis {bw:g} fest; Sommer {werte} °C)"
         # größter Ausschlag zuerst zeichnen, damit kleinere Balken sichtbar bleiben
         g = g.reindex(g["delta"].abs().sort_values(ascending=False).index)
         gruppen.append((label, bw, g))

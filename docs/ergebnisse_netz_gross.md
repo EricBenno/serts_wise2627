@@ -94,7 +94,22 @@ im Vergleich alt“, die alte Variantentabelle und „Lesart“ zeigen den Stand
 | LCOH Erzeugung [€/MWh] | 158,8 | 172,0 | 177,3 | 142,1 | 165,3 |
 | Wärmepreis inkl. Netz [€/MWh] | **228,9** | 243,8 | 249,8 | **200,1** | **236,2** |
 
-## Heatmaps (`uv run serts heatmap --netz gross`, Stand 15.11.2026 nach E39, ≈ 12 min)
+## Heatmaps Kollektorfläche × Speichervolumen (Stand 22.11.2026 nach E41)
+
+`results/gross/20261122-164427_base_heatmap`, Bild `docs/img/heatmap_gross.png`, `heatmap_alle.png` (neun Kennzahlen). Wärmepreis inkl. Netz [€/MWh], WP und PtH je Punkt optimiert, „–“ = passt nicht auf die Fläche:
+
+| V [m³] \ A [m²] | 5.000 | 10.000 | 15.000 | 20.000 | 25.000 | 30.000 |
+|---|---|---|---|---|---|---|
+| 50.000 | 249 | 242 | 236 | 231 | 226 | – |
+| 35.000 | 248 | 241 | 236 | 231 | 226 | – |
+| 20.000 | 247 | 242 | 237 | 232 | 229 | 227 |
+| 10.000 | 248 | 243 | 239 | 237 | 237 | 237 |
+| 5.000 | 261 | 245 | 243 | 243 | 244 | 245 |
+| 0 | 250 | 249 | 249 | 251 | 252 | 254 |
+
+Bester Rasterpunkt 25.000 m² / 50.000 m³ mit 226,0 €/MWh (35.000 m³: 226,5); freies Optimum 29.200 m² / 33.800 m³ mit 223,1. Ab ≈ 20.000 m³ ist das Feld flach (±3 €/MWh); große Kollektorflächen lohnen nur mit Speicher.
+
+## Heatmaps alt (`uv run serts heatmap --netz gross`, Stand 15.11.2026 nach E39, ≈ 12 min)
 
 `results/gross/20261115-152947_base_heatmap`, `heatmap_alle.png` (neun Kennzahlen). Wärmepreis inkl. Netz [€/MWh],
 Gas-Fernwärme 236; Basis-Optimum 29.800 m² / 30.300 m³ = 221,6:
@@ -115,7 +130,40 @@ Gas-Fernwärme 236; Basis-Optimum 29.800 m² / 30.300 m³ = 221,6:
 * **Charakter**: bei 25.000 m² / 35.000 m³ 3,4 Zyklen, 36 % Winteranteil (Mischspeicher). Saisonal (< 1 Zyklus,
   > 70 % Winter) nur mit wenig Kollektor (5.000–10.000 m² mit ≥ 20.000 m³) – dort teurer als Gas.
 
-## Sensitivitäten (`uv run serts tornado --netz gross`, 50 Varianten, Stand 15.11.2026 nach E39)
+## Sensitivitäten (`uv run serts tornado --netz gross`, 60 Varianten, Stand 22.11.2026 nach E41/E42)
+
+`results/gross/20261122-135246_base_tornado` (≈ 1,6 h). Wärmepreis inkl. Netz (Basis 223,1 €/MWh) und Vorteil
+gegenüber Gas-Fernwärme (Basis **+11,7 €/MWh**, LCOH Erzeugung):
+
+| Parameter (Variante) | Wärmepreis inkl. Netz | Vorteil ggü. Gas | Kollektor / Speicher |
+|---|---|---|---|
+| Gaspreis 8 / 16 ct/kWh | – | **−35 / +58** | – |
+| Strompreis 20 / 40 ct/kWh | 186 / 260 | **+45 / −21** | 29.100 / 34.600; 29.300 / 33.100 |
+| CO₂-Preis 55 / 200 €/t | – | +2 / +33 | – |
+| **keine Flächenbegrenzung** | **200** | **+33** | **57.700 m² / 130.000 m³** (Segmentgrenze), Solar 58 % |
+| Förderung BEW 40 % | 194 | +28 | gleich |
+| **Vorlauf gleitend 80 → 60 / 80 → 70 °C** (neu) | **205 / 214** | **+28 / +20** | 28.300 / 39.300; 29.000 / 35.400 |
+| **Vorlauf fest 70 / 90 °C** (neu) | **209 / 228** | **+24 / +7** | 29.000 / 35.200; gleich |
+| Gütegrad Luft-WP × 0,85 / × 1,15 | 242 / 209 | **−5,2 / +24** | gleich |
+| Strompreis +2 %/a real | 243 | **−5,9** | gleich |
+| Leistungspreis 0 / 163,73 €/kW·a | 221 / 239 | +13 / **−2,0** | 28.900 / 35.900 bei 163,73 |
+| Zins 3 / 7 %; WP-Kosten Luft 1,0 / 1,73 Mio. €/MW | 205 / 243; 215 / 232 | +19 / +4 | gleich |
+| Nebenkosten 0 / 20 %; Kollektor 220 / 350 €/m² | 213–233 | +7 … +16 | gleich |
+| Strahlung − / + 10 %; Last × 0,8 / × 1,2; Ankerkunde + 20 / 40 % | 201–234 | +6 … +17 | 28.500 / 38.400 bei +10 % Strahlung |
+| PtH-Reserve 0; η₀; Feldverluste; Speicherverluste; Speicherkosten ±30 % | 219–227 | +8 … +15 | 29.000–29.600 / 31.800–35.300 |
+| **Speicher-Obertemperatur 80 / 90 °C** (neu) | 224 / 222 | +10 / +13 | 28.700 / 36.900; 29.600 / 31.700 |
+| Vorwärmen aus; Rücklauf; b₀; Größenabhängigkeit; Kosten Speicher-WP; Jensen-Wirkungsgrad | 222–224 | ±1,2 | gleich |
+| **Durchflussgrenze aus** (neu) | 223,1 | +0,2 | 29.800 / 30.400 |
+| Hausanschluss, Trasse, Anteil Straße | 212–234 | unverändert | gleiches Netz |
+
+**Lesart (neu):**
+* Wie im kleinen Netz: Gas- und Strompreis, Fläche, Förderung, **Vorlauf** und WP-Gütegrad entscheiden. Der Vorteil
+  gegenüber Gas kippt bei 15 % schlechterem Gütegrad, +2 %/a realem Strompreisanstieg oder hohem Leistungspreis.
+* **Gleitender Vorlauf bis 60 °C: −18 €/MWh**, der Speicher wächst dabei auf 39.300 m³ (bessere Speicher-WP).
+* E41-Details (Obertemperatur, Durchflussgrenze, Speicher-WP) verschieben die Auslegung etwas, den Preis ≤ 1,4 €/MWh.
+* Ohne Flächengrenze wieder am größten Kostensegment (130.000 m³); Nachrechnung bis 200.000 m³ siehe unten (15.11.).
+
+## Sensitivitäten alt (`uv run serts tornado --netz gross`, 50 Varianten, Stand 15.11.2026 nach E39)
 
 `results/gross/20261115-154127_base_tornado` (≈ 2,4 h). Wärmepreis inkl. Netz (Basis 221,6 €/MWh) und Vorteil
 gegenüber Gas-Fernwärme (Basis **+13,0 €/MWh**, LCOH Erzeugung):

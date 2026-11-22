@@ -383,6 +383,14 @@ def test_segmentauswahl_findet_gleiches_optimum(cfg, ts):
     assert nah["kosten_a_gesamt"] == pytest.approx(voll["kosten_a_gesamt"], rel=1e-6)
 
 
+def test_segmentauswahl_unzulaessig_rechnet_restliche(cfg, ts):
+    """Sind Startsegment und Nachbarn unzulässig (kleine Fläche), werden die übrigen Segmente gerechnet."""
+    eng = cfg.variante("standort.flaeche_verfuegbar", 200.0)  # < 1.000 m3 / 2,65 m3/m2
+    _, k, _ = loese(eng, ts, start_segment=3)
+    assert k["segment_index"] == 0
+    assert k["V_m3"] <= 1000 * (1 + 1e-6)
+
+
 def test_segmente_parallel_wie_seriell(cfg, ts):
     _, seriell, _ = loese(cfg, ts)
     n, parallel, _ = loese(cfg, ts, jobs=2)

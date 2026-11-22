@@ -469,3 +469,8 @@ Voller Tornado nicht neu gerechnet (Wirkung klein); stattdessen Vorlauf-Sensitiv
   (Windows BELOW_NORMAL), damit der Rechner bedienbar bleibt; ein freier Rechner wird trotzdem voll genutzt.
 **Wirkung:** Vorlauf-Sensitivität Netz klein (7 Läufe) 14,5 statt 49 min, alle Ergebnisse identisch
 (`results/klein/20261122-114029_base_sensitivitaet`).
+**Nachtrag 22.11.2026:** `ptes.groessen_exponent` wieder im Tornado (Wirkung 15.11. −3,0 €/MWh klein, nicht
+vernachlässigbar; die Auswahl hatte nur die Spanne zwischen sens-Werten verglichen, bei einem sens-Wert also 0).
+Vorlauf jetzt fester Teil des Tornados: `netz.T_VL` 70/90 °C fest, `netz.T_VL_min` gleitend 80 → 60/70 °C
+(75/85 °C nur noch einzeln, Ergebnisse 21.11.). Segmentsuche: sind Startsegment und Nachbarn alle unzulässig
+(z. B. Variante mit weniger Fläche), rechnet sie die übrigen Segmente, statt abzubrechen.

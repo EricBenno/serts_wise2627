@@ -3,6 +3,7 @@ name = "serts"
 version = "0.1.0"
 description = "SERTS: Solares Waermenetz mit Erdbeckenspeicher (PTES), Grosswaermepumpe und PtH - Fallstudie Bad Lippspringe"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "pypsa>=0.35",

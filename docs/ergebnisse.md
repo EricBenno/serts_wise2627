@@ -144,7 +144,23 @@ auf ≈ 6 €/MWh.
 * **Mit BEW** ändert sich die Auslegung kaum (die Fläche bindet schon), der Wärmepreis sinkt um ≈ 35 €/MWh.
   40 % ist die Obergrenze; die BAFA begrenzt auf die Wirtschaftlichkeitslücke (E37).
 
-## Heatmaps Kollektorfläche × Speichervolumen (`uv run serts heatmap`, Stand 15.11.2026 nach E39, ≈ 12 min)
+## Heatmaps Kollektorfläche × Speichervolumen (Stand 22.11.2026 nach E41)
+
+`results/klein/20261122-163335_base_heatmap`, Bild `docs/img/heatmap_klein.png`, `heatmap_alle.png` (neun Kennzahlen). Wärmepreis inkl. Netz [€/MWh], WP und PtH je Punkt optimiert, „–“ = passt nicht auf die Fläche:
+
+| V [m³] \ A [m²] | 1.000 | 2.000 | 3.000 | 4.000 | 5.000 |
+|---|---|---|---|---|---|
+| 10.000 | 281 | 271 | 261 | 253 | – |
+| 8.000 | 279 | 268 | 259 | 251 | – |
+| 6.000 | 276 | 266 | 257 | 249 | – |
+| 4.000 | 273 | 263 | 255 | 249 | – |
+| 2.000 | 270 | 262 | 257 | 257 | 258 |
+| 1.000 | 282 | 264 | 264 | 267 | 271 |
+| 0 | 272 | 273 | 277 | 282 | 287 |
+
+Bester Rasterpunkt 4.000 m² / 4.000 m³ mit 248,6 €/MWh (6.000 m³: 248,9); das freie Optimum (4.670 m² / 6.000 m³, 244,5) liegt zwischen den Rasterpunkten, 5.000 m² passt nur mit ≤ 2.000 m³ auf die Fläche. Entlang 4.000 m² ändert sich der Preis zwischen 4.000 und 10.000 m³ nur um 4 €/MWh; mehr Kollektor bringt mehr als mehr Speicher. Ohne Speicher steigt der Preis mit der Kollektorfläche (Sommerüberschuss ungenutzt).
+
+## Heatmaps alt Kollektorfläche × Speichervolumen (`uv run serts heatmap`, Stand 15.11.2026 nach E39, ≈ 12 min)
 
 `results/klein/20261115-142814_base_heatmap`; `heatmap_alle.png` zeigt neun Kennzahlen (Wärmepreis, mit BEW,
 Vorteil ggü. Gas, Solaranteil, CO₂, Speicherzyklen, Winteranteil, WP-Leistung, PtH-Wärme). Feste Größen, WP und PtH
@@ -197,7 +213,49 @@ Preisjahr unabhängig vom Wetterjahr 2022. In den Day-Ahead-Szenarien dürfen WP
 * Die Auslegung bleibt bei ≈ 4.650 m² / 6.000 m³ (Fläche bindet), die Strommenge ist überall gleich.
 * Nicht modelliert: Korrelation Preis ↔ Wetter (Preis- und Wetterjahr verschieden).
 
-## Sensitivitäten (`uv run serts tornado`, 50 Varianten, Stand 15.11.2026 nach E39, Größen jeweils neu optimiert)
+## Sensitivitäten (`uv run serts tornado`, 60 Varianten, Stand 22.11.2026 nach E41/E42, Größen jeweils neu optimiert)
+
+`results/klein/20261122-121514_base_tornado` (≈ 1,6 h, 6 Läufe parallel). Wärmepreis inkl. Netz (Basis
+244,5 €/MWh) und Vorteil gegenüber Gas-Fernwärme (Basis **+14,0 €/MWh**, LCOH Erzeugung). Neu gegenüber 15.11.:
+Vorlauf, Speicher-Obertemperatur, Durchflussgrenze, Jensen-Wirkungsgrad, Kosten Speicher-WP.
+
+| Parameter (Variante) | Wärmepreis inkl. Netz | Vorteil ggü. Gas | Kollektor / Speicher |
+|---|---|---|---|
+| Gaspreis 8 / 16 ct/kWh | – | **−33 / +61** | – |
+| Strompreis 20 / 40 ct/kWh | 211 / 278 | **+42 / −14** | gleich |
+| CO₂-Preis 55 / 200 €/t | – | +4,5 / +35 | – |
+| Förderung BEW 40 % | 210 | +35 | gleich |
+| **keine Flächenbegrenzung** | **226** | **+30** | **11.460 m² / 33.610 m³**, Solar 93 % |
+| **Vorlauf gleitend 80 → 60 / 80 → 70 °C** (neu) | **229 / 236** | **+27 / +21** | gleich |
+| **Vorlauf fest 70 / 90 °C** (neu) | **232 / 249** | **+25 / +10** | gleich |
+| Gütegrad Luft-WP × 0,85 / × 1,15 | 262 / 232 | **−0,4 / +25** | gleich |
+| Zins 3 / 7 % (real) | 221 / 269 | +24 / +3,6 | gleich |
+| Strompreis +2 %/a real | 263 | −1,1 | gleich |
+| WP-Kosten Luft 1,0 / 1,73 Mio. €/MW | 237 / 253 | +20 / +7 | gleich |
+| Nebenkosten 0 / 20 % | 232 / 257 | +20 / +8 | gleich |
+| Kollektor 240 / 380 €/m² | 238 / 252 | +19 / +8 | gleich |
+| Strahlung − / + 10 % | 253 / 238 | +7 / +19 | 4.930 / 4.420; 4.450 / 7.350 |
+| Leistungspreis 0 / 163,73 €/kW·a | 243 / 259 | +15 / +2 | gleich |
+| Ankerkunde + 20 / 40 %; Last × 0,8 / × 1,2 | 227 / 215; 264 / 233 | +15 / +16; +17 / +11 | Anker: 4.880 / 4.680 und 4.910 / 4.510 |
+| η₀ 0,75 / 0,82; Feldverluste 5 / 15 %; Speicherverluste 1,5 / 8 ·10⁻⁵ 1/h | 241–250 | +9 … +17 | bis 4.580 / 6.510 |
+| Speicherkosten × 0,7 / × 1,3; PtH-Reserve 0; Größenabhängigkeit aus | 241–248 | +11 … +17 | gleich bzw. 4.630 / 6.250 |
+| Vorwärmen aus | 247 | +12 | gleich |
+| **Speicher-Obertemperatur 80 / 90 °C** (neu) | 247 / 244 | +12 / +15 | 4.600 / 6.420; gleich |
+| Kosten Speicher-WP 0,89 / 1,42 Mio. €/MW; Jensen-Wirkungsgrad 0,7 / 0,9; Rücklauf 40 / 50 °C; b₀ | 243–246 | ±1,5 | gleich |
+| **Durchflussgrenze aus** (neu) | 244,5 | ±0 | gleich |
+| Hausanschluss, Trasse, Anteil Straße | 226–263 | unverändert | gleiches Netz |
+
+**Lesart (neu):**
+* Reihenfolge wie am 15.11.: **Gas- und Strompreis**, dann Förderung, **Fläche**, **Vorlauf** und Effizienz der Luft-WP.
+* **Der Vorlauf ist jetzt einer der größten technischen Hebel:** ein im Sommer auf 60 °C gleitender Vorlauf bringt
+  −16 €/MWh, fast so viel wie die Aufhebung der Flächengrenze; ein fester Vorlauf von 90 °C kostet +4,6 €/MWh.
+* **Die neuen Speicherdetails aus E41 wirken kaum:** Obertemperatur 80/90 °C ±2,6, Kosten und COP der Speicher-WP
+  ≤ 1,1, Durchflussgrenze 0 €/MWh. Die Speicher-WP bleibt klein (0,15 MW); das Ergebnis hängt an Luft-WP, Strom und
+  Fläche, nicht an der Speicher-WP.
+* Die getrennte Vorlauf-Sensitivität vom 21.11. (alle Segmente) und der Tornado (nur Nachbarsegmente, E42) liefern
+  dieselben Werte – die verkürzte Segmentsuche verliert hier nichts.
+
+## Sensitivitäten alt (`uv run serts tornado`, 50 Varianten, Stand 15.11.2026 nach E39, Größen jeweils neu optimiert)
 
 `results/klein/20261115-115003_base_tornado` (≈ 2,6 h mit 4 Läufen parallel). Wärmepreis inkl. Netz (Basis
 243,4 €/MWh) und Vorteil gegenüber Gas-Fernwärme (Basis **+14,9 €/MWh**, LCOH Erzeugung):

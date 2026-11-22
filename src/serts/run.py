@@ -124,8 +124,9 @@ def loese(
         for i, n, k, r in rechnen(offen):
             ergebnisse[i] = (n, k, r)
         gueltig = {i: e for i, e in ergebnisse.items() if e[0] is not None}
-        if not gueltig:
-            break
+        if not gueltig:  # Auswahl ganz unzulässig (z. B. weniger Fläche) -> restliche Segmente
+            offen = [j for j in range(anzahl) if j not in ergebnisse]
+            continue
         beste_i = min(gueltig, key=lambda i: gueltig[i][1]["kosten_a_gesamt"])
         offen = [j for j in (beste_i - 1, beste_i + 1) if 0 <= j < anzahl and j not in ergebnisse]
 

@@ -6,7 +6,7 @@ Werden mit `uv run serts import-raw` aus dem Team-Ordner `../Bad Lippspringe` ko
 
 | Ordner | Inhalt | Herkunft | Im Git? |
 |---|---|---|---|
-| `bad_lippspringe/` | `results netzberechnung.xlsx`: Lastgang 2022 (8760 h, MW) je BDEW-Typ, Netzverluste, Gebäudestatistik | eigene Netzberechnung des Teams (klein + `results_gross.xlsx`) | ja (je 0,6 MB, nicht anders reproduzierbar) |
+| `bad_lippspringe/` | `results netzberechnung.xlsx`: Lastgang 2022 (8760 h, MW) je BDEW-Typ, Netzverluste, Gebäudestatistik | eigene Netzberechnung des Teams mit F\|Heat (klein + `results_gross.xlsx`), fiktive Netze auf Basis ALKIS (Geobasis NRW), OpenStreetMap (ODbL) und LANUV-Wärmebedarfsmodell (KWP NRW) | ja (je 0,6 MB, nicht anders reproduzierbar) |
 | `dwd/tu_03028/` | Lufttemperatur/Feuchte stündlich 1971–2025, UTC | DWD CDC `observations_germany/climate/hourly/air_temperature` | ja (23 MB) |
 | `dwd/st_03028/` | Global-/Diffusstrahlung stündlich 1982–08/2011 | DWD CDC `.../hourly/solar` | ja (21 MB) |
 | `dwd/eb_03028/` | Erdbodentemperatur 2–100 cm | DWD CDC `.../hourly/soil_temperature` | ja (18 MB, im Modell derzeit nicht genutzt) |
@@ -15,3 +15,5 @@ Werden mit `uv run serts import-raw` aus dem Team-Ordner `../Bad Lippspringe` ko
 
 Nicht importiert (bewusst): GIS-Daten (`*.gpkg`, KWP-NRW-Shapes, QGIS-Projekt), DWD-Sonnenscheindauer (SD).
 DWD-Nutzungsbedingungen: Datenlizenz Deutschland – Namensnennung 2.0, Quelle „Deutscher Wetterdienst“ angeben.
+`kww/`: KWW Technikkatalog Wärmeplanung (Kompetenzzentrum Kommunale Wärmewende), CC BY 4.0. `pvgis/`: © Europäische
+Union, JRC PVGIS. Alle Quellen mit Nennung: Abschnitt „Lizenz und Quellen“ im Haupt-README.
