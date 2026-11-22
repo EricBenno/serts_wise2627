@@ -9,7 +9,12 @@ waermepumpe:
     einheit: "EUR/MW_th"
     status: belegt
     quelle: "KWW Tab. 24 (Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto): 1.730 EUR/kW_th bei 1 MW (2 MW: 1.600; 5 MW: 1.440; 10 MW: 1.340), Unsicherheit ±30 %"
-    hinweis: "Basis (Frederikssund 2022, DK, NH3): 1,0 Mio. EUR/MW. Das KWW enthält keine Speicher-WP (Sole/Wasser-Quelle) -> gleicher Satz für beide Teile angenommen."
+    hinweis: "Nur Luft-WP (seit E41 getrennt von der Speicher-WP)."
+  kosten_spez_speicher:
+    wert: 1310000
+    einheit: "EUR/MW_th"
+    status: annahme
+    quelle: "KWW Tab. 26/27 (Sole/Wasser, 1-MW-Klasse): 1.070 EUR/kW bei 50 K, 1.660 EUR/kW bei 85 K Hub; linear auf 64 K -> 1.310 EUR/kW"
 pth:
   kosten_spez:
     wert: 340000

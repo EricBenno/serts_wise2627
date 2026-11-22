@@ -157,7 +157,7 @@ def _cmd_tornado(a):
 
     from serts.tornado import tornado
 
-    out = tornado(_cfg(a), jobs=a.jobs)
+    out = tornado(_cfg(a), jobs=a.jobs, nur=a.parameter)
     df = pd.read_csv(out / "tornado.csv").sort_values(["parameter", "wert"])
     cols = ["parameter", "wert", "lcoh", "lcoh_inkl_netz", "abstand_gas", "solar_gesamt", "V_m3"]
     print(df[cols].round(3).to_string(index=False))
@@ -206,7 +206,13 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("tornado", help="Sensitivitäten (tornado.parameter x sens-Werte)")
     p.add_argument("--szenario", default=None)
     p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
-    p.add_argument("--jobs", type=int, default=4, help="parallele Läufe (je 1 Thread)")
+    p.add_argument("--jobs", type=int, default=6, help="parallele Läufe (je 1 Thread)")
+    p.add_argument(
+        "--parameter",
+        nargs="+",
+        default=None,
+        help="nur diese Parameter variieren (sens-Werte aus der Config), z. B. netz.T_VL",
+    )
     p.set_defaults(func=_cmd_tornado)
 
     p = sub.add_parser(
@@ -240,6 +246,10 @@ def main(argv: list[str] | None = None) -> int:
     ).set_defaults(func=_cmd_check_strahlung)
 
     a = ap.parse_args(argv)
+    if a.cmd in ("run", "tornado", "varianten", "heatmap"):
+        from serts.run import niedrige_prioritaet
+
+        niedrige_prioritaet()  # Rechner bleibt bedienbar; Kindprozesse erben die Priorität
     return int(a.func(a) or 0)
 
 

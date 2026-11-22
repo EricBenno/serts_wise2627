@@ -22,7 +22,7 @@ import pandas as pd
 
 from serts.config import Config
 from serts.prepare import build_zeitreihen
-from serts.run import loese, new_run_dir
+from serts.run import loese, new_run_dir, niedrige_prioritaet
 
 log = logging.getLogger(__name__)
 
@@ -112,7 +112,7 @@ def varianten(cfg: Config, jobs: int = 2) -> Path:
     out = new_run_dir(cfg, "varianten")
     f = faelle(cfg)
     threads = 1 if jobs > 1 else None
-    with ProcessPoolExecutor(max_workers=jobs) as pool:
+    with ProcessPoolExecutor(max_workers=jobs, initializer=niedrige_prioritaet) as pool:
         futs = [pool.submit(_lauf, name, c, A, V, threads) for name, (c, A, V) in f.items()]
         ergebnisse = dict(fu.result() for fu in futs)
     df = pd.DataFrame({name: ergebnisse[name] for name in f}).loc[

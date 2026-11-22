@@ -430,3 +430,42 @@ Solaranteil 92 %, Wärmepreis 226 statt 243 €/MWh, Flächenbedarf ≈ 38.900 m
 **Netz groß (15.11.):** ohne Grenze kein inneres Optimum – das Volumen läuft an die letzte Stützstelle (130.000 m³,
 nachgerechnet bis 200.000 m³ = Gültigkeitsgrenze KWW: 72.900 m², 73 % solar, 186 statt 222 €/MWh, 24 ha).
 `ptes.segmente_m3` Netz groß bleibt bei 130.000 m³ (Basis bindet die Fläche ohnehin).
+
+## E41 Boosting, zwei Wärmepumpen, COP nach Jensen, Durchflussgrenze (21.11.2026)
+
+Anlass: Vergleich mit Schauß et al. 2026 (`docs/vergleich_schauss2026.md`).
+- *Direktentladung/Boosting:* Ist der Kern kälter als Vorlauf + 5 K (`ptes.T_oben` < 85 °C oder gleitender Vorlauf
+  darüber), braucht jede MWh Direktentladung α(t) = (T_VL(t) + 5 − T_oben)/(T_oben − T_RL) MWh Nachheizen durch
+  WP/PtH in derselben Stunde (Paper Gl. 4a). Zusammen mit dem Vorwärmen in einer Bedingung (constraints.py Nr. 5).
+  Basis 85 °C: α = 0, Ergebnis unverändert. Vorher ging der Kern bei T_oben < 85 °C unphysikalisch direkt ins Netz.
+  `ptes.T_oben` (80/90 °C) jetzt im Tornado.
+- *Zwei Wärmepumpen:* Luft-WP (`wp_luft_out`, KWW Tab. 24, 1.340 €/kW) und Speicher-WP (`wp_speicher_out`,
+  Wasser/Wasser, KWW Tab. 26/27 auf 64 K Hub interpoliert: 1.100 €/kW) mit eigener Leistung statt einer gemeinsamen
+  `wp_out`. `P_WP_MW` in kpi.json = Summe; neu `P_WP_luft_MW`, `P_WP_speicher_MW`.
+- *COP Speicher-WP nach Jensen et al. 2018* (Ammoniak, Pinch 5 K, isentrop 0,8; Umsetzung PyPSA-Eur), Temperaturen
+  wie Schauß et al.: Senke Rücklauf → Vorlauf, Quelle (T_RL + T_unten)/2 → 6 K kälter. Reproduziert Fig. S7 des
+  Papers auf ±0,02. Basis 3,91 statt fest 4,5 (`waermepumpe.cop_ansatz_speicher`; `fest` für die Validierung
+  Dronninglund). Luft-WP bleibt KWW (Jensen ohne Abtauen ≈ 30 % höher; Option `cop_ansatz_luft: jensen`).
+- *Durchfluss* (`ptes.austauschrate` 0,0094 1/h): Volumenstrom je Richtung ≤ Rate × V, Wärme / (c × Spreizung je
+  Temperaturband; WP-Quelle 6 K). Rate = höchster Stundenwert durch die Diffusoren in Dronninglund 2014 (565 m³/h bei
+  60.000 m³). Gemessener Höchstwert, keine Auslegungsgrenze; `.inf` = aus.
+**Wirkung Netz klein (Basis):** 4.670 m² / 6.000 m³ wie vorher; WP 0,84 MW Luft + 0,15 MW Speicher; Wärmepreis
+244,5 statt 243,4 €/MWh inkl. Netz (LCOH 150,9). **Netz groß:** 29.240 m² / 33.780 m³, WP 8,65 + 1,09 MW, 223,1 statt 221,6 €/MWh.
+Voller Tornado nicht neu gerechnet (Wirkung klein); stattdessen Vorlauf-Sensitivität 70–90 °C fest und gleitend bis
+60/70 °C: −14 bis +5 €/MWh, fast nur über COP/Strom, Boosting über 80 °C ≤ 415 MWh/a (Tabellen in
+`docs/ergebnisse.md`, `docs/ergebnisse_netz_gross.md`).
+
+## E42 Rechenzeit Tornado (22.11.2026)
+
+- *Tornado-Liste gekürzt:* `ptes.uebergang_ref`, `waermepumpe.luft_leistung_bei_tmin` und `ptes.groessen_exponent`
+  fliegen raus (Tornado 15.11.: höchstens ±0,2 / +0,1 / −3,0 €/MWh klein, ±0,03 / +0,1 / −0,4 groß). Die Parameter
+  bleiben in `config/base.yaml` mit ihren `sens`-Werten; einzeln weiter mit `serts tornado --parameter ...`.
+- *Nur Nachbarsegmente:* Die Basis rechnet alle Kostensegmente des Speichers. Jede Tornado-Variante rechnet nur das
+  Gewinnersegment der Basis und seine Nachbarn (`run.loese(start_segment=...)`). Liegt das Optimum am Rand dieser
+  Auswahl, kommt so lange das nächste Segment dazu, bis es innen oder am ersten/letzten Segment liegt. Fehlt dadurch
+  ein Optimum, dann nur, wenn die Kosten über die Segmente mehr als ein Tal haben (bisher nicht beobachtet).
+- *Parallel und niedrige Priorität:* Die Basis rechnet ihre Segmente parallel; Tornado standardmäßig 6 statt 4
+  parallele Läufe (8 Kerne, 32 GB). `run`, `tornado`, `varianten`, `heatmap` laufen mit niedriger Prozesspriorität
+  (Windows BELOW_NORMAL), damit der Rechner bedienbar bleibt; ein freier Rechner wird trotzdem voll genutzt.
+**Wirkung:** Vorlauf-Sensitivität Netz klein (7 Läufe) 14,5 statt 49 min, alle Ergebnisse identisch
+(`results/klein/20261122-114029_base_sensitivitaet`).

@@ -145,14 +145,15 @@ netz:
     einheit: "degC"
     status: vorgabe
     quelle: "TEAM: Netz bleibt bei 80 degC Vorlauf wie in der NB (ersetzt BRF-Wert 75 degC)"
-    sens: [75]
+    sens: [70, 75, 85, 90]
+    hinweis: "Wirkt auf COP Luft- und Speicher-WP, Direktentladung (über 80 °C Boosting, da T_oben 85), Übergangszone und Vorwärmen. Netzverluste bleiben die der Netzberechnung (80/50 °C) -> Vorteil niedriger Vorläufe eher unterschätzt. Sensitivität: uv run serts tornado --parameter netz.T_VL netz.T_VL_min"
   T_VL_min:
     wert: 80
     einheit: "degC"
     status: vorgabe
     quelle: "Basis = konstanter Vorlauf (TEAM). Kleiner als T_VL -> gleitender Vorlauf: T_VL bei Tagesmittel <= gleit_T_kalt, linear fallend auf T_VL_min bei >= gleit_T_warm (Szenario vl_gleitend)"
-    sens: [70]
-    hinweis: "Wirkt nur auf den COP der Luft-WP (heatpump.py). Speicher (Direktentladung ab T_VL + 5 K) und Netzverluste rechnen weiter mit T_VL -> eher vorsichtig."
+    sens: [60, 70]
+    hinweis: "Wirkt stündlich auf den COP von Luft- und Speicher-WP und das Boosting (heatpump.vorlauf). Übergangszone, Vorwärmen und Netzverluste rechnen weiter mit T_VL -> eher vorsichtig."
   gleit_T_kalt:
     wert: -10
     einheit: "degC"
@@ -234,8 +235,15 @@ ptes:
     einheit: "degC"
     status: vorgabe
     quelle: "BRF §3.1; Liner-Grenze (Xiang et al. 2022)"
-    sens: [90]
-    hinweis: "Direktentladung braucht T_oben >= T_VL + 5 K = 85 degC -> bei VL 80 genau an der Grenze."
+    sens: [80, 90]
+    hinweis: "Direktentladung braucht T_oben >= T_VL + direkt_dT = 85 degC. Darunter muss WP/PtH nachheizen (Boosting, docs E41): je MWh Entladung (T_VL + dT - T_oben)/(T_oben - T_RL) MWh, z. B. 80 degC -> 0,14. Schauß et al. 2026: Top-Temperatur ist ein Haupttreiber des PTES-Werts."
+  austauschrate:
+    wert: 0.0094
+    einheit: "1/h"
+    status: belegt
+    quelle: "Messdaten Dronninglund 2014 (PitStorages/DronninglundData, Datei *_flow_rates_2014): höchster Stundenmittelwert des Volumenstroms durch die Diffusoren 565 m3/h (Summe der drei Diffusoren / 2; 10-min-Spitze 610, P99 466) bei 60.000 m3 -> 0,0094 je Stunde"
+    sens: [.inf]
+    hinweis: "Volumenstrom beim Laden bzw. Entladen <= Rate x V (je Richtung, je Stunde), Wärme = Volumenstrom x c x Spreizung des Temperaturbands. Gemessener Höchstwert, keine Auslegungsgrenze -> eher vorsichtig. .inf = keine Grenze. DEA (Technology Data Energy Storage, PTES): Energie/Leistung 30 h, entspricht ≈ 0,03 je Stunde bei voller Spreizung (Schauß et al. 2026)."
   T_unten:
     wert: 10
     einheit: "degC"
@@ -433,8 +441,8 @@ waermepumpe:
     einheit: "-"
     status: vorgabe
     quelle: "KWW Tab. 24/25: COP = Gütegrad x T_VL / (T_VL - T_a) mit Gütegrad 46 % (70 °C) bzw. 44 % (95 °C), JAZ 2,5 bzw. 1,8 bei 7 °C Heizperiodenmittel; für 80 °C linear 45,2 % -> COP 2,19 bei 7 °C. Ersetzt den Lorenz-Ansatz des Briefings (der war ≈ 20 % optimistischer: Arbeitszahl 2022 2,65 statt 2,22)."
-    sens: [lorenz]
-    hinweis: "lorenz = Briefing-Ansatz (eta_G_luft, Abtauabschlag, logarithmische Mitteltemperaturen). Heizperiode 2022 (Okt-Apr) 6,4 °C, Mittel 1992-2021 5,5 °C (DWD 03028) -> Wetterjahr nur ≈ 1 % günstiger. docs/entscheidungen.md E35."
+    sens: [lorenz, jensen]
+    hinweis: "jensen = wie Speicher-WP (Schauß et al. 2026), ohne Abtauen ≈ 30 % über KWW. lorenz = Briefing-Ansatz (eta_G_luft, Abtauabschlag, logarithmische Mitteltemperaturen). Heizperiode 2022 (Okt-Apr) 6,4 °C, Mittel 1992-2021 5,5 °C (DWD 03028) -> Wetterjahr nur ≈ 1 % günstiger. docs/entscheidungen.md E35."
   guetegrad_faktor:
     wert: 1.0
     einheit: "-"
@@ -481,20 +489,50 @@ waermepumpe:
     quelle: "BRF §3.4: linear auf 80 % der Leistung bei T_min_luft (-7 degC); Rest Annahme, keine Referenz unter -5 degC"
     sens: [0.6, 1.0]
     hinweis: "Thermische Leistung der Luft-WP relativ zur gebauten WP-Leistung (docs E27); 1,0 = altes Verhalten (Leistung unabhängig von der Temperatur)."
+  cop_ansatz_speicher:
+    wert: jensen
+    einheit: "-"
+    status: belegt
+    quelle: "Jensen et al. 2018 (Heat pump COP part 2, IIR Gustav Lorentzen Conf.), Umsetzung PyPSA-Eur central_heating_cop_approximator, genutzt in Schauß et al. 2026 (Adv. Appl. Energy 24, 100315): Senke Rücklauf -> Vorlauf, Quelle (T_RL + T_unten)/2 -> 6 K kälter (reproduziert Fig. S7 auf ±0,02). VL 80: COP 3,91"
+    hinweis: "fest = waermepumpe.COP_ptes (Validierung Dronninglund: Absorptions-WP). Kreuzcheck KWW Tab. 26 (Sole/Wasser, JAZ 3,9 bei 50 K Hub). Mittel über Durchgänge 45 -> 10 °C in 6-K-Schritten: 4,2 (Basis also leicht vorsichtig). Vorher konstant 4,5 (BRF §3.4, docs E41)."
+  jensen_pinch:
+    wert: 5
+    einheit: "K"
+    status: belegt
+    quelle: "PyPSA-Eur config.default (heat_pump_cop_approximation: heat_exchanger_pinch_point_temperature_difference 5), Pieper et al. 2020"
+  jensen_isentrop:
+    wert: 0.8
+    einheit: "-"
+    status: belegt
+    quelle: "Isentroper Verdichterwirkungsgrad, PyPSA-Eur config.default (isentropic_compressor_efficiency 0,8), Schauß et al. 2026 §2.2.5"
+    sens: [0.7, 0.9]
+    hinweis: "Wirkt auf die Speicher-WP (und die Luft-WP bei cop_ansatz_luft = jensen): COP Speicher-WP 3,55 / 4,27 statt 3,91."
+  quell_abkuehlung:
+    wert: 6
+    einheit: "K"
+    status: belegt
+    quelle: "Schauß et al. 2026 §2.2.5 / PyPSA-Eur heat_source_cooling 6 K: Abkühlung der Quelle je Durchgang (Speicher-WP; Luft-WP bei cop_ansatz_luft = jensen)"
+    hinweis: "Auch im Durchfluss-Constraint: Quellwasser der Speicher-WP fließt mit 6 K Spreizung durch die Diffusoren."
   COP_ptes:
     wert: 4.5
     einheit: "-"
     status: annahme
     quelle: "BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5"
-    sens: [3.5, 5.5]
-    hinweis: "Bei VL 80 statt 75 degC eher etwas niedriger (≈ -5 %) -> in Sensitivität abgedeckt."
+    hinweis: "Nur bei cop_ansatz_speicher = fest (seit E41 nicht mehr Basis)."
   kosten_spez:
     wert: 1340000
     einheit: "EUR/MW_th"
     status: vorgabe
     quelle: "TEAM 10.11.2026: unteres Ende des KWW Technikkatalogs (Tab. 24, Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto): 1.340 EUR/kW_th (10 MW); Spanne 1.970 (0,3 MW) / 1.730 (1 MW) / 1.600 (2 MW) / 1.440 (5 MW), Unsicherheit ±30 %"
     sens: [1000000, 1730000]
-    hinweis: "Für das kleine Netz (≈ 1 MW) optimistisch (KWW-Größenklasse 1.730 EUR/kW, Szenario kww_komplett). Vorher 1,0 Mio. EUR/MW (Frederikssund 2022, DK). Lebensdauer/O&M weiter 20 a / 2,5 % (KWW: 28 a / 3 %). Gilt für Luft- und Speicher-WP (gemeinsame Leistung wp_out)."
+    hinweis: "Nur Luft-WP (seit E41 eigene Leistung wp_luft_out). Für das kleine Netz (≈ 1 MW) optimistisch (KWW-Größenklasse 1.730 EUR/kW, Szenario kww_komplett). Lebensdauer/O&M weiter 20 a / 2,5 % (KWW: 28 a / 3 %)."
+  kosten_spez_speicher:
+    wert: 1100000
+    einheit: "EUR/MW_th"
+    status: annahme
+    quelle: "KWW Tab. 26/27 (Kompressions-WP Sole/Wasser, 2026, netto, 10-MW-Klasse wie die Luft-WP): 890 EUR/kW bei 50 K Hub (einstufig), 1.420 EUR/kW bei 85 K (zweistufig); linear auf den größten Hub der Speicher-WP T_VL - (T_unten + 6 K) = 64 K -> 1.100 EUR/kW"
+    sens: [890000, 1420000]
+    hinweis: "Eigene Leistung wp_speicher_out (zwei getrennte Maschinen, docs E41). 1-MW-Klasse wäre 1.310 EUR/kW (Szenario kww_komplett). Schauß et al. 2026: PTES-WP 598 statt 906 EUR/kW Luft (DEA, -34 %)."
 
 # -------------------------------------------------------------------------------------
 pth:
@@ -860,12 +898,13 @@ tornado:
       - last.skalierung
       - last.ankerkunde_anteil
       - ptes.verlustrate
-      - ptes.uebergang_ref
-      - ptes.groessen_exponent
       - ptes.vorwaermen
+      - ptes.T_oben
+      - ptes.austauschrate
       - strom.leistungspreis
       - kollektor.iam_b0
-      - waermepumpe.COP_ptes
+      - waermepumpe.jensen_isentrop
+      - waermepumpe.kosten_spez_speicher
       - waermepumpe.guetegrad_faktor
       - netz.T_RL
       - kollektor.kosten_spez
@@ -873,7 +912,6 @@ tornado:
       - oekonomie.zins
       - oekonomie.foerderquote
       - oekonomie.nebenkosten
-      - waermepumpe.luft_leistung_bei_tmin
       - oekonomie.preisaenderung.strom
       - kollektor.eta0
       - kollektor.feldverluste

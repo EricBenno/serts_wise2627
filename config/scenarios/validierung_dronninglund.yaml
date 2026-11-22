@@ -1,5 +1,6 @@
 # Validierungslauf Dronninglund (BRF §6): prüft das SPEICHERmodell gegen Solites 2019 (2015-2017).
 # Aufruf: uv run serts run --szenario validierung_dronninglund --A 37573 --V 60000
+# (WP wie vorhanden: waermepumpe.kosten_spez_speicher ≈ 0 setzen, docs/validierung_dronninglund.md)
 # Vergleich und Ergebnis: docs/validierung_dronninglund.md, Zielwerte data/reference/dronninglund_solites2019_*.csv
 # Näherungen (kein Nachbau der Anlage): Wetter und Lastprofil von Bad Lippspringe, auf die Jahreswerte von
 # Dronninglund skaliert; Absorptions-WP als WP mit COP 1,7, deren Antrieb (dort Kesselwärme) hier wie die
@@ -24,6 +25,10 @@ kollektor:
     status: belegt
     quelle: "Solites 2019: Einstrahlung Kollektorebene 38.674-40.631 MWh / 37.573 m2 ≈ 1.060 kWh/m2 gegenüber 1.287 kWh/m2 (PVGIS-TMY Bad Lippspringe, vor Einfallswinkel-Korrektur)"
 waermepumpe:
+  cop_ansatz_speicher:
+    wert: fest
+    status: vorgabe
+    quelle: "Absorptions-WP: fester COP statt Kompressions-WP nach Jensen"
   COP_ptes:
     wert: 1.7
     status: belegt

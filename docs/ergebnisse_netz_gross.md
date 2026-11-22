@@ -1,10 +1,34 @@
-# Ergebnisse Netz groß (oben Stand 14.11.2026 nach E39, darunter Stand 10.11.2026)
+# Ergebnisse Netz groß (oben Stand 21.11.2026 nach E41, darunter 14.11. und 10.11.2026)
 
 Netzfall `gross` (`config/netze/gross.yaml`, Aufruf `uv run serts run --netz gross`, Ergebnisse in `results/gross/`):
 877 Gebäude, davon 54 % der Wärme in Nichtwohngebäuden (GMK/GKO), 42.782 MWh/a Gebäude + 5.440 MWh/a Netzverluste,
 Spitze 15,5 MW (Stundensumme), Trasse 14.291 m, Freifläche 80.000 m². Alle anderen Annahmen wie Netz klein
 (`docs/eingangsparameter.md` zeigt beide nebeneinander). Kollektor 276 €/m² Brutto (KWW, Klasse ≥ 15.000 m²
 Apertur), Trasse 1.140/640 €/m (KWW, größere Rohre), Luft-WP nach KWW-Gütegrad, Speicher mit Kennlinie (E34–E36).
+
+## Stand 21.11.2026 nach E41 (Boosting, zwei WP, COP Jensen, Durchflussgrenze)
+
+**Basis:** 29.240 m² / 33.780 m³, WP 8,65 MW Luft + 1,09 MW Speicher, PtH 15,5 MW (159 MWh/a), Solar 30 %,
+3,9 Zyklen, LCOH 153,6 €/MWh, **Wärmepreis inkl. Netz 223,1 €/MWh** (vorher 221,6; Gas 236,2), mit BEW 194,5.
+Varianten (`results/gross/20261121-161709_base_varianten`): ohne Speicher 249,0, nur WP + PtH 254,5, BEW-optimiert
+194,4 €/MWh. Der volle Tornado wurde nicht neu gerechnet.
+
+**Vorlauftemperatur** (`uv run serts tornado --netz gross --parameter netz.T_VL netz.T_VL_min`,
+`results/gross/20261121-171545_base_sensitivitaet`):
+
+| Vorlauf | inkl. Netz | Δ Basis | Vorteil ggü. Gas | Kollektor [m²] | Speicher [m³] | JAZ WP | Strom [MWh] | Boosting [MWh] | PtH [MWh] |
+|---|---|---|---|---|---|---|---|---|---|
+| fest 70 °C | 209,1 | −14,0 | 24,1 | 29.010 | 35.170 | 2,56 | 13.740 | 0 | 64 |
+| fest 75 °C | 216,1 | −7,0 | 17,8 | 29.150 | 34.300 | 2,38 | 14.740 | 0 | 119 |
+| **fest 80 °C (Basis)** | 223,1 | – | 11,7 | 29.240 | 33.780 | 2,23 | 15.730 | 0 | 159 |
+| fest 85 °C | 225,5 | +2,4 | 9,5 | 29.240 | 33.810 | 2,18 | 16.100 | 210 | 200 |
+| fest 90 °C | 228,0 | +4,9 | 7,3 | 29.230 | 33.840 | 2,14 | 16.460 | 415 | 248 |
+| gleitend 80 → 70 °C | 214,0 | −9,1 | 19,7 | 28.980 | 35.400 | 2,44 | 14.450 | 0 | 104 |
+| gleitend 80 → 60 °C | 205,2 | −17,9 | 27,6 | 28.330 | 39.330 | 2,69 | 13.230 | 0 | 0 |
+
+Lesart wie Netz klein: Wirkung fast nur über COP/Strom, Boosting über 80 °C klein. Bei niedrigem Vorlauf wird der
+Speicher etwas größer und das Kollektorfeld etwas kleiner (bessere Speicher-WP, weniger PtH). Netzverluste bleiben
+bei 80/50 °C -> Vorteil niedriger Vorläufe eher unterschätzt.
 
 ## Stand 14.11.2026 nach E39 (neues Speichermodell)
 

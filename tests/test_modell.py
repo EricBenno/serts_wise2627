@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from serts import economics, kpi, network
+from serts import economics, heatpump, kpi, network
 from serts.run import loese
 
 pytestmark = pytest.mark.solver
@@ -49,7 +49,8 @@ def netz_fest(cfg, ts):
 
 def test_energiebilanz_waermeknoten(cfg, ts, netz_fest):
     p0 = netz_fest.links_t.p0
-    zu = p0["solar_direkt"] + p0["entladen_direkt"] + p0["wp_out"] + p0["pth"] * cfg.get("pth.eta")
+    wp = p0["wp_luft_out"] + p0["wp_speicher_out"]
+    zu = p0["solar_direkt"] + p0["entladen_direkt"] + wp + p0["pth"] * cfg.get("pth.eta")
     zu = zu + p0["vorwaermen"]
     np.testing.assert_allclose(zu.sum(), ts["last_gesamt"].sum(), rtol=1e-3)
 
@@ -61,7 +62,7 @@ def test_speicherbilanz_geschlossen(cfg, ts, netz_fest):
     ab = (
         p0["entladen_direkt"].sum()
         + p0["vorwaermen"].sum()
-        + p0["hp_speicher"].sum() * (cfg.get("waermepumpe.COP_ptes") - 1)
+        + (p0["hp_speicher"] * (heatpump.cop_speicher(cfg, ts["T_a"]) - 1)).sum()
     )
     # PyPSA: Verlust je Stunde = standing_loss * Inhalt der Vorstunde (zyklisch), je Speicherteil
     lam = netz_fest.meta["verlustrate"]
@@ -162,11 +163,62 @@ def test_vorwaermen_braucht_nachheizen(cfg, ts):
     k = network.vorwaerm_verhaeltnis(cfg)
     assert k == pytest.approx(0.75)  # 45 -> 60 °C aus dem Speicher, 60 -> 80 °C Nachheizung
     assert p0["vorwaermen"].sum() > 1.0
-    nachheizen = p0["wp_out"] + p0["pth"] * cfg.get("pth.eta")
+    nachheizen = p0["wp_luft_out"] + p0["wp_speicher_out"] + p0["pth"] * cfg.get("pth.eta")
     assert (p0["vorwaermen"] <= k * nachheizen + 1e-6).all()
     # abgeschaltet: kein Link
     aus = network.build_network(cfg.variante("ptes.vorwaermen", False), ts, A_m2=0.0, V_m3=3000.0)
     assert "vorwaermen" not in aus.links.index
+
+
+def test_zwei_waermepumpen_eigene_leistung(cfg, ts, netz_fest):
+    """Luft- und Speicher-WP sind getrennte Maschinen mit eigener Leistung und eigenen Kosten (E41)."""
+    L = netz_fest.links
+    assert L.at["wp_speicher_out", "capital_cost"] < L.at["wp_luft_out", "capital_cost"]
+    p0 = netz_fest.links_t.p0
+    for out in ("wp_luft_out", "wp_speicher_out"):
+        assert (p0[out] <= L.at[out, "p_nom_opt"] + 1e-6).all()
+    # Wärme der Speicher-WP = Strom x COP (Jensen) und nur über ihre eigene Leistung
+    cop = heatpump.cop_speicher(cfg, ts["T_a"])
+    np.testing.assert_allclose(p0["wp_speicher_out"], p0["hp_speicher"] * cop, atol=1e-6)
+
+
+def test_boosting_wenn_kern_kaelter_als_vorlauf(cfg, ts):
+    """T_oben 80 °C < VL 80 + 5 K: jede MWh Direktentladung braucht 5/35 MWh Nachheizen (E41)."""
+    assert (network.boost_verhaeltnis(cfg, ts["T_a"]) == 0).all()  # Basis: 85 °C reicht
+    c = cfg.variante("ptes.T_oben", 80)
+    alpha = network.boost_verhaeltnis(c, ts["T_a"])
+    assert alpha.iloc[0] == pytest.approx(5 / 35)
+    n = network.build_network(c, ts, A_m2=0.0, V_m3=3000.0)
+    _mit_startinhalt(n, kern=1.0, ueb=1.0, kalt=1.0)
+    network.optimize(n, c, ts)
+    p0 = n.links_t.p0
+    assert p0["entladen_direkt"].sum() > 1.0
+    nachheizen = p0["wp_luft_out"] + p0["wp_speicher_out"] + p0["pth"] * c.get("pth.eta")
+    k = network.vorwaerm_verhaeltnis(c)
+    bedarf = alpha * p0["entladen_direkt"] + p0["vorwaermen"] / k
+    assert (bedarf <= nachheizen + 1e-6).all()
+    assert (nachheizen >= alpha * p0["entladen_direkt"] - 1e-6).all()
+
+
+def test_durchfluss_begrenzt_laden_und_entladen(cfg, ts):
+    """Volumenstrom je Richtung <= austauschrate x V (Dronninglund); .inf = keine Grenze (E41)."""
+    c = cfg.variante("ptes.austauschrate", 0.002)
+    n = network.build_network(c, ts, A_m2=3000.0, V_m3=3000.0)
+    network.optimize(n, c, ts)
+    p0 = n.links_t.p0
+    cw = c.get("ptes.c_wasser")
+    grenze = 0.002 * 3000.0  # m3/h
+    laden = p0["laden_heiss"] / (cw * 40) + p0["laden_kalt"] / (cw * 35)
+    assert (laden <= grenze + 1e-6).all()
+    assert laden.max() == pytest.approx(grenze, rel=1e-3)  # bindet in der Mittagsspitze
+    entladen = p0["entladen_direkt"] / (cw * 40) + p0["vorwaermen"] / (cw * 20)
+    entladen += p0["hp_speicher"] * (heatpump.cop_speicher(c, ts["T_a"]) - 1) / (cw * 6)
+    assert (entladen <= grenze + 1e-6).all()
+    frei = network.build_network(
+        cfg.variante("ptes.austauschrate", float("inf")), ts, 3000.0, 3000.0
+    )
+    network.optimize(frei, cfg.variante("ptes.austauschrate", float("inf")), ts)
+    assert frei.links_t.p0["laden_heiss"].max() > p0["laden_heiss"].max() + 0.1
 
 
 def test_ideale_schichtung_ohne_uebergangszone(cfg, ts):
@@ -221,7 +273,8 @@ def test_bew_ausweis(cfg, ts):
         * (
             2000.0 * cfg.get("kollektor.kosten_spez")
             + economics.ptes_invest(cfg, 2000.0)
-            + k["P_WP_MW"] * cfg.get("waermepumpe.kosten_spez")
+            + k["P_WP_luft_MW"] * cfg.get("waermepumpe.kosten_spez")
+            + k["P_WP_speicher_MW"] * cfg.get("waermepumpe.kosten_spez_speicher")
             + k["netz_invest_trasse_EUR"]
         )
     )
@@ -229,14 +282,14 @@ def test_bew_ausweis(cfg, ts):
 
 
 def test_luft_wp_leistung_sinkt_bei_kaelte(cfg, ts, netz_fest):
-    P = netz_fest.links.at["wp_out", "p_nom_opt"]
+    P = netz_fest.links.at["wp_luft_out", "p_nom_opt"]
     p0 = netz_fest.links_t.p0
     assert (ts["COP_luft"] * p0["hp_luft"] <= ts["p_max_pu_luft"] * P + 1e-6).all()
 
 
 def test_luft_wp_leistung_auch_bei_fester_wp(cfg, ts):
     n = network.build_network(cfg, ts, A_m2=2000.0, V_m3=2000.0)
-    n.links.loc["wp_out", ["p_nom", "p_nom_extendable"]] = [0.6, False]
+    n.links.loc["wp_luft_out", ["p_nom", "p_nom_extendable"]] = [0.6, False]
     n.links.loc["pth", ["p_nom", "p_nom_extendable"]] = [1.6, False]
     network.optimize(n, cfg, ts)
     wp_waerme = ts["COP_luft"] * n.links_t.p0["hp_luft"]
@@ -316,3 +369,23 @@ def test_mwh_je_m3_und_anteil_heiss(cfg):
     # 1,163e-3 * (85 - 10) = 0,0872 MWh/m3 -> 60.000 m3 ≈ 5.234 MWh (BRF §3.2)
     assert network.mwh_je_m3(cfg) * 60_000 == pytest.approx(5233.5, abs=1)
     assert network.anteil_heiss(cfg) == pytest.approx(40 / 75)
+
+
+def test_segmentauswahl_findet_gleiches_optimum(cfg, ts):
+    """Tornado (E42): nur Nachbarsegmente rechnen, bei Optimum am Rand nach außen erweitern."""
+    _, voll, _ = loese(cfg, ts)
+    letztes = len(cfg.get("ptes.segmente_m3")) - 2
+    _, teil, _ = loese(cfg, ts, start_segment=letztes)  # weit weg starten -> wandert zum Optimum
+    assert teil["segment_index"] == voll["segment_index"]
+    assert teil["kosten_a_gesamt"] == pytest.approx(voll["kosten_a_gesamt"], rel=1e-6)
+    _, nah, _ = loese(cfg, ts, start_segment=voll["segment_index"])
+    assert len(nah["segmente_vergleich"]) <= 3
+    assert nah["kosten_a_gesamt"] == pytest.approx(voll["kosten_a_gesamt"], rel=1e-6)
+
+
+def test_segmente_parallel_wie_seriell(cfg, ts):
+    _, seriell, _ = loese(cfg, ts)
+    n, parallel, _ = loese(cfg, ts, jobs=2)
+    assert parallel["segment_index"] == seriell["segment_index"]
+    assert parallel["kosten_a_gesamt"] == pytest.approx(seriell["kosten_a_gesamt"], rel=1e-6)
+    assert n.links.at["wp_luft_out", "p_nom_opt"] >= 0  # Netz kommt über die Prozessgrenze zurück

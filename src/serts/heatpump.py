@@ -46,6 +46,53 @@ def cop_kww(t_senke_c, t_quelle_c, guetegrad):
     return guetegrad * t_s / (t_s - t_q)
 
 
+def cop_jensen(senke_ein, senke_aus, quelle_ein, quelle_aus, cfg: Config):
+    """COP aus Ein- und Austrittstemperaturen von Senke und Quelle (alle degC), Kältemittel Ammoniak.
+
+    Näherung nach Jensen et al. (2018), "Heat pump COP, part 2: Generalized COP estimation of heat pump
+    processes" (IIR Gustav Lorentzen Conference), wie in PyPSA-Eur umgesetzt
+    (scripts/build_cop_profiles/central_heating_cop_approximator.py, MIT) und von Schauß et al. (2026)
+    genutzt: Lorenz-COP der logarithmischen Mitteltemperaturen, korrigiert um Temperaturdifferenzen im
+    Kältemittel, Pinch, Verdampfungs-/Verdichtungsarbeit und isentropen Wirkungsgrad. Die Koeffizienten
+    0,2 / 0,2 / 0,016 und 0,0014 / -0,0015 / 0,039 sind die Ammoniak-Werte der Methode (keine Annahmen).
+    """
+    pinch = cfg.get("waermepumpe.jensen_pinch")
+    eta = cfg.get("waermepumpe.jensen_isentrop")
+    s_e, s_a, q_e, q_a = (
+        np.asarray(x, dtype=float) for x in (senke_ein, senke_aus, quelle_ein, quelle_aus)
+    )
+    t_senke, t_quelle = tlog(s_e, s_a), tlog(q_e, q_a)  # K
+    hub = t_senke - t_quelle
+    if np.any(hub <= 0):
+        raise ValueError("Quelle wärmer als Senke: Jensen-Ansatz nicht anwendbar")
+    dt_senke = 0.2 * (s_a - q_a + 2 * pinch) + 0.2 * (s_a - s_e) + 0.016
+    dt_quelle = (q_e - q_a) / 2.0
+    arbeit = 0.0014 * (s_a - q_a + 2 * pinch) - 0.0015 * (s_a - s_e) + 0.039
+    korrektur = (1 + (dt_senke + pinch) / t_senke) / (1 + (dt_senke + dt_quelle + 2 * pinch) / hub)
+    return (t_senke / hub) * korrektur * eta * (1 - arbeit) + 1 - eta
+
+
+def cop_speicher(cfg: Config, T_a: pd.Series) -> pd.Series:
+    """COP der Speicher-WP je Stunde.
+
+    ``waermepumpe.cop_ansatz_speicher``:
+      jensen (Basis) wie Schauß et al. 2026 (reproduziert deren Fig. S7): Senke Rücklauf -> Vorlauf
+             (konstant oder gleitend); Quelle: Wasser aus dem kalten Teil, ein = Mittel aus Rücklauf und
+             T_unten, aus = ein - quell_abkuehlung (6 K je Durchgang). VL 80: COP 3,91
+             (Mittel über Durchgänge 45 -> 10 °C: 4,2; Kreuzcheck KWW Tab. 26: JAZ 3,9 bei 50 K Hub).
+      fest   ``waermepumpe.COP_ptes`` (z. B. Absorptions-WP in der Validierung Dronninglund)
+    """
+    if cfg.get("waermepumpe.cop_ansatz_speicher") == "fest":
+        return pd.Series(
+            float(cfg.get("waermepumpe.COP_ptes")), index=T_a.index, name="COP_speicher"
+        )
+    t_rl, t_u = cfg.get("netz.T_RL"), cfg.get("ptes.T_unten")
+    ein = (t_rl + t_u) / 2.0
+    aus = ein - cfg.get("waermepumpe.quell_abkuehlung")
+    cop = cop_jensen(t_rl, vorlauf(cfg, T_a).to_numpy(), ein, aus, cfg)
+    return pd.Series(cop, index=T_a.index, name="COP_speicher")
+
+
 def vorlauf(cfg: Config, T_a: pd.Series) -> pd.Series:
     """Vorlauftemperatur je Stunde [degC]. Basis: konstant ``netz.T_VL``.
 
@@ -75,10 +122,17 @@ def cop_luft(cfg: Config, T_a: pd.Series) -> pd.Series:
     ``waermepumpe.cop_ansatz_luft``:
       kww    (Basis) Carnot auf den Vorlauf x Gütegrad nach KWW (JAZ-Bezug, Abtauen im Gütegrad enthalten)
       lorenz (Briefing) Lorenz mit Mitteltemperaturen, eta_G_luft, plus Abtauabschlag
+      jensen (Schauß et al. 2026) Ein-/Austrittstemperaturen, Luft kühlt um quell_abkuehlung ab;
+             ohne Abtauen/Ventilator -> ≈ 30 % über KWW (nur Sensitivität)
     """
     T_vl = vorlauf(cfg, T_a).to_numpy()  # konstant oder gleitend (netz.T_VL_min)
-    if cfg.get("waermepumpe.cop_ansatz_luft") == "kww":
+    ansatz = cfg.get("waermepumpe.cop_ansatz_luft")
+    if ansatz == "kww":
         cop = cop_kww(T_vl, T_a, guetegrad_kww(cfg, T_vl))
+        return pd.Series(cop, index=T_a.index, name="COP_luft")
+    if ansatz == "jensen":
+        dT = cfg.get("waermepumpe.quell_abkuehlung")
+        cop = cop_jensen(cfg.get("netz.T_RL"), T_vl, T_a.to_numpy(), T_a.to_numpy() - dT, cfg)
         return pd.Series(cop, index=T_a.index, name="COP_luft")
     T_rl = cfg.get("netz.T_RL")
     dT = cfg.get("waermepumpe.luft_spreizung")

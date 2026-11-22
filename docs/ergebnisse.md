@@ -1,4 +1,4 @@
-# Ergebnisse Netz klein (oben Stand 14.11.2026 nach E39, darunter Stand 10.11.2026)
+# Ergebnisse Netz klein (oben Stand 21.11.2026 nach E41, darunter 14.11. und 10.11.2026)
 
 Vorläufig: Kollektorkennwerte und mehrere Kosten sind Annahmen (`docs/annahmen.md`, Übersicht:
 `docs/eingangsparameter.md`). Basis: Normaljahr (PVGIS-TMY), Lastgang/Temperatur 2022, Vorlauf 80 °C, **Zins real 5 %**,
@@ -8,6 +8,32 @@ Speicher in drei Teilen mit Schichtung, Vorwärmen und größenabhängigen Verlu
 vor dem 14.11.: Temperaturkennlinie E34/E36). Großes Netz:
 **`docs/ergebnisse_netz_gross.md`**. Prüfung gegen die Leitfrage: **`docs/kernfragen.md`**. Speichermodell
 erklärt: `docs/speichermodell.md`.
+
+## Stand 21.11.2026 nach E41 (Boosting, zwei WP, COP Jensen, Durchflussgrenze)
+
+**Basis:** 4.668 m² / 6.000 m³ (Flächengrenze), WP 0,84 MW Luft + 0,15 MW Speicher, PtH 1,59 MW, Solar 41 %,
+LCOH 150,9 €/MWh, **Wärmepreis inkl. Netz 244,5 €/MWh** (vorher 243,4; Gas 261,4), mit BEW 210,2. COP Speicher-WP
+3,91 (vorher fest 4,5), kein Boosting. Varianten (`results/klein/20261121-160105_base_varianten`): ohne Speicher 271,8,
+nur WP + PtH 277,5, BEW-optimiert 210,2 €/MWh. Der volle Tornado wurde nicht neu gerechnet (Wirkung von E41 klein).
+
+**Vorlauftemperatur** (`uv run serts tornado --parameter netz.T_VL netz.T_VL_min`,
+`results/klein/20261121-162643_base_sensitivitaet`, Größen je Lauf neu optimiert):
+
+| Vorlauf | LCOH | inkl. Netz | Δ Basis | Vorteil ggü. Gas | JAZ WP | COP Speicher-WP | Strom [MWh] | Boosting [MWh] |
+|---|---|---|---|---|---|---|---|---|
+| fest 70 °C | 140,3 | 231,7 | −12,8 | 24,6 | 2,57 | 4,33 | 1.338 | 0 |
+| fest 75 °C | 145,6 | 238,1 | −6,4 | 19,3 | 2,40 | 4,11 | 1.434 | 0 |
+| **fest 80 °C (Basis)** | 150,9 | 244,5 | – | 14,0 | 2,25 | 3,91 | 1.529 | 0 |
+| fest 85 °C | 152,8 | 246,8 | +2,3 | 12,1 | 2,21 | 3,83 | 1.563 | 26 |
+| fest 90 °C | 154,8 | 249,2 | +4,7 | 10,2 | 2,16 | 3,76 | 1.598 | 52 |
+| gleitend 80 → 70 °C | 144,2 | 236,4 | −8,1 | 20,7 | 2,45 | 4,13 | 1.406 | 0 |
+| gleitend 80 → 60 °C | 137,7 | 228,5 | −16,0 | 27,2 | 2,67 | 4,38 | 1.288 | 0 |
+
+Lesart: Kollektor, Speicher und WP-Leistung bleiben gleich (Fläche bindet); der Vorlauf wirkt fast nur über den COP
+und damit den Strombezug (≈ 1,3 €/MWh je K unter 80 °C, ≈ 0,5 €/MWh je K darüber). Über 80 °C braucht die
+Direktentladung Boosting (T_oben 85 °C), es bleibt aber klein (≤ 52 MWh/a). Ein im Sommer gleitender Vorlauf bringt
+mehr als ein fester 75 °C. Netzverluste bleiben die der Netzberechnung (80/50 °C) -> Vorteil niedriger Vorläufe eher
+unterschätzt; der Kollektorertrag hängt im Modell nicht vom Vorlauf ab.
 
 ## Stand 14.11.2026 nach E39 (neues Speichermodell) – Testläufe, Netz klein
 

@@ -72,7 +72,8 @@ Passt das Modell zur Leitfrage? [docs/kernfragen.md](docs/kernfragen.md). Zentra
 Details und Stand: [docs/struktur.md](docs/struktur.md). Ergebnisse: [docs/ergebnisse.md](docs/ergebnisse.md),
 offene Kostenpunkte: [docs/unsicherheiten.md](docs/unsicherheiten.md), Systemskizze: [docs/systemskizze.md](docs/systemskizze.md),
 BEW-Förderung: [docs/foerderung_bew.md](docs/foerderung_bew.md), Vorschläge: [docs/ausblick.md](docs/ausblick.md).
-Speichermodell: [docs/speichermodell.md](docs/speichermodell.md), geprüft gegen Dronninglund: [docs/validierung_dronninglund.md](docs/validierung_dronninglund.md).
+Speichermodell: [docs/speichermodell.md](docs/speichermodell.md), geprüft gegen Dronninglund: [docs/validierung_dronninglund.md](docs/validierung_dronninglund.md),
+Vergleich mit Schauß et al. 2026 (PTES-Temperaturen in PyPSA-DE): [docs/vergleich_schauss2026.md](docs/vergleich_schauss2026.md).
 Wie die Berechnung funktioniert: [notebooks/01_modell_erklaert.ipynb](notebooks/01_modell_erklaert.ipynb).
 
 ## Projekt weitergeben / auf einem neuen Rechner einrichten

@@ -40,7 +40,7 @@ nur der Speicher. Zielwerte: `data/reference/dronninglund_solites2019_jahr.csv` 
 | Zyklen | 1,9–2,2 | 2,1 | 1,9 |
 | Solaranteil | 38–41 % | 39 % | 39 % |
 
-Mit der vorhandenen WP (Spalte 2, `waermepumpe.kosten_spez` ≈ 0) liegen alle Jahreswerte in der gemessenen
+Mit der vorhandenen WP (Spalte 2, WP-Kosten ≈ 0; seit E41 `waermepumpe.kosten_spez_speicher`) liegen alle Jahreswerte in der gemessenen
 Spanne. Wird die WP-Größe im Modell nach Kosten gewählt, baut es eine viel kleinere WP als in Dronninglund
 (dort 4,7 MW) und nutzt den kalten Teil weniger; das ist eine Folge der Kostenannahmen, kein Speicherfehler.
 
@@ -51,3 +51,7 @@ trifft die Messung schon, deshalb bleibt er 0 (Parameter für Sensitivität vorh
 ganz, gemessen sind im Dezember/Januar noch 500–1.300 MWh): perfekte Voraussicht und fremdes Wetter/Lastprofil.
 In Dronninglund zählt alles, was nicht direkt ins Netz geht, als WP-Quellwärme; deshalb ist Vorwärmen im
 Szenario aus.
+
+**Seit E41 (21.11.2026):** Das Szenario setzt `waermepumpe.cop_ansatz_speicher: fest` (Absorptions-WP,
+COP 1,7). Die Durchflussgrenze stammt aus denselben Messdaten (565 m³/h) und bindet in der Nachrechnung
+per Konstruktion höchstens in den Spitzenstunden. Nicht neu gerechnet.

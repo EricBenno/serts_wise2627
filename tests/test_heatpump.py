@@ -73,3 +73,31 @@ def test_vorlauf_konstant_und_gleitend(cfg):
     cop_fest, cop_gleit = cop_luft(cfg, T_a), cop_luft(c, T_a)
     assert cop_gleit.iloc[47] == pytest.approx(cop_fest.iloc[47])
     assert cop_gleit.iloc[-1] > cop_fest.iloc[-1] * 1.1
+
+
+def test_cop_jensen_speicher_wp(cfg):
+    """Jensen et al. 2018 (PyPSA-Eur-Umsetzung, Ammoniak, Pinch 5 K, isentrop 0,8), docs E41."""
+    from serts.heatpump import cop_jensen, cop_speicher
+
+    # Schauß et al. 2026 Fig. S7 (Booster-WP; Senke Rücklauf -> Vorlauf, Quelle (T_RL + T_unten)/2 - 6 K):
+    # HighST 60/124 °C gekühlt auf 10 °C -> 2,97; ungekühlt (Quelle 60 °C) -> 4,15; bei 90,5 °C 3,75 / 6,2
+    assert float(cop_jensen(60, 124, 35, 29, cfg)) == pytest.approx(2.97, abs=0.03)
+    assert float(cop_jensen(60, 124, 60, 54, cfg)) == pytest.approx(4.15, abs=0.03)
+    assert float(cop_jensen(60, 90.5, 35, 29, cfg)) == pytest.approx(3.75, abs=0.03)
+    assert float(cop_jensen(60, 90.5, 60, 54, cfg)) == pytest.approx(6.2, abs=0.03)
+    # Basis SERTS: Senke 45 -> 80 °C, Quelle 27,5 -> 21,5 °C -> 3,91 (KWW Tab. 26: JAZ 3,9 bei 50 K Hub)
+    cop = cop_speicher(cfg, pd.Series([5.0, 5.0]))
+    np.testing.assert_allclose(cop, 3.91, atol=0.01)
+    # kältere Senke -> höherer COP
+    assert float(cop_jensen(45, 70, 27.5, 21.5, cfg)) > float(cop.iloc[0])
+    # fest: alter Wert (Validierung Dronninglund: Absorptions-WP)
+    fest = cfg.variante("waermepumpe.cop_ansatz_speicher", "fest")
+    assert (cop_speicher(fest, pd.Series([5.0])) == fest.get("waermepumpe.COP_ptes")).all()
+
+
+def test_cop_luft_jensen_ueber_kww(cfg):
+    c = cfg.variante("waermepumpe.cop_ansatz_luft", "jensen")
+    T = pd.Series([-5.0, 0.0, 10.0])
+    j, k = cop_luft(c, T), cop_luft(cfg, T)
+    np.testing.assert_allclose(j, [2.52, 2.67, 3.02], atol=0.01)  # Quelle T -> T - 6 K
+    assert (j > k * 1.2).all()  # ohne Abtauen/Ventilator deutlich über KWW

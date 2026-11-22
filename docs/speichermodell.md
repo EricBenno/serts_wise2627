@@ -11,25 +11,31 @@ drei Teile sortiert (Zahlen für 80/45 °C Netz und ≈ 7.400 m³):
 |---|---|---|---|
 | **heißer Kern** | Wärme über 45 °C in richtig heißem Wasser (85 °C, oben) | 53 % × 70 % = 37 % | `entladen_direkt` ins Netz |
 | **Übergangszone** | Wärme über 45 °C im Mischwasser zwischen heiß und kalt (≈ 65 °C) | 53 % × 30 % = 16 % | `vorwaermen` (Rücklauf auf ≈ 60 °C, WP/PtH heizen nach) oder `umlagern` → WP |
-| **kalt** | Wärme zwischen 10 °C und 45 °C (Rücklauf) | 47 % | nur die Speicher-WP (Quelle, COP 4,5) |
+| **kalt** | Wärme zwischen 10 °C und 45 °C (Rücklauf) | 47 % | nur die Speicher-WP (Quelle, COP 3,9 nach Jensen et al., E41) |
 
 * **Laden kalt** (`laden_kalt`): Wasser wird von 10 °C auf 45 °C erwärmt.
 * **Laden heiß** (`laden_heiss`): Wasser mit 45 °C wird auf 85 °C erwärmt. Ist der kalte Teil voll (Speicher unten
   auf Rücklauftemperatur, im Sommer normal), wird nur noch heiß geladen und entladen: der Speicher pendelt zwischen
   45 und 85 °C, ganz ohne Wärmepumpe.
-* **Direkt entladen:** 85-°C-Wasser geht ins Netz und kommt mit 45 °C zurück → nur der Kern sinkt.
+* **Direkt entladen:** 85-°C-Wasser geht ins Netz und kommt mit 45 °C zurück → nur der Kern sinkt. Ist der Kern
+  kälter als Vorlauf + 5 K (z. B. `ptes.T_oben` 80 °C), muss WP oder PtH in derselben Stunde nachheizen
+  (Boosting, E41): je MWh (T_VL + 5 − T_oben)/(T_oben − 45) MWh, bei 80 °C also 0,14.
 * **Vorwärmen:** Mischwasser hebt den Rücklauf von 45 auf ≈ 60 °C; die restlichen 20 K liefert in derselben Stunde
   die WP oder PtH (je MW Nachheizung höchstens 0,75 MW Vorwärmen).
-* **Speicher-WP:** kühlt 45-°C-Wasser auf 10 °C ab → nur der kalte Teil sinkt.
+* **Speicher-WP:** kühlt 45-°C-Wasser in Durchgängen von je 6 K bis auf 10 °C ab → nur der kalte Teil sinkt. Eigene
+  Maschine mit eigener Leistung (Wasser/Wasser, 1.100 €/kW), getrennt von der Luft-WP (E41).
 * **Mischen** (`abbau` Kern → Übergangszone, `umlagern` Übergangszone → kalt): heißes Wasser wird zu Mischwasser,
   Mischwasser kühlt unter 45 °C. Keine Energie geht verloren, aber sie wird weniger wert.
 
-Zwei Bedingungen halten das physikalisch (`constraints.py`):
+Drei Bedingungen halten das physikalisch (`constraints.py`):
 
 1. **Größenverhältnis:** die drei Teile gehören zu demselben Wasser und wachsen gemeinsam.
 2. **Schichtung:** Füllstand Kern ≤ Füllstand Übergangszone ≤ Füllstand kalt (jeweils Inhalt / Kapazität), in jeder
    Stunde. Heißes Wasser liegt immer auf seiner Übergangszone, und jedes Wasser über 45 °C enthält seinen
    10–45-°C-Anteil. Folge: von einem vollen heißen Teil gehen höchstens 70 % direkt ins Netz, der Rest ist Mischwasser.
+3. **Durchfluss:** je Stunde und Richtung höchstens 0,0094 × V m³ Wasser durch die Diffusoren (Höchstwert
+   Dronninglund 2014: 565 m³/h bei 60.000 m³). Wärme = Volumenstrom × c × Spreizung des Bands (heiß 40 K, kalt
+   35 K, Vorwärmen 20 K, WP-Quelle 6 K). Bei 6.000 m³: 56 m³/h ≈ 2,6 MW Laden heiß.
 
 Die Optimierung (PyPSA/HiGHS) entscheidet für jede der 8.760 Stunden gleichzeitig, wie viel geladen, direkt
 entladen, vorgewärmt und über die WP genutzt wird – mit perfekter Voraussicht über das ganze Jahr, in **einem**
@@ -52,7 +58,8 @@ Dicke in Metern. Wird das Volumen optimiert, gilt je Kostensegment der Wert der 
 ## 3 Was das Modell nicht kann
 
 * Heißes Wasser bleibt 85 °C; Verluste verringern die Menge, nicht die Temperatur. Da das Netz 85 °C braucht
-  (80 °C + 5 K), gibt es keine Reserve – die Direktentladung ist eher optimistisch.
+  (80 °C + 5 K), gibt es keine Reserve – die Direktentladung ist eher optimistisch. Mit niedrigerem `T_oben`
+  greift das Boosting (Tornado 80 °C).
 * Die Übergangszone ist ein fester Anteil. In Dronninglund ist sie bei vollem Speicher kleiner (5–13 %) und beim
   Entladen größer (bis 33 %).
 * Bei fast leerem Speicher darf eine dünne heiße Schicht sofort wieder direkt entladen werden. Für Tag-Nacht-Zyklen

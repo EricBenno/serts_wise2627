@@ -58,7 +58,8 @@ Szenario: **base**. "=" heißt: im großen Netz gleicher Wert wie im kleinen. St
 | PTES bei 60.000 m3 (Kostenkurve, siehe unten) | 67,77 | = | EUR/m3 | B | KWW Tab. 52 (Erdbeckenspeicher): Kostenkurve Invest = 1093,6 * V^0,7472 … |
 |   Größenexponent spez. Kosten | -0,2528 | = | - | B | KWW Tab. 52: Invest ~ V^0,7472 -> spezifisch ~ V^-0,2528 |
 |   Lebensdauer | 30 | = | a | B | KWW Tab. 52: 30 a (mittlere Lebensdauer, Unsicherheit ±40 %) … |
-| Wärmepumpe (Luft + Speicher) | 1.340 | = | EUR/kW_th | V | TEAM 10.11.2026: unteres Ende des KWW Technikkatalogs … |
+| Luft-Wärmepumpe | 1.340 | = | EUR/kW_th | V | TEAM 10.11.2026: unteres Ende des KWW Technikkatalogs … |
+| Speicher-Wärmepumpe (Wasser/Wasser) | 1.100 | = | EUR/kW_th | A | KWW Tab. 26/27 … |
 |   Lebensdauer | 20 | = | a | A | Größenordnung DEA/VDI 2067-1 (18-25 a) |
 | Power-to-Heat (Reserve) | 100 | = | EUR/kW_th | A | Frederikssund 2022: ≈ 0,5 Mio. DKK/MW ≈ 0,07 Mio. EUR/MW (SCH) … |
 |   Lebensdauer | 20 | = | a | A | Größenordnung DEA (20 a) |
@@ -86,7 +87,8 @@ Szenario: **base**. "=" heißt: im großen Netz gleicher Wert wie im kleinen. St
 | PTES: Volumen je Grundfläche | 2,65 | = | m3/m2 | A | DRL-Geometrie … |
 | Luft-WP: COP-Ansatz (KWW: Gütegrad x Carnot auf Vorlauf) | kww | = | - | V | KWW Tab. 24/25: COP = Gütegrad x T_VL / (T_VL - T_a) mit Gütegrad 46 % (70 °C) bzw. 44 % … |
 | Luft-WP: Faktor auf KWW-Gütegrad (45 % bei 80 °C) | 1 | = | - | V | Faktor auf den KWW-Gütegrad (Sensitivität; KWW-Unsicherheit der JAZ ±30 %) |
-| Speicher-WP: COP | 4,5 | = | - | A | BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5 |
+| Speicher-WP: COP-Ansatz (Jensen: 3,9 bei VL 80) | jensen | = | - | B | Jensen et al. 2018 … |
+| PTES: Durchfluss je m3 Speicher (Dronninglund) | 0,0094 | = | 1/h | B | Messdaten Dronninglund 2014 … |
 | Luft-WP: Leistung bei -7 °C (Anteil) | 0,8 | = | - | A | BRF §3.4: linear auf 80 % der Leistung bei T_min_luft (-7 degC) … |
 | PtH: Wirkungsgrad | 0,99 | = | - | V | BRF §2 |
 | PtH: Reserve (x Spitzenlast) | 1 | = | x P_max | A | SCH A6: x_PtH >= P_max (n-1-Redundanz, Versorgungssicherheit) … |

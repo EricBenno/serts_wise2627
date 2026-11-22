@@ -4,8 +4,8 @@
                           ├── laden_heiss ─> [ heiß (Kern)   85 °C ] ── entladen_direkt ──>   ▲
                           │                  [ Übergangszone       ] ── vorwaermen ───────>   │ (+ Nachheizen)
                           └── laden_kalt ──> [ kalt        10-45 °C] ── Quellwärme ─┐         │
-    Netzstrom ──> hp_luft ──────────────────────────────> wp ── wp_out ─────────────┴────────>┤
-             └──> hp_speicher (holt Quellwärme aus dem kalten Teil) ┘                         │
+    Netzstrom ──> hp_luft ─────────────────────> wp_luft ── wp_luft_out ─────────────────────>┤
+             └──> hp_speicher (Quelle: kalter Teil) ──> wp_speicher ── wp_speicher_out ───────>┤
              └──> pth ────────────────────────────────────────────────────────────────────────┘
 
 - Ein Wärmeknoten ``waerme`` (Erzeugung liegt am Netz, TEAM). Last = Gebäude + Netzverluste.
@@ -22,16 +22,18 @@
   Speichergröße ab (kleine Speicher: mehr Oberfläche je m3, weniger Tiefe).
 - Größen werden mitoptimiert (linear): Kollektorfläche, Speicher, WP-, PtH- und Netzanschlussleistung.
   Kollektor-p_nom in MW bei 1 kW/m2 -> A [m2] = p_nom * 1000.
-- WP: zwei Quellen (Luft, Speicher) teilen sich die thermische Leistung ``wp_out``; die Luft-WP verliert
-  bei Kälte Leistung (constraints.py).
+- WP: zwei Maschinen mit eigener thermischer Leistung und eigenen Kosten (docs E41): Luft-WP (verliert
+  bei Kälte Leistung, constraints.py) und Speicher-WP (Quelle kalter Teil, COP nach Jensen et al. 2018).
+- Kern kälter als Vorlauf + dT (z. B. T_oben 80 °C): Direktentladung nur mit Nachheizen (Boosting).
 - Strom: Arbeitspreis am Generator ``netz_strom``, Leistungspreis als Kosten der Leistung ``netzanschluss``.
 """
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
-from serts import economics
+from serts import economics, heatpump
 from serts.config import Config
 
 M2_JE_MW = 1000.0  # Kollektor: 1 MW p_nom = 1000 m2 (p_max_pu in kW/m2)
@@ -101,6 +103,18 @@ def vorwaerm_verhaeltnis(cfg: Config) -> float:
     return (t_vor - t_r) / (t_vl - t_vor) if t_vl > t_vor else 1e3
 
 
+def boost_verhaeltnis(cfg: Config, T_a: pd.Series) -> pd.Series:
+    """Nachheizwärme je MWh Direktentladung aus dem Kern [-], je Stunde (Boosting, docs E41).
+
+    Der Kern ist T_oben heiß; das Netz braucht T_VL(t) + direkt_dT. Fehlt Temperatur, muss WP oder PtH
+    in derselben Stunde nachheizen: (T_noetig - T_oben) / (T_oben - T_RL), sonst 0
+    (Schauß et al. 2026, Gl. 4a). Basis: VL 80 + 5 = 85 = T_oben -> 0.
+    """
+    t_noetig = heatpump.vorlauf(cfg, T_a) + cfg.get("ptes.direkt_dT")
+    t_o, t_r = cfg.get("ptes.T_oben"), cfg.get("netz.T_RL")
+    return ((t_noetig - t_o).clip(lower=0.0) / (t_o - t_r)).rename("boost")
+
+
 def temperaturen_speicher(cfg: Config, s_kern, s_ueb, s_kalt, anteil_ueb: float):
     """(Temperatur oben, mittlere Temperatur) in degC aus den Füllständen 0..1 der drei Teile (nur Anzeige).
 
@@ -138,7 +152,7 @@ def build_network(
         ("netz", "strom"),
         ("elec", "strom"),
         ("solar", "waerme"),
-        ("wp", "waerme"),
+        ("wp_luft", "waerme"),
         ("waerme", "waerme"),
     ]:
         n.add("Bus", bus, carrier=car)
@@ -265,40 +279,52 @@ def build_network(
             if vorwaerm_verhaeltnis(cfg) > 0:
                 n.add("Link", "vorwaermen", bus0="ueb", bus1="waerme", carrier="waerme", p_nom=1e3)
 
-    # Wärmepumpe: Luft (COP je Stunde, aus unter T_min) und Speicher (COP konstant)
+    # Zwei Wärmepumpen mit eigener thermischer Leistung (``*_out``, docs E41):
+    # Luft (COP je Stunde, aus unter T_min) und Speicher (Quelle: kalter Teil, COP nach Jensen)
     luft_aus = ts["T_a"] < cfg.get("waermepumpe.T_min_luft")
     n.add(
         "Link",
         "hp_luft",
         bus0="elec",
-        bus1="wp",
+        bus1="wp_luft",
         carrier="strom",
         p_nom=1e3,
         efficiency=ts["COP_luft"],
         p_max_pu=(~luft_aus).astype(float),
     )
-    if mit_speicher:
-        cop = cfg.get("waermepumpe.COP_ptes")
-        n.add(
-            "Link",
-            "hp_speicher",
-            bus0="elec",
-            bus1="wp",
-            bus2="kalt",
-            carrier="strom",
-            p_nom=1e3,
-            efficiency=cop,
-            efficiency2=-(cop - 1.0),
-        )
     n.add(
         "Link",
-        "wp_out",
-        bus0="wp",
+        "wp_luft_out",
+        bus0="wp_luft",
         bus1="waerme",
         carrier="waerme",
         p_nom_extendable=True,
         capital_cost=annualisiert(cfg, "waermepumpe", "waermepumpe.kosten_spez"),
     )
+    if mit_speicher:
+        cop = heatpump.cop_speicher(cfg, ts["T_a"])
+        konstant = bool(np.isclose(cop.min(), cop.max()))
+        n.add("Bus", "wp_speicher", carrier="waerme")
+        n.add(
+            "Link",
+            "hp_speicher",
+            bus0="elec",
+            bus1="wp_speicher",
+            bus2="kalt",
+            carrier="strom",
+            p_nom=1e3,
+            efficiency=float(cop.iloc[0]) if konstant else cop,
+            efficiency2=-(float(cop.iloc[0]) - 1.0) if konstant else -(cop - 1.0),
+        )
+        n.add(
+            "Link",
+            "wp_speicher_out",
+            bus0="wp_speicher",
+            bus1="waerme",
+            carrier="waerme",
+            p_nom_extendable=True,
+            capital_cost=annualisiert(cfg, "waermepumpe", "waermepumpe.kosten_spez_speicher"),
+        )
 
     # PtH mit Mindestleistung (Redundanz) und Last
     eta = cfg.get("pth.eta")

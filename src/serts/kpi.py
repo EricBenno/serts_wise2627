@@ -50,7 +50,9 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
     """Stündliche Wärme-/Stromflüsse [MW] und Speicherinhalt [MWh]."""
     g, p0 = n.generators_t.p, n.links_t.p0
     leer = pd.Series(0.0, index=n.snapshots)
-    cop_s = cfg.get("waermepumpe.COP_ptes")
+    from serts.heatpump import cop_speicher
+
+    cop_s = cop_speicher(cfg, ts["T_a"]).reindex(n.snapshots)
     r = pd.DataFrame(index=n.snapshots)
     r["last"] = ts["last_gesamt"]
     r["T_a"] = ts["T_a"]  # nur für Plots
@@ -153,7 +155,12 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         "V_m3": V,
         "E_speicher_MWh": E,
         "speicher_preis_EUR_m3": speicher_preis,
-        "P_WP_MW": float(n.links.at["wp_out", "p_nom_opt"]),
+        "P_WP_luft_MW": float(n.links.at["wp_luft_out", "p_nom_opt"]),
+        "P_WP_speicher_MW": (
+            float(n.links.at["wp_speicher_out", "p_nom_opt"])
+            if "wp_speicher_out" in n.links.index
+            else 0.0
+        ),
         "P_PtH_MW": float(n.links.at["pth", "p_nom_opt"]) * cfg.get("pth.eta"),
         "stunden": len(n.snapshots),
         "anteil_heiss": anteil_heiss(cfg),
@@ -161,6 +168,16 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         "verlustrate_1_h": float(meta.get("verlustrate", 0.0)),
         "P_netzanschluss_MW": float(r["strom_netz"].max()),
     }
+    k["P_WP_MW"] = k["P_WP_luft_MW"] + k["P_WP_speicher_MW"]  # thermisch, beide Maschinen
+    wp_invest = k["P_WP_luft_MW"] * cfg.get("waermepumpe.kosten_spez") + k[
+        "P_WP_speicher_MW"
+    ] * cfg.get("waermepumpe.kosten_spez_speicher")
+
+    def wp_jahr(c):
+        return k["P_WP_luft_MW"] * annualisiert(c, "waermepumpe", "waermepumpe.kosten_spez") + k[
+            "P_WP_speicher_MW"
+        ] * annualisiert(c, "waermepumpe", "waermepumpe.kosten_spez_speicher")
+
     k.update(
         {
             f"Q_{x}_MWh": S[x]
@@ -185,6 +202,18 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     wp_strom = S["wp_strom_luft"] + S["wp_strom_speicher"]
     k["jaz_wp"] = (
         (S["wp_waerme_luft"] + S["wp_waerme_speicher"]) / wp_strom if wp_strom else float("nan")
+    )
+    k["cop_speicher_mittel"] = (
+        S["wp_waerme_speicher"] / S["wp_strom_speicher"]
+        if S["wp_strom_speicher"] > 1e-9
+        else float("nan")
+    )
+    # Boosting: Nachheizwärme für Direktentladung unter Vorlauftemperatur (docs E41)
+    from serts.network import boost_verhaeltnis
+
+    k["Q_boost_MWh"] = (
+        float((boost_verhaeltnis(cfg, ts["T_a"]).reindex(n.snapshots) * r["entladen_direkt"]).sum())
+        * skal
     )
 
     # Speicher
@@ -239,7 +268,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     capex = {
         "kollektor": A * annualisiert(cfg, "kollektor", "kollektor.kosten_spez"),
         "speicher": annualisiert(cfg, "ptes", invest_speicher) if V > 0 else 0.0,
-        "waermepumpe": k["P_WP_MW"] * annualisiert(cfg, "waermepumpe", "waermepumpe.kosten_spez"),
+        "waermepumpe": wp_jahr(cfg),
         "pth": k["P_PtH_MW"] * annualisiert(cfg, "pth", "pth.kosten_spez"),
     }
     mc = n.get_switchable_as_dense("Generator", "marginal_cost")["netz_strom"]
@@ -276,7 +305,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     k["invest_EUR"] = (1.0 + cfg.get("oekonomie.nebenkosten")) * (
         A * cfg.get("kollektor.kosten_spez")
         + invest_speicher
-        + k["P_WP_MW"] * cfg.get("waermepumpe.kosten_spez")
+        + wp_invest
         + k["P_PtH_MW"] * cfg.get("pth.kosten_spez")
     )  # inkl. Nebenkosten, ohne Verteilnetz
     k["lcoh"] = economics.lcoh(sum(capex.values()), strom, Q)
@@ -301,8 +330,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         capex_b = {
             "kollektor": A * annualisiert(cb, "kollektor", "kollektor.kosten_spez"),
             "speicher": annualisiert(cb, "ptes", invest_speicher) if V > 0 else 0.0,
-            "waermepumpe": k["P_WP_MW"]
-            * annualisiert(cb, "waermepumpe", "waermepumpe.kosten_spez"),
+            "waermepumpe": wp_jahr(cb),
             "pth": k["P_PtH_MW"] * annualisiert(cb, "pth", "pth.kosten_spez"),
         }
         k["lcoh_bew"] = economics.lcoh(sum(capex_b.values()), strom, Q)
@@ -310,7 +338,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         foerderbar = {
             "kollektor": A * cfg.get("kollektor.kosten_spez"),
             "ptes": invest_speicher,
-            "waermepumpe": k["P_WP_MW"] * cfg.get("waermepumpe.kosten_spez"),
+            "waermepumpe": wp_invest,
             "pth": k["P_PtH_MW"] * cfg.get("pth.kosten_spez"),
         }
         if cfg.get("netz.netzkosten_einbeziehen"):

@@ -41,3 +41,10 @@ def test_tornado_plot(tmp_path):
     )
     out = plots.tornado(df, "lcoh", "LCOH", tmp_path / "t.png")
     assert out.exists()
+
+
+def test_varianten_nur_ausgewaehlte_parameter(cfg):
+    v = varianten(cfg, nur=["netz.T_VL", "netz.T_VL_min"])
+    assert v == [("netz.T_VL", w) for w in cfg.node("netz.T_VL")["sens"]] + [
+        ("netz.T_VL_min", w) for w in cfg.node("netz.T_VL_min")["sens"]
+    ]
