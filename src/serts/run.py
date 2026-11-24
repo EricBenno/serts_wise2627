@@ -242,7 +242,7 @@ def run(
     if stunden:
         ts = ts.iloc[:stunden]
     t1 = time.perf_counter()
-    n, k, r = loese(cfg, ts, A_m2, V_m3)
+    n, k, r = loese(cfg, ts, A_m2, V_m3, jobs=int(cfg.get("solver.jobs_segmente") or 1))
     teile = [f"A{A_m2:g}" if A_m2 is not None else "", f"V{V_m3:g}" if V_m3 is not None else ""]
     label = "_".join(filter(None, teile)) or "opt"
     out = new_run_dir(cfg, label + (f"_{stunden}h" if stunden else ""))

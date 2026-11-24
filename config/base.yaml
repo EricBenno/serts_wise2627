@@ -870,6 +870,12 @@ solver:
     einheit: "EUR/MWh"
     status: vorgabe
     quelle: "numerische Hilfsgröße (keine Kosten): Speicherladen minimal teurer als Direktnutzung; << Strompreis, LCOH-Einfluss < 0,01 EUR/MWh"
+  jobs_segmente:
+    wert: 5
+    einheit: "Prozesse"
+    status: vorgabe
+    quelle: "serts run löst die Speicher-Kostensegmente parallel (je 1 Thread); Benchmark 24.11.2026: 460 statt ≈ 840 s (Windows), gleiche Ergebnisse (docs/laufzeit.md)"
+    hinweis: "1 = nacheinander. Mehr Prozesse als Segmente bringen nichts; jeder Prozess braucht eigenen Arbeitsspeicher."
 
 # -------------------------------------------------------------------------------------
 heatmap:

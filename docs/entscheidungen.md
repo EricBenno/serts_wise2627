@@ -525,3 +525,12 @@ Vorlauf jetzt fester Teil des Tornados: `netz.T_VL` 70/90 °C fest, `netz.T_VL_m
 - *Grafiken* jetzt mit englischen Beschriftungen (Läufe, Tornado, Heatmap); die README-Grafiken sind aus den
   Ergebnissen vom 24.11. neu gezeichnet (ohne Pacht und mit altem Tornado-Satz, bis zum nächsten vollen Lauf).
 - *BEW-Ausweis:* die Pacht bleibt in den Kosten mit BEW enthalten (nicht förderfähig, vorher fälschlich weggelassen).
+
+## E46 Laufzeit: Segmente parallel, Laufzeitausweis, Benchmark (24.11.2026)
+
+- `serts run` löst die Speicher-Kostensegmente parallel (`solver.jobs_segmente` = 5, je 1 Thread), wie schon die
+  Tornado-Basis. Netz klein: 510 s statt ≈ 14 min; Vergleich mit dem Lauf nacheinander (Ganzjahr): alle Kennzahlen,
+  Zeitreihen und das Netz identisch; Test `test_segmente_parallel_gleich_wie_nacheinander`.
+- Jeder Lauf schreibt die Laufzeit je Schritt und die Plattform in `meta.json`; `serts bench` misst den Basisfall
+  wiederholt (`benchmarks/bench.csv`). Windows gegen Ubuntu (WSL2) auf demselben Laptop: −15 % (eine Optimierung)
+  bis −27 % (Segmente parallel) unter Linux, gleiche Ergebnisse (`docs/laufzeit.md`).

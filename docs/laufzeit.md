@@ -29,8 +29,9 @@ mode the step times are summed over the five parallel segments and are therefore
 - Run order was Windows first, then WSL, for each mode. WSL never ran on a cooler CPU, so thermal throttling does not
   explain its lead. Small samples (2–3 runs); repetitions spread by ±5 %.
 
-**Side finding:** `serts run` currently solves the segments one after another (≈ 14 min for the small network on
-Windows). Solved in parallel as in the benchmark, the same run takes ≈ 8 min on Windows and ≈ 5.5 min under WSL.
+**Parallel segments in `serts run`:** since 24.11.2026 `serts run` solves the storage segments in parallel
+(`solver.jobs_segmente`, default 5). Small network on Windows: 510 s instead of ≈ 14 min sequentially. A full-year
+comparison with the sequential run gave identical key figures, time series and network file.
 
 To repeat the comparison: `uv run serts bench --modus fest` (≈ 5 min) or `--modus voll --jobs 5` (≈ 15 min) on each
 system; every run appends to `benchmarks/bench.csv`. Every `serts run` also records its step times and the platform in

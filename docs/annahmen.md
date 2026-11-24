@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 47, vorgabe 22, annahme 73, offen 0
+Status: belegt 47, vorgabe 23, annahme 73, offen 0
 
 
 ## standort
@@ -208,6 +208,7 @@ Status: belegt 47, vorgabe 22, annahme 73, offen 0
 | `solver.name` | highs | - | vorgabe | BRF §2 |  |  |
 | `solver.optionen` | {'solver': 'ipm', 'run_crossover': 'off'} | - | vorgabe | Benchmark 09.11.2026 (A_spez 0,4, V/A 1,0, 8760 h, 1 Thread): Simplex 262 s, IPM ohne Crossover 56 s, identisches Optimum |  |  |
 | `solver.tie_breaker` | 0.1 | EUR/MWh | vorgabe | numerische Hilfsgröße (keine Kosten): Speicherladen minimal teurer als Direktnutzung; << Strompreis, LCOH-Einfluss < 0,01 EUR/MWh |  |  |
+| `solver.jobs_segmente` | 5 | Prozesse | vorgabe | serts run löst die Speicher-Kostensegmente parallel (je 1 Thread); Benchmark 24.11.2026: 460 statt ≈ 840 s (Windows), gleiche Ergebnisse (docs/laufzeit.md) |  | 1 = nacheinander. Mehr Prozesse als Segmente bringen nichts; jeder Prozess braucht eigenen Arbeitsspeicher. |
 
 ## heatmap
 
