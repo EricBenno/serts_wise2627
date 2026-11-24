@@ -80,9 +80,10 @@ source: [docs/eingangsparameter.md](docs/eingangsparameter.md) (overview small/l
 
 As of 24.11.2026 (decisions E43/E44), preliminary.
 
-> **Note:** the land lease (1,000 €/(ha·a), decision E45) and the updated tornado parameters are already in the model
-> but not yet in the results and figures below. A base run with the lease gives the same sizes and +0.2 €/MWh in both
-> networks (small 225.9, large 189.4 €/MWh); a full update follows soon.
+> **Note:** the tornado figures below are recomputed with the land lease (1,000 €/(ha·a), decision E45) and the
+> current tornado parameters, including supply temperatures of 100/110 °C (E47). The table and the other figures
+> are still without the lease; a base run with the lease gives the same sizes and +0.2 €/MWh in both networks
+> (small 225.9, large 189.4 €/MWh).
 
 | | Small network | Large network |
 |---|---|---|
@@ -105,7 +106,9 @@ As of 24.11.2026 (decisions E43/E44), preliminary.
 - **Day-ahead price is used actively:** heat pump and PtH charge the storage in cheap hours (mainly in autumn);
   the electricity they buy costs 225 instead of 231 €/MWh on average (large network: 221).
 - **Lower supply temperature helps:** sliding to 60 °C in summer −12 to −14 €/MWh, fixed 70 °C −10 to −11;
-  90 °C costs +4 €/MWh.
+  90 / 100 / 110 °C cost +4 / +8 / +12 €/MWh (≈ 0.4 €/MWh per K). With 100 °C or more the small network is above gas
+  district heating; the large one stays below even at 110 °C (201 vs. 207 €/MWh). Optimistic for 100/110 °C:
+  network losses stay those of 80/50 °C and heat pump costs do not depend on the supply temperature.
 - **Area is the bottleneck:** without an area limit a **seasonal storage** is cheapest (small network: 33,600 m³,
   93 % solar, −14 €/MWh; large network: −12 €/MWh). Upper bound: only the land lease is charged, no purchase or permitting.
 - **PtH as full back-up costs** about 12 €/MWh (small) and 7 €/MWh (large) compared with PtH sized only as needed.
@@ -180,8 +183,8 @@ uv run serts run --V 0         # variant without storage (more options: --A, --s
 uv run serts run --szenario strom_fest  # fixed electricity price 30 ct/kWh instead of day-ahead
 uv run serts varianten         # base / no storage / heat pump + PtH only / with BEW subsidy (+ gas), ≈ 10 min
 uv run serts heatmap           # grid of collector area x storage volume
-uv run serts tornado           # sensitivities (≈ 1.5 h per network)
-uv run serts bench             # run-time benchmark of the base case -> benchmarks/bench.csv
+uv run serts tornado           # sensitivities (≈ 2 h per network)
+uv run serts bench             # run-time benchmark of the base case -> benchmarks/bench.csv (local, not in git)
 uv run serts annahmen          # generate docs/annahmen.md from config/base.yaml
 uv run serts uebersicht        # generate docs/eingangsparameter.md
 uv run serts offen             # list of open parameters

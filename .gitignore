@@ -45,3 +45,6 @@ desktop.ini
 
 # Claude Code: Agentenhinweise und Einstellungen nur lokal
 .claude/
+
+# Benchmarks und Rechnerdaten nur lokal (serts bench)
+benchmarks/

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import multiprocessing
 import os
 import platform
 import subprocess
@@ -137,6 +138,19 @@ def niedrige_prioritaet() -> None:
         pass
 
 
+def prozesspool(jobs: int) -> ProcessPoolExecutor:
+    """Prozesspool mit niedriger Priorität, Start immer per ``spawn`` (wie unter Windows).
+
+    Unter Linux wäre ``fork`` Standard: Hat der Elternprozess schon mit HiGHS gerechnet (Thread-Pool),
+    erben die Kinder gesperrte Locks und hängen bei 0 % CPU.
+    """
+    return ProcessPoolExecutor(
+        max_workers=jobs,
+        mp_context=multiprocessing.get_context("spawn"),
+        initializer=niedrige_prioritaet,
+    )
+
+
 def _segment(cfg: Config, ts: pd.DataFrame, A_m2, i: int, threads: int | None):
     """Ein Kostensegment lösen -> (i, n, k, r) oder (i, None, Text, None) wenn unzulässig."""
     seg = economics.ptes_segmente(cfg)[i]
@@ -185,9 +199,7 @@ def loese(
 
     def rechnen(idx):
         if jobs > 1 and len(idx) > 1:
-            with ProcessPoolExecutor(
-                max_workers=min(jobs, len(idx)), initializer=niedrige_prioritaet
-            ) as pool:
+            with prozesspool(min(jobs, len(idx))) as pool:
                 return list(
                     pool.map(_segment, *zip(*[(cfg, ts, A_m2, i, 1) for i in idx], strict=True))
                 )

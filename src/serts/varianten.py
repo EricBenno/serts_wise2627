@@ -14,7 +14,6 @@ Ausgabe: results/<netz>/<zeit>_<szenario>_varianten/ mit varianten.csv, variante
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -22,7 +21,7 @@ import pandas as pd
 
 from serts.config import Config
 from serts.prepare import build_zeitreihen
-from serts.run import loese, new_run_dir, niedrige_prioritaet
+from serts.run import loese, new_run_dir, prozesspool
 
 log = logging.getLogger(__name__)
 
@@ -112,7 +111,7 @@ def varianten(cfg: Config, jobs: int = 2) -> Path:
     out = new_run_dir(cfg, "varianten")
     f = faelle(cfg)
     threads = 1 if jobs > 1 else None
-    with ProcessPoolExecutor(max_workers=jobs, initializer=niedrige_prioritaet) as pool:
+    with prozesspool(jobs) as pool:
         futs = [pool.submit(_lauf, name, c, A, V, threads) for name, (c, A, V) in f.items()]
         ergebnisse = dict(fu.result() for fu in futs)
     df = pd.DataFrame({name: ergebnisse[name] for name in f}).loc[

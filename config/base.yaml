@@ -152,8 +152,8 @@ netz:
     einheit: "degC"
     status: annahme
     quelle: "TEAM: Netz bleibt bei 80 degC Vorlauf wie in der NB (ersetzt BRF-Wert 75 degC)"
-    sens: [70, 90]
-    hinweis: "Wirkt auf COP Luft- und Speicher-WP, Direktentladung (über 80 °C Boosting, da T_oben 85), Übergangszone und Vorwärmen. Netzverluste bleiben die der Netzberechnung (80/50 °C) -> Vorteil niedriger Vorläufe eher unterschätzt. Im Tornado 70/90 °C fest; 75/85 °C einzeln (Stand 21.11. in docs/ergebnisse*.md)."
+    sens: [70, 90, 100, 110]
+    hinweis: "Wirkt auf COP Luft- und Speicher-WP, Direktentladung (über 80 °C Boosting, da T_oben 85: 100/110 °C -> 0,5/0,75 MWh je MWh Entladung), Übergangszone und Vorwärmen. Netzverluste bleiben die der Netzberechnung (80/50 °C) -> Vorteil niedriger Vorläufe eher unterschätzt, Kosten hoher Vorläufe auch. 100/110 °C außerhalb der KWW-Stützwerte (Gütegrad Luft-WP bleibt 44 % wie bei 95 °C, WP-Investkosten unverändert) -> eher optimistisch. Im Tornado 70/90/100/110 °C fest; 75/85 °C einzeln (Stand 21.11. in docs/ergebnisse*.md)."
   T_VL_min:
     wert: 80
     einheit: "degC"

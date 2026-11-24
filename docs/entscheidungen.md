@@ -534,3 +534,19 @@ Vorlauf jetzt fester Teil des Tornados: `netz.T_VL` 70/90 °C fest, `netz.T_VL_m
 - Jeder Lauf schreibt die Laufzeit je Schritt und die Plattform in `meta.json`; `serts bench` misst den Basisfall
   wiederholt (`benchmarks/bench.csv`). Windows gegen Ubuntu (WSL2) auf demselben Laptop: −15 % (eine Optimierung)
   bis −27 % (Segmente parallel) unter Linux, gleiche Ergebnisse (`docs/laufzeit.md`).
+
+## E47 Vorlauf 100/110 °C im Tornado; Prozesspools per spawn (24.11.2026)
+
+- *Tornado:* `netz.T_VL` jetzt 70 / 90 / 100 / 110 °C (vorher 70 / 90). Modell unverändert: über 85 °C braucht jede
+  MWh Direktentladung Nachheizen (100 °C: 0,5, 110 °C: 0,75 MWh), COP Luft-WP nach KWW mit Gütegrad 44 % über 95 °C
+  gehalten, Speicher-WP nach Jensen. **Wirkung** (mit Pacht): Netz klein 233,7 / 237,4 €/MWh (+7,8 / +11,5, ab
+  ≈ 90 °C über Gas 229,9), Netz groß 197,5 / 201,4 €/MWh (+8,2 / +12,1, weiter unter Gas 207,3). Tabellen in
+  `docs/ergebnisse.md`, `docs/ergebnisse_netz_gross.md`. Eher optimistisch: Netzverluste bleiben 80/50 °C,
+  WP-Investkosten hängen nicht vom Vorlauf ab.
+- *Prozesspools:* `run.prozesspool` startet die Worker immer per `spawn` (Windows-Standard). Unter Linux war `fork`
+  Standard; hatte der Elternprozess schon mit HiGHS gerechnet, hingen die Kinder bei 0 % CPU (Testsuite und
+  `serts tornado` unter WSL). Gilt für `run`, `tornado`, `varianten`, `heatmap`.
+- *Voller Tornado 24.11.* mit Pacht und neuem Satz (`results/klein/20261124-161435_base_tornado`,
+  `results/gross/20261124-185038_base_tornado`, je ≈ 2 h unter WSL), README-Grafiken neu. Tabellen in
+  `docs/ergebnisse*.md`.
+- *Benchmarks nur lokal:* `benchmarks/` ist nicht mehr in Git (`.gitignore`); `serts bench` schreibt weiter dorthin.

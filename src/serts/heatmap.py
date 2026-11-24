@@ -9,7 +9,6 @@ Ausgabe: results/<netz>/<zeit>_<szenario>_heatmap/ mit heatmap.csv und heatmap.p
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -19,7 +18,7 @@ from matplotlib import patheffects
 
 from serts.config import Config
 from serts.prepare import build_zeitreihen
-from serts.run import loese, new_run_dir, niedrige_prioritaet
+from serts.run import loese, new_run_dir, prozesspool
 
 log = logging.getLogger(__name__)
 WERTE = [
@@ -142,7 +141,7 @@ def heatmap(cfg: Config, jobs: int = 3) -> Path:
         if passt(cfg, A, V)
     ]
     threads = 1 if jobs > 1 else None
-    with ProcessPoolExecutor(max_workers=jobs, initializer=niedrige_prioritaet) as pool:
+    with prozesspool(jobs) as pool:
         zeilen = list(
             pool.map(
                 _punkt, [cfg] * len(punkte), *zip(*punkte, strict=True), [threads] * len(punkte)

@@ -3,7 +3,7 @@
 Measured on 24.11.2026 with `uv run serts bench` on the same laptop (Intel Core i7-1185G7, 4 cores / 8 threads,
 32 GB RAM), first on Windows 11, then on Ubuntu 26.04 under WSL2 (8 threads, 15 GB). Same code (git `7053b0c`),
 same package versions from `uv.lock` (Python 3.12, PyPSA 1.4, linopy 0.10, HiGHS 1.15). On Linux the repo was
-cloned into the Linux file system (`~/serts`), not run from `/mnt/c`. Raw data: `benchmarks/bench.csv`.
+cloned into the Linux file system (`~/serts`), not run from `/mnt/c`. Raw data: `benchmarks/bench.csv` (local only, not in git).
 
 Median per step, small network, full year (8760 h):
 
@@ -34,5 +34,5 @@ mode the step times are summed over the five parallel segments and are therefore
 comparison with the sequential run gave identical key figures, time series and network file.
 
 To repeat the comparison: `uv run serts bench --modus fest` (≈ 5 min) or `--modus voll --jobs 5` (≈ 15 min) on each
-system; every run appends to `benchmarks/bench.csv`. Every `serts run` also records its step times and the platform in
+system; every run appends to `benchmarks/bench.csv` (local only, ignored by git). Every `serts run` also records its step times and the platform in
 `meta.json`.

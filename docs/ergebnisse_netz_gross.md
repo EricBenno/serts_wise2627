@@ -6,6 +6,54 @@ Spitze 15,5 MW (Stundensumme), Trasse 14.291 m, Freifläche 80.000 m². Alle and
 (`docs/eingangsparameter.md` zeigt beide nebeneinander). Kollektor 276 €/m² Brutto (KWW, Klasse ≥ 15.000 m²
 Apertur), Trasse 1.140/640 €/m (KWW, größere Rohre), Luft-WP nach KWW-Gütegrad, Speicher mit Kennlinie (E34–E36).
 
+## Tornado 24.11.2026 mit Pacht und Tornado-Satz E45/E47
+
+`uv run serts tornado --netz gross` (`results/gross/20261124-185038_base_tornado`, ≈ 2 h unter WSL). Basis mit
+Pacht: 28.350 m² / 39.200 m³, **Wärmepreis inkl. Netz 189,4 €/MWh (Gas 207,3)**, Solar 29 %. Δ zur Basis:
+
+| Parameter | niedrig | hoch |
+|---|---|---|
+| fester Tarif 20 / 30 / 40 ct statt Day-Ahead | −9,4 | +27,0 / +63,2 |
+| Preisjahr 2023 / 2022 | | +7,6 / +33,7 |
+| Förderquote 40 % | −25,2 | |
+| Ankerkunde 20 / 40 % | −13,7 / −22,9 | |
+| Zins 2 / 6 % | −18,0 | +19,1 |
+| Strompreis +2 %/a real | | +15,8 |
+| WP-Gütegrad ×0,85 / ×1,15 | +14,6 | −10,9 |
+| Vorlauf gleitend 60 / 70 °C | −14,1 / −7,0 | |
+| Last ×0,8 / ×1,2 | +12,7 | −8,3 |
+| **Vorlauf fest 70 / 90 / 100 / 110 °C** | −10,8 | +4,1 / +8,2 / +12,1 |
+| Fläche unbegrenzt (130.000 m³ = Rasterende) | −11,8 | |
+| Hausanschluss 5.000 / 15.000 € | −9,8 | +9,8 |
+| Nebenkosten 0 / 20 % | −9,4 | +9,3 |
+| Trasse Straße 730 / 1.560 €/m | −8,0 | +8,2 |
+| Luft-WP 1.000 / 1.730 €/kW | −7,5 | +8,0 |
+| PtH ohne Redundanz | −6,7 | |
+| Laden aus dem Netz aus | | +5,0 |
+
+Übrige (Kollektorkosten, Strahlung, Straßenanteil, Leistungspreis, eta0, Speicherkosten/-verluste, Vorwärmen, Pacht
+0 / 3.000 €/(ha·a)) ≤ ±4,1 €/MWh. Gas-Referenz 6 / 8 / 10 / 14 ct/kWh: Abstand −54,2 / −30,9 / −7,5 / +39,2 €/MWh.
+Gegenüber dem Tornado vom 23.11. (ohne Pacht) ändern sich die Werte um höchstens 0,3 €/MWh. Auch bei 110 °C
+Vorlauf bleibt das große Netz unter Gas (201,4 statt 207,3 €/MWh).
+
+## Vorlauf 100/110 °C (24.11.2026, mit Pacht, E47)
+
+`uv run serts tornado --netz gross --parameter netz.T_VL` (`results/gross/20261124-150915_base_sensitivitaet`).
+Gas-Fernwärme 207,3 €/MWh.
+
+| Vorlauf | LCOH | inkl. Netz | Δ Basis | Kollektor [m²] | Speicher [m³] | JAZ Luft-WP | COP Speicher-WP | Strom [MWh] | Boosting [MWh] | PtH [MWh] |
+|---|---|---|---|---|---|---|---|---|---|---|
+| fest 70 °C | 118,4 | 178,6 | −10,8 | 27.760 | 42.810 | 2,60 | 4,33 | 13.970 | 0 | 62 |
+| **fest 80 °C (Basis)** | 128,0 | 189,4 | – | 28.350 | 39.200 | 2,25 | 3,91 | 15.880 | 0 | 95 |
+| fest 90 °C | 131,6 | 193,5 | +4,1 | 27.940 | 41.720 | 2,18 | 3,76 | 16.670 | 686 | 169 |
+| **fest 100 °C** | 135,2 | **197,5** | **+8,2** | 27.610 | 43.740 | 2,11 | 3,64 | 17.440 | 1.347 | 265 |
+| **fest 110 °C** | 138,7 | **201,4** | **+12,1** | 27.170 | 46.430 | 2,05 | 3,52 | 18.210 | 1.990 | 350 |
+
+Lesart: ≈ 0,4 €/MWh je K über 80 °C; das große Netz bleibt auch bei 110 °C unter der Gas-Fernwärme (−5,8 €/MWh).
+Der Speicher wächst auf 46.400 m³, das Kollektorfeld schrumpft leicht (Boosting macht Direktentladung teurer, mehr
+Wärme läuft über die Speicher-WP). Gleiche Vorbehalte wie Netz klein (Netzverluste 80/50 °C, KWW-Gütegrad über 95 °C
+gehalten, WP-Kosten unabhängig vom Vorlauf) -> eher optimistisch.
+
 ## Stand 24.11.2026 nach E43/E44 (Day-Ahead-Basis, Gas 12 ct, Zins 4 %, Kosten je Netz)
 
 Annahmen wie Netz klein (`docs/ergebnisse.md`, Abschnitt 24.11.), aber Luft-WP 1.340 €/kW und PtH 180 €/kW (KWW,

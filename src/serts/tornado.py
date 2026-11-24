@@ -11,7 +11,7 @@ neuen Solverlauf auf dem Basis-Ergebnis nachgerechnet (``NUR_NACHRECHNUNG``).
 from __future__ import annotations
 
 import logging
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import as_completed
 from pathlib import Path
 
 import pandas as pd
@@ -19,7 +19,7 @@ import pandas as pd
 from serts import kpi, plots
 from serts.config import Config
 from serts.prepare import build_zeitreihen
-from serts.run import loese, new_run_dir, niedrige_prioritaet
+from serts.run import loese, new_run_dir, prozesspool
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ def tornado(cfg: Config, jobs: int = 6, nur: list[str] | None = None) -> Path:
         zeilen.append(_zeile(cfg, p, w, k))
 
     threads = 1 if jobs > 1 else None
-    with ProcessPoolExecutor(max_workers=jobs, initializer=niedrige_prioritaet) as pool:
+    with prozesspool(jobs) as pool:
         futs = [pool.submit(_lauf, cfg, p, w, threads, start) for p, w in neu]
         for f in as_completed(futs):
             zeilen.append(f.result())

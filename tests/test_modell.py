@@ -201,6 +201,17 @@ def test_boosting_wenn_kern_kaelter_als_vorlauf(cfg, ts):
     assert (nachheizen >= alpha * p0["entladen_direkt"] - 1e-6).all()
 
 
+@pytest.mark.parametrize("t_vl, boost", [(100, 0.5), (110, 0.75)])
+def test_hoher_vorlauf_100_110(cfg, ts, t_vl, boost):
+    """Tornado-Varianten 100/110 °C: Boosting (T_VL + 5 - 85)/(85 - 45), COP sinken, Vorwärmen bleibt."""
+    c = cfg.variante("netz.T_VL", t_vl)
+    assert network.boost_verhaeltnis(c, ts["T_a"]).iloc[0] == pytest.approx(boost)
+    assert network.vorwaerm_verhaeltnis(c) == pytest.approx(15 / (t_vl - 60))
+    for f in (heatpump.cop_luft, heatpump.cop_speicher):
+        cop, cop_basis = f(c, ts["T_a"]), f(cfg, ts["T_a"])
+        assert np.isfinite(cop).all() and (cop > 1).all() and (cop < cop_basis).all()
+
+
 def test_durchfluss_begrenzt_laden_und_entladen(cfg, ts):
     """Volumenstrom je Richtung <= austauschrate x V (Dronninglund); .inf = keine Grenze (E41)."""
     c = cfg.variante("ptes.austauschrate", 0.002)
