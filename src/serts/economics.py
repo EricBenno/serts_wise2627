@@ -183,7 +183,9 @@ def gas_referenz(cfg: Config, Q_MWh_a: float, P_max_MW: float) -> dict:
         * cfg.get("gas_referenz.gaspreis")
         * preisdynamik(zins, T, cfg.get("oekonomie.preisaenderung.gas"))
     )
-    co2_t = brennstoff_hi * cfg.get("gas_referenz.emissionsfaktor")  # nur Ausweis; Preis im Gaspreis (E43)
+    co2_t = brennstoff_hi * cfg.get(
+        "gas_referenz.emissionsfaktor"
+    )  # nur Ausweis; Preis im Gaspreis (E43)
     return {
         "gas_P_kessel_MW": P,
         "gas_capex_a": capex_a,

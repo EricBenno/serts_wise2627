@@ -80,7 +80,9 @@ def _lauf(cfg: Config, pfad: str, wert, threads: int | None, start: int | None) 
     logging.getLogger("linopy").setLevel(logging.WARNING)
     logging.getLogger("pypsa").setLevel(logging.WARNING)
     c = cfg.variante(pfad, wert)
-    if pfad == "strom.preis_fest":  # wirkt nur beim festen Tarif: Variante = fester Tarif statt Day-Ahead (E43)
+    if (
+        pfad == "strom.preis_fest"
+    ):  # wirkt nur beim festen Tarif: Variante = fester Tarif statt Day-Ahead (E43)
         c = c.variante("strom.tarif", "fest")
     ts, _ = build_zeitreihen(c, vollstaendig=True)
     _, k, _ = loese(c, ts, threads=threads, start_segment=start)
@@ -120,17 +122,17 @@ def tornado(cfg: Config, jobs: int = 6, nur: list[str] | None = None) -> Path:
     df = pd.DataFrame(zeilen)
     df.to_csv(out / "tornado.csv", index=False)
     plots.tornado(
-        df, "lcoh", "LCOH Erzeugung [€/MWh]", out / "tornado_lcoh.png", referenz="gas_lcoh"
+        df, "lcoh", "LCOH generation [€/MWh]", out / "tornado_lcoh.png", referenz="gas_lcoh"
     )
     plots.tornado(
         df,
         "lcoh_inkl_netz",
-        "Wärmepreis inkl. Netz [€/MWh geliefert]",
+        "Heat price incl. network [€/MWh delivered]",
         out / "tornado_lcoh_inkl_netz.png",
         referenz="gas_lcoh_inkl_netz",
     )
     plots.tornado(
-        df, "abstand_gas", "Vorteil ggü. Gas-Referenz [€/MWh]", out / "tornado_abstand_gas.png"
+        df, "abstand_gas", "Advantage over gas reference [€/MWh]", out / "tornado_abstand_gas.png"
     )
-    plots.tornado(df, "solar_gesamt", "Solaranteil [-]", out / "tornado_solaranteil.png")
+    plots.tornado(df, "solar_gesamt", "Solar share [-]", out / "tornado_solaranteil.png")
     return out

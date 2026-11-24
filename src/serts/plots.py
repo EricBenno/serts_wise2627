@@ -14,10 +14,10 @@ def lastgang(last: pd.DataFrame, out: Path) -> Path:
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4), gridspec_kw={"width_ratios": [2, 1]})
     cols = [c for c in ("gebaeude", "netzverlust", "ankerkunde") if last[c].abs().sum() > 0]
     last[cols].resample("D").mean().plot.area(ax=a1, linewidth=0)
-    a1.set(ylabel="Leistung [MW] (Tagesmittel)", xlabel="")
+    a1.set(ylabel="Power [MW] (daily mean)", xlabel="")
     dauer = np.sort(last["gesamt"].to_numpy())[::-1]
     a2.plot(np.arange(1, len(dauer) + 1), dauer)
-    a2.set(xlabel="Stunden [h]", ylabel="Leistung [MW]", title="Jahresdauerlinie")
+    a2.set(xlabel="Hours [h]", ylabel="Power [MW]", title="Load duration curve")
     for a in (a1, a2):
         a.grid(alpha=0.3)
     fig.tight_layout()
@@ -30,8 +30,8 @@ def last_ueber_temperatur(last: pd.Series, T_a: pd.Series, out: Path) -> Path:
     fig, ax = plt.subplots(figsize=(6, 4))
     d = pd.DataFrame({"T": T_a.resample("D").mean(), "P": last.resample("D").mean()})
     ax.scatter(d["T"], d["P"], s=8)
-    ax.set(xlabel="Tagesmittel Außentemperatur [°C]", ylabel="Tagesmittel Last [MW]")
-    ax.set_title(f"Korrelation r = {d['T'].corr(d['P']):.2f}")
+    ax.set(xlabel="Daily mean outdoor temperature [°C]", ylabel="Daily mean load [MW]")
+    ax.set_title(f"Correlation r = {d['T'].corr(d['P']):.2f}")
     ax.grid(alpha=0.3)
     fig.tight_layout()
     fig.savefig(out, dpi=150)
@@ -42,11 +42,11 @@ def last_ueber_temperatur(last: pd.Series, T_a: pd.Series, out: Path) -> Path:
 def monatsbilanz(r: pd.DataFrame, out: Path) -> Path:
     """Wärmeherkunft je Monat (gestapelt) + Speicherinhalt (Tagesmittel)."""
     quellen = {
-        "Solar direkt": r["solar_direkt"],
-        "Speicher direkt": r["entladen_direkt"],
-        "Speicher Vorwärmen": r["vorwaermen"],
-        "WP aus Speicher": r["wp_waerme_speicher"],
-        "WP Luft": r["wp_waerme_luft"],
+        "Solar direct": r["solar_direkt"],
+        "Storage direct": r["entladen_direkt"],
+        "Storage preheating": r["vorwaermen"],
+        "Storage HP": r["wp_waerme_speicher"],
+        "Air-source HP": r["wp_waerme_luft"],
         "PtH": r["pth_waerme"],
     }
     monat = pd.DataFrame(quellen).resample("MS").sum()
@@ -54,12 +54,12 @@ def monatsbilanz(r: pd.DataFrame, out: Path) -> Path:
     fig, (a1, a2) = plt.subplots(2, 1, figsize=(10, 7), sharex=False)
     monat.index = monat.index.strftime("%b")
     monat.plot.bar(stacked=True, ax=a1, width=0.8)
-    a1.plot(range(len(last)), last.to_numpy(), "k_", ms=20, mew=2, label="Last")
-    a1.set(ylabel="Wärme [MWh/Monat]", xlabel="")
+    a1.plot(range(len(last)), last.to_numpy(), "k_", ms=20, mew=2, label="Load")
+    a1.set(ylabel="Heat [MWh/month]", xlabel="")
     a1.legend(ncol=3, fontsize=8)
     if "speicherinhalt" in r:
         r["speicherinhalt"].resample("D").mean().plot(ax=a2)
-        a2.set(ylabel="Speicherinhalt [MWh]", xlabel="")
+        a2.set(ylabel="Storage content [MWh]", xlabel="")
     for a in (a1, a2):
         a.grid(alpha=0.3)
     fig.tight_layout()
@@ -85,13 +85,13 @@ def tornado(
         g = g.sort_values("wert")
         bw = float(g["basiswert"].iloc[0])
         werte = " / ".join(
-            "unbegrenzt" if np.isinf(float(w)) else f"{float(w):g}" for w in g["wert"]
+            "unlimited" if np.isinf(float(w)) else f"{float(w):g}" for w in g["wert"]
         )
-        label = f"{p}\n(Basis {bw:g}; Variante {werte})"
+        label = f"{p}\n(base {bw:g}; variants {werte})"
         if p == "netz.T_VL_min":  # sonst als fester Vorlauf missverständlich
-            label = f"{p} (gleitender Vorlauf)\n(Basis {bw:g} fest; Sommer {werte} °C)"
+            label = f"{p} (sliding supply temp.)\n(base {bw:g} fixed; summer {werte} °C)"
         if p == "strom.preis_fest":  # Basis ist Day-Ahead, Varianten fester Tarif (E43)
-            label = f"{p} (fester Tarif statt Day-Ahead)\n({werte} EUR/MWh)"
+            label = f"{p} (fixed tariff instead of day-ahead)\n({werte} EUR/MWh)"
         # größter Ausschlag zuerst zeichnen, damit kleinere Balken sichtbar bleiben
         g = g.reindex(g["delta"].abs().sort_values(ascending=False).index)
         gruppen.append((label, bw, g))
@@ -116,19 +116,19 @@ def tornado(
     from matplotlib.patches import Patch
 
     handles = [
-        Patch(color="tab:blue", alpha=0.8, label="Parameter niedriger als Basis"),
-        Patch(color="tab:orange", alpha=0.8, label="Parameter höher als Basis"),
+        Patch(color="tab:blue", alpha=0.8, label="parameter lower than base"),
+        Patch(color="tab:orange", alpha=0.8, label="parameter higher than base"),
     ]
     if spalte == "lcoh" and "gas_lcoh" in df:
         gas = float(df.loc[df["parameter"] == "basis", "gas_lcoh"].iloc[0])
         handles.append(
-            ax.axvline(gas, color="grey", ls="--", lw=1, label=f"Gas-Referenz {gas:.0f}")
+            ax.axvline(gas, color="grey", ls="--", lw=1, label=f"gas reference {gas:.0f}")
         )
     ax.legend(handles=handles, fontsize=7, loc="lower right")
     ax.set_yticks(range(len(gruppen)), [g[0] for g in gruppen], fontsize=7)
     ax.set_xlabel(titel)
     ax.set_title(
-        f"Sensitivität {titel} (Basis {basis:.3g}; Größen jeweils neu optimiert)", fontsize=9
+        f"Sensitivity {titel} (base {basis:.3g}; sizes re-optimised per variant)", fontsize=9
     )
     ax.grid(axis="x", alpha=0.3)
     fig.tight_layout()
@@ -140,7 +140,7 @@ def tornado(
 def cop_kurve(T_a: pd.Series, cop: pd.Series, out: Path) -> Path:
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.scatter(T_a, cop, s=2)
-    ax.set(xlabel="Außentemperatur [°C]", ylabel="COP Luft [-]")
+    ax.set(xlabel="Outdoor temperature [°C]", ylabel="COP air-source HP [-]")
     ax.grid(alpha=0.3)
     fig.tight_layout()
     fig.savefig(out, dpi=150)

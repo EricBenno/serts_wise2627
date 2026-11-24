@@ -509,3 +509,17 @@ Vorlauf jetzt fester Teil des Tornados: `netz.T_VL` 70/90 °C fest, `netz.T_VL_m
 - *PtH* nach KWW Tab. 31/32 statt 100 €/kW (Frederikssund): klein 340 €/kW (Widerstandserhitzer 2 MW,
   PtH ≥ P_max ≈ 1,6 MW), groß 180 €/kW (Elektrodenkessel 10 MW, P_max ≈ 15,5 MW). Die Szenarien
   `kww_komplett(_gross)` weichen damit bei WP/PtH kaum noch von der Basis ab.
+
+## E45 Flächenpacht, Laden aus dem Netz im Tornado, Tornado gekürzt (24.11.2026)
+
+- *Flächenkosten:* neuer Parameter `standort.flaechenkosten`, Basis 1.000 €/(ha·a) Pacht (Annahme), Tornado 0 / 3.000.
+  Belegte Fläche = Kollektorfeld inkl. Reihenabstand + Speichergrundfläche; geht als Jahreskosten in Optimierung und
+  Wärmepreis ein (Kostenbalken „Land“), ohne Förderung. Wirkung in der Basis klein (Netz klein 1,3 ha ≈ 1.300 €/a
+  ≈ 0,25 €/MWh); die Ergebnisse vom 24.11. sind ohne Pacht gerechnet und wurden nicht neu gerechnet.
+- *Tornado:* neu `ptes.laden_aus_netz` (false = Szenario `ohne_laden_aus_netz`; Testlauf Netz klein 229,1 statt
+  225,7 €/MWh) und `standort.flaechenkosten`; Fläche unbegrenzt bleibt (`standort.flaeche_verfuegbar` = inf,
+  Szenario `flaeche_kosten`; Testlauf mit 300 €/(ha·a): 11.463 m² / 33.615 m³, 211,5 €/MWh). Gestrichen:
+  `ptes.groessen_exponent`, `ptes.T_oben`, `kollektor.feldverluste` (Tornado 24.11., Netz klein: −2,3 / +2,4 / ±1,8 €/MWh).
+- *Grafiken* jetzt mit englischen Beschriftungen (Läufe, Tornado, Heatmap); die README-Grafiken sind aus den
+  Ergebnissen vom 24.11. neu gezeichnet (ohne Pacht und mit altem Tornado-Satz, bis zum nächsten vollen Lauf).
+- *BEW-Ausweis:* die Pacht bleibt in den Kosten mit BEW enthalten (nicht förderfähig, vorher fälschlich weggelassen).

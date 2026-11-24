@@ -43,5 +43,5 @@ desktop.ini
 ~$*
 
 
-# Claude Code: lokale Einstellungen nicht versionieren
-.claude/settings.local.json
+# Claude Code: Agentenhinweise und Einstellungen nur lokal
+.claude/

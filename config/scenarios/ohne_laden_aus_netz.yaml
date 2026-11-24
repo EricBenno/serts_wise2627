@@ -1,0 +1,5 @@
+# Luft-WP (und PtH) dürfen den Speicher nicht laden; Speicher nur solar geladen, trotz Day-Ahead-Preis.
+meta:
+  beschreibung: "Kein Laden des Speichers aus dem Netz (WP/PtH)"
+ptes:
+  laden_aus_netz: false

@@ -1,0 +1,6 @@
+# Fläche unbegrenzt (Pacht 1.000 EUR/(ha a) wie in der Basis, docs E45). Entspricht im Tornado standort.flaeche_verfuegbar = inf.
+meta:
+  beschreibung: "Fläche unbegrenzt, Pacht wie Basis"
+standort:
+  flaeche_verfuegbar:
+    wert: .inf

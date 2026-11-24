@@ -128,6 +128,11 @@ def temperaturen_speicher(cfg: Config, s_kern, s_ueb, s_kalt, anteil_ueb: float)
     return ohne_kern.where(s_kern < 1e-3, t_o), mittel
 
 
+def flaeche_eur_m2_a(cfg: Config) -> float:
+    """Flächenkosten (Pacht) in EUR je m2 belegter Fläche und Jahr (standort.flaechenkosten, E45)."""
+    return (cfg.get("standort.flaechenkosten") or 0.0) / 1e4
+
+
 def build_network(
     cfg: Config,
     ts: pd.DataFrame,
@@ -189,7 +194,11 @@ def build_network(
         p_max_pu=ts["P_solar"].clip(0, 1),
         p_nom=(A_m2 or 0.0) / M2_JE_MW,
         p_nom_extendable=A_m2 is None,
-        capital_cost=annualisiert(cfg, "kollektor", "kollektor.kosten_spez") * M2_JE_MW,
+        capital_cost=(
+            annualisiert(cfg, "kollektor", "kollektor.kosten_spez")
+            + flaeche_eur_m2_a(cfg) * cfg.get("kollektor.flaechenfaktor")
+        )
+        * M2_JE_MW,
     )
     n.add("Link", "solar_direkt", bus0="solar", bus1="waerme", carrier="waerme", p_nom=1e3)
 
@@ -218,7 +227,8 @@ def build_network(
         }
         v_fix = V_m3 or 0.0
         # Kosten nur am Kern (V = E_Kern / (f * (1 - s) * kap)); die anderen Teile folgen per Constraint
-        kosten_kern = annualisiert(cfg, "ptes", steigung) / (kap * f * (1.0 - s))
+        land_m3 = flaeche_eur_m2_a(cfg) / cfg.get("ptes.volumen_je_grundflaeche")
+        kosten_kern = (annualisiert(cfg, "ptes", steigung) + land_m3) / (kap * f * (1.0 - s))
         teile = [
             ("ptes_heiss", "heiss", f * (1.0 - s), kosten_kern),
             ("ptes_kalt", "kalt", 1.0 - f, 0.0),

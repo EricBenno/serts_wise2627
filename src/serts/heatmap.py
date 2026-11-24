@@ -40,15 +40,15 @@ WERTE = [
 
 # Grafik "heatmap_alle.png": (Spalte, Titel, Farbskala, Format)
 FELDER = [
-    ("lcoh_inkl_netz", "Wärmepreis inkl. Netz [€/MWh]", "viridis_r", "{:.0f}"),
-    ("lcoh_inkl_netz_bew", "dito mit BEW Modul 2 (max. 40 %) [€/MWh]", "viridis_r", "{:.0f}"),
-    ("vorteil_gas", "Vorteil ggü. Gas-Fernwärme [€/MWh]", "RdYlGn", "{:+.0f}"),
-    ("solar_gesamt", "Solaranteil [-]", "YlOrRd", "{:.0%}"),
+    ("lcoh_inkl_netz", "Heat price incl. network [€/MWh]", "viridis_r", "{:.0f}"),
+    ("lcoh_inkl_netz_bew", "same with BEW module 2 (max. 40 %) [€/MWh]", "viridis_r", "{:.0f}"),
+    ("vorteil_gas", "Advantage over gas district heating [€/MWh]", "RdYlGn", "{:+.0f}"),
+    ("solar_gesamt", "Solar share [-]", "YlOrRd", "{:.0%}"),
     ("co2_t_a", "CO₂ [t/a]", "Greys", "{:,.0f}"),
-    ("speicher_zyklen", "Speicherzyklen [1/a]", "PuBu", "{:.1f}"),
-    ("speicher_winteranteil", "Speicherentladung Nov–Mär [-]", "PuBu", "{:.0%}"),
-    ("P_WP_MW", "WP-Leistung [MW]", "Blues", "{:.2f}"),
-    ("Q_pth_waerme_MWh", "PtH-Wärme [MWh/a]", "Reds", "{:,.0f}"),
+    ("speicher_zyklen", "Storage cycles [1/a]", "PuBu", "{:.1f}"),
+    ("speicher_winteranteil", "Storage discharge Nov–Mar [-]", "PuBu", "{:.0%}"),
+    ("P_WP_MW", "Heat pump capacity [MW]", "Blues", "{:.2f}"),
+    ("Q_pth_waerme_MWh", "PtH heat [MWh/a]", "Reds", "{:,.0f}"),
 ]
 
 
@@ -75,14 +75,14 @@ def _feld(ax, fig, df: pd.DataFrame, spalte: str, titel: str, cmap: str, fmt: st
     im = ax.imshow(werte, origin="lower", aspect="auto", cmap=cmap, **kw)
     ax.set_xticks(range(len(mat.columns)), [f"{a / 1000:g}" for a in mat.columns])
     ax.set_yticks(range(len(mat.index)), [f"{v / 1000:g}" for v in mat.index])
-    ax.set(xlabel="Kollektorfläche [1.000 m²]", ylabel="Speicher [1.000 m³]", title=titel)
+    ax.set(xlabel="Collector area [1,000 m²]", ylabel="Storage [1,000 m³]", title=titel)
     ax.title.set_fontsize(10)
     for (i, j), v in np.ndenumerate(werte):
         if v == v:
             ax.text(
                 j,
                 i,
-                fmt.format(v).replace(",", "."),
+                fmt.format(v),
                 ha="center",
                 va="center",
                 fontsize=7,
@@ -99,12 +99,18 @@ def _bild(df: pd.DataFrame, out: Path, gas: float | None) -> Path:
     """Kurzfassung: Wärmepreis und Solaranteil."""
     fig, axes = plt.subplots(1, 2, figsize=(13, 5))
     _feld(
-        axes[0], fig, df, "lcoh_inkl_netz", "Wärmepreis inkl. Netz [€/MWh]", "viridis_r", "{:.0f}"
+        axes[0],
+        fig,
+        df,
+        "lcoh_inkl_netz",
+        "Heat price incl. network [€/MWh]",
+        "viridis_r",
+        "{:.0f}",
     )
-    _feld(axes[1], fig, df, "solar_gesamt", "Solaranteil [-]", "YlOrRd", "{:.0%}")
+    _feld(axes[1], fig, df, "solar_gesamt", "Solar share [-]", "YlOrRd", "{:.0%}")
     if gas is not None:
         fig.suptitle(
-            f"Raster mit festen Größen (WP, PtH je Punkt optimiert); Gas-Fernwärme {gas:.0f} €/MWh"
+            f"Grid of fixed sizes (heat pump, PtH optimised per point); gas district heating {gas:.0f} €/MWh"
         )
     fig.tight_layout()
     fig.savefig(out, dpi=150)
@@ -165,7 +171,7 @@ def heatmap(cfg: Config, jobs: int = 3) -> Path:
     _bild_alle(
         df,
         out / "heatmap_alle.png",
-        f"Netz {cfg.netz}: Raster mit festen Größen (WP, PtH je Punkt optimiert)"
-        + (f"; Gas-Fernwärme {gas:.0f} €/MWh" if gas is not None else ""),
+        f"Network {cfg.netz}: grid of fixed sizes (heat pump, PtH optimised per point)"
+        + (f"; gas district heating {gas:.0f} €/MWh" if gas is not None else ""),
     )
     return out

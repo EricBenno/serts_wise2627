@@ -2,7 +2,7 @@
 
 > Automatisch erzeugt aus `config/base.yaml` mit `serts annahmen`. Nicht von Hand ändern.
 
-Status: belegt 47, vorgabe 22, annahme 72, offen 0
+Status: belegt 47, vorgabe 22, annahme 73, offen 0
 
 
 ## standort
@@ -16,6 +16,7 @@ Status: belegt 47, vorgabe 22, annahme 72, offen 0
 | `standort.lon` | 8.8388 | deg | belegt | DWD Metadaten_Geographie_03028.txt |  |  |
 | `standort.hoehe` | 157 | m | belegt | DWD Metadaten_Geographie_03028.txt |  |  |
 | `standort.flaeche_verfuegbar` | 13000 | m2 | annahme | TEAM: ca. 13.000 m2 Grundstück am Erzeugerstandort, annähernd quadratisch | inf | Muss Kollektorfeld (inkl. Reihenabstand, Technik) UND PTES aufnehmen -> Flächencheck je Rasterpunkt. Sensitivität .inf = keine Flächenbegrenzung (Speicher dann nur durch ptes.segmente_m3 bis 35.000 m3 begrenzt). |
+| `standort.flaechenkosten` | 1000 | EUR/(ha a) | annahme | Annahme TEAM 24.11.2026: Pacht 1.000 EUR je ha und Jahr für die belegte Fläche (Kollektorfeld inkl. Reihenabstand + Speichergrundfläche), docs E45 | 0, 3000 | Geht als Jahreskosten in Optimierung und Wärmepreis ein (kein Kapitalwert, keine Förderung). |
 
 ## zeit
 
@@ -71,7 +72,7 @@ Status: belegt 47, vorgabe 22, annahme 72, offen 0
 | `ptes.uebergang_max` | 0.8 | - | annahme | Obergrenze für sehr kleine/flache Speicher (unter ≈ 400 m3), damit ein Kern übrig bleibt; rechnerische Grenze |  |  |
 | `ptes.einschicht_anteil` | 0 | - | annahme | Anteil der heiß geladenen Wärme, der sich beim Einschichten mit der Übergangszone mischt. Kalibriergröße gegen den Direktanteil der Speicherentladung in Dronninglund (docs/validierung_dronninglund.md) | 0.1, 0.2 |  |
 | `ptes.vorwaermen` | True | - | vorgabe | Wasser der Übergangszone (≈ 65 °C) wärmt den Rücklauf auf ≈ 60 °C vor, WP/PtH heizen in derselben Stunde auf Vorlauf nach (übliche Betriebsweise). false = Übergangszone nur über die Speicher-WP nutzbar (docs E39) | False |  |
-| `ptes.laden_aus_netz` | True | - | vorgabe | true = WP und PtH dürfen den heißen Teil laden (sinnvoll bei zeitvariablem Strompreis, Basis Day-Ahead seit E43); false = der Speicher nimmt nur Solarwärme auf (docs E29) |  |  |
+| `ptes.laden_aus_netz` | True | - | vorgabe | true = WP und PtH dürfen den heißen Teil laden (sinnvoll bei zeitvariablem Strompreis, Basis Day-Ahead seit E43); false = der Speicher nimmt nur Solarwärme auf (docs E29) | False | Tornado false = Szenario ohne_laden_aus_netz (Speicher nur solar geladen). |
 | `ptes.direkt_dT` | 5 | K | annahme | BRF §3.1: Direktentladung braucht T_oben >= T_VL + 5 K (Wärmeübertrager/Übergabe) |  |  |
 | `ptes.kosten_ref` | 67.77 | EUR/m3 | belegt | KWW Tab. 52 (Erdbeckenspeicher): Kostenkurve Invest = 1093,6 * V^0,7472 (2026, netto) bei V_ref = 60.000 m3 -> 67,8 EUR/m3; Stützwerte 20.000 m3 90, 50.000 m3 70, 100.000 m3 60, 200.000 m3 50 EUR/m3 |  | Frühere Basis (SIF/DRL 2014: 38,3 EUR/m3 bei 60.000 m3 x Index 1,5 = 57,5) liegt bei 60.000 m3 ≈ 15 % niedriger; bei 1.600 m3 praktisch gleich (175 vs. 168 EUR/m3). docs/entscheidungen.md E32. |
 | `ptes.V_ref` | 60000 | m3 | belegt | Bezugsgröße der Kostenkurve (innerhalb der KWW-Stützwerte 20.000-200.000 m3) |  |  |
@@ -219,4 +220,4 @@ Status: belegt 47, vorgabe 22, annahme 72, offen 0
 
 | Parameter | Wert | Einheit | Status | Quelle / Begründung | Sensitivität | Hinweis |
 |---|---|---|---|---|---|---|
-| `tornado.parameter` | ['ptes.kosten_faktor', 'standort.flaeche_verfuegbar', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'strom.preisjahr', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.groessen_exponent', 'ptes.vorwaermen', 'ptes.T_oben', 'strom.leistungspreis', 'waermepumpe.guetegrad_faktor', 'netz.T_VL', 'netz.T_VL_min', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'kollektor.feldverluste', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |
+| `tornado.parameter` | ['ptes.kosten_faktor', 'standort.flaeche_verfuegbar', 'kollektor.strahlung_skalierung', 'strom.preis_fest', 'strom.preisjahr', 'last.skalierung', 'last.ankerkunde_anteil', 'ptes.verlustrate', 'ptes.vorwaermen', 'ptes.laden_aus_netz', 'standort.flaechenkosten', 'strom.leistungspreis', 'waermepumpe.guetegrad_faktor', 'netz.T_VL', 'netz.T_VL_min', 'kollektor.kosten_spez', 'waermepumpe.kosten_spez', 'oekonomie.zins', 'oekonomie.foerderquote', 'oekonomie.nebenkosten', 'oekonomie.preisaenderung.strom', 'kollektor.eta0', 'pth.redundanz', 'netz.anteil_strasse', 'netz.kosten_trasse_strasse', 'netz.kosten_hausanschluss', 'gas_referenz.gaspreis'] | - | vorgabe | BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens' |  |  |

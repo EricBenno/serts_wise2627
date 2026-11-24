@@ -14,10 +14,11 @@ Code, config keys and parts of `docs/` are in German (e.g. `netz` = network, `kl
 
 ## The two networks
 
-![Network areas small and large in the example town "Bad Lippstadt"](docs/img/netze.jpg)
+![Network areas small and large in Bad Lippspringe](docs/img/netze.jpg)
 
-> "Bad Lippstadt" was chosen as an example. The team designed both networks on real, open building and geodata of
-> Bad Lippspringe (NRW, Germany) and calculated them with F|Heat (route, house connections, losses, hourly load).
+> **Example networks, not a real project:** the team designed both networks for this student study on open building
+> and geodata of Bad Lippspringe (NRW, Germany) and calculated them with F|Heat (route, house connections, losses,
+> hourly load). No actual planning or project stands behind them.
 
 | | Small network (red) | Large network (yellow) |
 |---|---|---|
@@ -25,7 +26,7 @@ Code, config keys and parts of `docs/` are in German (e.g. `netz` = network, `kl
 | Building heat demand (space heating + hot water) | 4,525 MWh/a | 42,783 MWh/a |
 | Network losses | 935 MWh/a | 5,437 MWh/a |
 | Route / house connection pipes | 2,432 m / 3,413 m | 14,291 m / 16,755 m |
-| Peak load (incl. losses) | 1.6 MW | 15.5 MW |
+| Peak load (incl. losses, hourly sum; map: with simultaneity) | 1.6 MW (1.43) | 15.5 MW (11.47) |
 | Free area for collectors + storage | 1.3 ha | 8 ha |
 | Supply / return temperature | 80 °C / 45 °C (F\|Heat: 50 °C) | 80 °C / 45 °C |
 
@@ -46,7 +47,7 @@ Code, config keys and parts of `docs/` are in German (e.g. `netz` = network, `kl
 - **Storage:** three layers – hot core (directly into the network), transition zone (preheating the return) and cold
   part (only via the heat pump). This way a linear model captures stratification and temperatures. Checked against
   the real storage in Dronninglund (DK): [validation](docs/validierung_dronninglund.md).
-- **Size limits:** collector and storage must fit on the free area together; storage cost per m³ falls with size
+- **Size limits:** collector and storage must fit on the free area together, and the land used is leased (1,000 €/(ha·a)); storage cost per m³ falls with size
   (cost curve in segments).
 - **Result:** heat price in €/MWh at the customer (incl. distribution network), compared with gas-fired district
   heating on the same network.
@@ -67,6 +68,7 @@ More detail (German): [model step by step (notebook)](notebooks/01_modell_erklae
 | Air-source heat pump | 1,730 €/kW (large: 1,340 €/kW) | KWW technology catalogue |
 | Storage heat pump / PtH | 1,100 €/kW / 340 €/kW (large: 180 €/kW) | KWW technology catalogue |
 | Distribution network | Route 650 €/m (large: 1,140 €/m) + house connections | KWW technology catalogue |
+| Land | Lease 1,000 €/(ha·a) for collector field and storage footprint (tornado 0 / 3,000) | Assumption |
 | Economics | Real terms, 4 % interest, 20 a, +10 % planning, base without subsidy | Assumption, VDI 2067 |
 
 Every parameter with unit, status (`belegt` = sourced / `vorgabe` = model setting / `annahme` = assumption) and
@@ -100,7 +102,7 @@ As of 24.11.2026 (decisions E43/E44), preliminary.
 - **Lower supply temperature helps:** sliding to 60 °C in summer −12 to −14 €/MWh, fixed 70 °C −10 to −11;
   90 °C costs +4 €/MWh.
 - **Area is the bottleneck:** without an area limit a **seasonal storage** is cheapest (small network: 33,600 m³,
-  93 % solar, −14 €/MWh; large network: −12 €/MWh). Upper bound, because land costs nothing in the model.
+  93 % solar, −14 €/MWh; large network: −12 €/MWh). Upper bound: only the land lease is charged, no purchase or permitting.
 - **PtH as full back-up costs** about 12 €/MWh (small) and 7 €/MWh (large) compared with PtH sized only as needed.
 
 **Where does the heat come from, what does it cost?** (small network) The air-source heat pump supplies about half
@@ -145,7 +147,7 @@ All numbers and variants (German): [docs/ergebnisse.md](docs/ergebnisse.md) (sma
   operation achieves somewhat less.
 - **One weather and load year (2022)**; no uncertainty across years.
 - **Network not optimised:** route, losses and temperatures are fixed from F|Heat; the network only enters as cost.
-- **Simplified storage temperatures** (three layers instead of a flow model); land costs nothing.
+- **Simplified storage temperatures** (three layers instead of a flow model); land only as a lease of 1,000 €/(ha·a).
 - **Costs** from catalogue values (KWW), not quotes; subsidy only as an upper bound.
 
 More (German): [docs/modellgrenzen.md](docs/modellgrenzen.md), [docs/unsicherheiten.md](docs/unsicherheiten.md),

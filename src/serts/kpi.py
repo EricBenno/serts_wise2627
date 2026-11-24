@@ -118,7 +118,13 @@ def zeitreihen_ergebnis(n, cfg: Config, ts: pd.DataFrame) -> pd.DataFrame:
 def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
     """KPI (Jahreswerte; kürzere Läufe werden auf 8760 h hochskaliert) + Zeitreihen."""
     from serts import economics, prices
-    from serts.network import M2_JE_MW, annualisiert, anteil_heiss, mwh_je_m3
+    from serts.network import (
+        M2_JE_MW,
+        annualisiert,
+        anteil_heiss,
+        flaeche_eur_m2_a,
+        mwh_je_m3,
+    )
 
     meta = getattr(n, "meta", {}) or {}
     s_ueb = float(meta.get("uebergang_anteil", 0.0)) if "ptes_ueb" in n.stores.index else 0.0
@@ -270,6 +276,8 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
         "speicher": annualisiert(cfg, "ptes", invest_speicher) if V > 0 else 0.0,
         "waermepumpe": wp_jahr(cfg),
         "pth": k["P_PtH_MW"] * annualisiert(cfg, "pth", "pth.kosten_spez"),
+        "flaeche": flaeche_eur_m2_a(cfg)
+        * (A * cfg.get("kollektor.flaechenfaktor") + V / cfg.get("ptes.volumen_je_grundflaeche")),
     }
     mc = n.get_switchable_as_dense("Generator", "marginal_cost")["netz_strom"]
     strom = float((r["strom_netz"] * mc).sum()) * skal
@@ -332,6 +340,7 @@ def auswerten(n, cfg: Config, ts: pd.DataFrame) -> tuple[dict, pd.DataFrame]:
             "speicher": annualisiert(cb, "ptes", invest_speicher) if V > 0 else 0.0,
             "waermepumpe": wp_jahr(cb),
             "pth": k["P_PtH_MW"] * annualisiert(cb, "pth", "pth.kosten_spez"),
+            "flaeche": capex["flaeche"],  # Pacht: nicht förderfähig, bleibt aber Kosten (E45)
         }
         k["lcoh_bew"] = economics.lcoh(sum(capex_b.values()), strom, Q)
         k["kosten_a_gesamt_bew"] = sum(capex_b.values()) + strom
