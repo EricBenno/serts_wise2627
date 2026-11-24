@@ -89,6 +89,22 @@ def _cmd_fetch_strompreise(a):
         print(f"gespeichert: {fetch_day_ahead(jahr)}")
 
 
+def _cmd_bench(a):
+    from serts.bench import BENCH_CSV, bench, zusammenfassung
+
+    df = bench(
+        _cfg(a),
+        modus=a.modus,
+        wiederholungen=a.wiederholungen,
+        A_m2=a.A,
+        V_m3=a.V,
+        jobs=a.jobs,
+        stunden=a.stunden,
+    )
+    print(zusammenfassung(df))
+    print(f"angehängt: {BENCH_CSV}")
+
+
 def _cmd_run(a):
     from serts.run import run
 
@@ -202,6 +218,22 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--V", type=float, default=None, help="Speichervolumen fest [m3] (0 = ohne)")
     p.add_argument("--stunden", type=int, default=None, help="nur die ersten N Stunden (Test)")
     p.set_defaults(func=_cmd_run)
+
+    p = sub.add_parser("bench", help="Laufzeit-Benchmark Basisfall -> benchmarks/bench.csv")
+    p.add_argument("--szenario", default=None)
+    p.add_argument("--netz", default="klein", help="Netzfall (config/netze/<netz>.yaml)")
+    p.add_argument(
+        "--modus",
+        choices=["fest", "voll"],
+        default="fest",
+        help="fest = eine Optimierung mit festen Größen; voll = Größen optimiert wie run",
+    )
+    p.add_argument("--wiederholungen", type=int, default=3)
+    p.add_argument("--A", type=float, default=4000.0, help="Kollektorfläche bei modus fest [m2]")
+    p.add_argument("--V", type=float, default=6000.0, help="Speichervolumen bei modus fest [m3]")
+    p.add_argument("--jobs", type=int, default=1, help="parallele Segmente bei modus voll")
+    p.add_argument("--stunden", type=int, default=None, help="nur die ersten N Stunden (Test)")
+    p.set_defaults(func=_cmd_bench)
 
     p = sub.add_parser("tornado", help="Sensitivitäten (tornado.parameter x sens-Werte)")
     p.add_argument("--szenario", default=None)
