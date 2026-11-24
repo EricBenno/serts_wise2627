@@ -38,7 +38,8 @@ Code, config keys and parts of `docs/` are in German (e.g. `netz` = network, `kl
   and grid connection – so that the **annual cost** (annuity of investments per VDI 2067 + electricity + O&M) is
   minimal and the load is met in every hour.
 - **How?** A linear optimisation model in [PyPSA](https://pypsa.org) (solver HiGHS) over all 8760 hours at once,
-  with perfect foresight. About 4 min per run.
+  with perfect foresight. One optimisation takes ≈ 1.5 min, a full run with size search ≈ 14 min on a laptop
+  ([run time, Windows vs. Linux](docs/laufzeit.md)).
 - **Heat sources:** collector field (irradiance DWD/PVGIS), air-source heat pump (COP depends on outdoor
   temperature), storage heat pump (uses the cold part of the storage as its source), PtH electric boiler as back-up
   and peak.
@@ -168,7 +169,7 @@ uv sync                      # Python 3.12 + exactly the package versions from u
 uv run serts verify-raw      # checksums of the raw data
 uv run pytest                # tests
 uv run serts prepare         # time series 8760 h -> data/processed/
-uv run serts run             # base run small network: optimise sizes, KPIs + plots (≈ 4 min)
+uv run serts run             # base run small network: optimise sizes, KPIs + plots (≈ 14 min)
 ```
 
 More commands (`uv run serts --help`):
@@ -180,6 +181,7 @@ uv run serts run --szenario strom_fest  # fixed electricity price 30 ct/kWh inst
 uv run serts varianten         # base / no storage / heat pump + PtH only / with BEW subsidy (+ gas), ≈ 10 min
 uv run serts heatmap           # grid of collector area x storage volume
 uv run serts tornado           # sensitivities (≈ 1.5 h per network)
+uv run serts bench             # run-time benchmark of the base case -> benchmarks/bench.csv
 uv run serts annahmen          # generate docs/annahmen.md from config/base.yaml
 uv run serts uebersicht        # generate docs/eingangsparameter.md
 uv run serts offen             # list of open parameters

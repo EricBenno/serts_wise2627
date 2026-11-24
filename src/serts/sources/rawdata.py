@@ -34,12 +34,6 @@ RAW_FILES: list[RawFile] = [
         "Eigene Netzberechnung (Netz groß, 877 Gebäude): Lastgang 2022 (8760 h), Netzverluste, Statistik",
     ),
     RawFile(
-        "../Netzannahmen.pdf",
-        "bad_lippspringe/Netzannahmen.pdf",
-        "Karte und Kennzahlen beider Netze (klein/groß: Gebäude, Trasse, Verlust, Temperaturen)",
-        pflicht=False,
-    ),
-    RawFile(
         "../AP 0 und Annahmen/KWW-Technikkatalog-Waermeplanung_08-2026_Version_1.1.xlsx",
         "kww/KWW-Technikkatalog-Waermeplanung_08-2026_Version_1.1.xlsx",
         "KWW Technikkatalog Wärmeplanung v1.1: Kosten/Lebensdauern (2026, netto, real); Erträge werden nicht übernommen",
