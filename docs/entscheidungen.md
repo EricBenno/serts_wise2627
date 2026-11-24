@@ -533,7 +533,7 @@ Vorlauf jetzt fester Teil des Tornados: `netz.T_VL` 70/90 °C fest, `netz.T_VL_m
   Zeitreihen und das Netz identisch; Test `test_segmente_parallel_gleich_wie_nacheinander`.
 - Jeder Lauf schreibt die Laufzeit je Schritt und die Plattform in `meta.json`; `serts bench` misst den Basisfall
   wiederholt (`benchmarks/bench.csv`). Windows gegen Ubuntu (WSL2) auf demselben Laptop: −15 % (eine Optimierung)
-  bis −27 % (Segmente parallel) unter Linux, gleiche Ergebnisse (`docs/laufzeit.md`).
+  bis −27 % (Segmente parallel) unter Linux, gleiche Ergebnisse (`docs/laufzeit.md`, nur lokal).
 
 ## E47 Vorlauf 100/110 °C im Tornado; Prozesspools per spawn (24.11.2026)
 
@@ -550,3 +550,4 @@ Vorlauf jetzt fester Teil des Tornados: `netz.T_VL` 70/90 °C fest, `netz.T_VL_m
   `results/gross/20261124-185038_base_tornado`, je ≈ 2 h unter WSL), README-Grafiken neu. Tabellen in
   `docs/ergebnisse*.md`.
 - *Benchmarks nur lokal:* `benchmarks/` ist nicht mehr in Git (`.gitignore`); `serts bench` schreibt weiter dorthin.
+- *Laufzeitvergleich nur lokal:* `docs/laufzeit.md` ist nicht mehr in Git (`.gitignore`), wie `benchmarks/`.

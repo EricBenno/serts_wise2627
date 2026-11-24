@@ -6,7 +6,7 @@ Zwei Modi:
   dann zählt auch der Start der Rechenprozesse mit).
 
 Es wird nichts in results/ geschrieben. Der Wärmepreis steht als Kontrolle mit in der Tabelle: Er muss auf jeder
-Plattform gleich sein. Vergleich Windows/Linux: docs/laufzeit.md.
+Plattform gleich sein. Vergleich Windows/Linux: docs/laufzeit.md (nur lokal, nicht in Git).
 """
 
 from __future__ import annotations

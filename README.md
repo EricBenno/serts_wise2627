@@ -38,8 +38,7 @@ Code, config keys and parts of `docs/` are in German (e.g. `netz` = network, `kl
   and grid connection – so that the **annual cost** (annuity of investments per VDI 2067 + electricity + O&M) is
   minimal and the load is met in every hour.
 - **How?** A linear optimisation model in [PyPSA](https://pypsa.org) (solver HiGHS) over all 8760 hours at once,
-  with perfect foresight. One optimisation takes ≈ 1.5 min, a full run with size search ≈ 8.5 min on a laptop
-  ([run time, Windows vs. Linux](docs/laufzeit.md)).
+  with perfect foresight. One optimisation takes ≈ 1.5 min, a full run with size search ≈ 8.5 min on a laptop.
 - **Heat sources:** collector field (irradiance DWD/PVGIS), air-source heat pump (COP depends on outdoor
   temperature), storage heat pump (uses the cold part of the storage as its source), PtH electric boiler as back-up
   and peak.

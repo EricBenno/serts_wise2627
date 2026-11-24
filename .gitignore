@@ -48,3 +48,4 @@ desktop.ini
 
 # Benchmarks und Rechnerdaten nur lokal (serts bench)
 benchmarks/
+docs/laufzeit.md
