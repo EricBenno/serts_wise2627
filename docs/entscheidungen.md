@@ -514,8 +514,10 @@ Vorlauf jetzt fester Teil des Tornados: `netz.T_VL` 70/90 °C fest, `netz.T_VL_m
 
 - *Flächenkosten:* neuer Parameter `standort.flaechenkosten`, Basis 1.000 €/(ha·a) Pacht (Annahme), Tornado 0 / 3.000.
   Belegte Fläche = Kollektorfeld inkl. Reihenabstand + Speichergrundfläche; geht als Jahreskosten in Optimierung und
-  Wärmepreis ein (Kostenbalken „Land“), ohne Förderung. Wirkung in der Basis klein (Netz klein 1,3 ha ≈ 1.300 €/a
-  ≈ 0,25 €/MWh); die Ergebnisse vom 24.11. sind ohne Pacht gerechnet und wurden nicht neu gerechnet.
+  Wärmepreis ein (Kostenbalken „Land“), ohne Förderung. Wirkung in der Basis klein: Basisläufe mit Pacht
+  (`results/klein/20261124-122650_base_opt`, `results/gross/20261124-124046_base_opt`) ergeben gleiche Größen und
+  +0,2 €/MWh (klein 225,9, groß 189,4 €/MWh; Netz klein 1,3 ha ≈ 1.300 €/a). Varianten, Heatmap und Tornado vom
+  24.11. sind noch ohne Pacht gerechnet.
 - *Tornado:* neu `ptes.laden_aus_netz` (false = Szenario `ohne_laden_aus_netz`; Testlauf Netz klein 229,1 statt
   225,7 €/MWh) und `standort.flaechenkosten`; Fläche unbegrenzt bleibt (`standort.flaeche_verfuegbar` = inf,
   Szenario `flaeche_kosten`; Testlauf mit 300 €/(ha·a): 11.463 m² / 33.615 m³, 211,5 €/MWh). Gestrichen:

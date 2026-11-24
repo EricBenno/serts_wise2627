@@ -80,7 +80,8 @@ source: [docs/eingangsparameter.md](docs/eingangsparameter.md) (overview small/l
 As of 24.11.2026 (decisions E43/E44), preliminary.
 
 > **Note:** the land lease (1,000 €/(ha·a), decision E45) and the updated tornado parameters are already in the model
-> but not yet in the results and figures below. Expected effect in the base case ≈ +0.3 €/MWh; an update follows soon.
+> but not yet in the results and figures below. A base run with the lease gives the same sizes and +0.2 €/MWh in both
+> networks (small 225.9, large 189.4 €/MWh); a full update follows soon.
 
 | | Small network | Large network |
 |---|---|---|

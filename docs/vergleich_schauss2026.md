@@ -1,9 +1,9 @@
-# Comparison: Schauß et al. 2026 ("Mind the temperature gap") vs. SERTS model (21.11.2026)
+# Comparison: Schauß et al. 2026 ("Mind the temperature gap") vs. SERTS model
 
 Paper: Schauß, Schledorn, Kähler, Schumacher, Ammon, Brown: *Mind the temperature gap: Pit thermal energy storage in
 sector-coupled energy systems with high-temperature district heating*. Advances in Applied Energy 24 (2026) 100315,
-doi:10.1016/j.adapen.2026.100315 (+ supplementary information). PDF: `../AP 0 und Annahmen/other papers/`.
-Model state compared: after E39/E40 (`docs/speichermodell.md`, `docs/systemskizze.md`).
+doi:10.1016/j.adapen.2026.100315 (+ supplementary information).
+Sections 2–5 compare the model as of 21.11.2026 (after E39/E40); section 6 lists what has changed since.
 
 ## 1 In one sentence
 
@@ -71,38 +71,36 @@ the network at 80/45 °C, the collector charging 45→85 °C (top) and 10→45 �
 top, pre-heating from the zone, and the HP using the cold part as source. That makes "why no boosting at 80 °C" and
 "why the storage HP adds capacity" visible at a glance and directly comparable to the paper. The LP does not change.
 
-## 6 What SERTS could take from the paper (cheap, ranked)
+## 6 What SERTS adopted from the paper
 
-**Status 21.11.2026 (E41):** points 1–4 are implemented. Top temperature is in the tornado (80/90 °C), and
-below 85 °C direct discharge needs boosting. Air and storage heat pumps are separate units (storage HP 1,100 €/kW,
-KWW Tab. 26/27). The storage-HP COP follows Jensen et al. as in the paper: 3.91 instead of 4.5, and the
-implementation reproduces the paper's Fig. S7 within ±0.02. Charge/discharge is limited by the Dronninglund
-diffuser flow (0.0094 per hour × V). See `docs/entscheidungen.md` E41.
+Sections 2–5 compare the model as of 21.11.2026. Since then SERTS has taken over these points from the paper
+(decisions E41–E45 in `docs/entscheidungen.md`):
 
-1. **Add `ptes.T_oben` to the tornado** (sens 90 already exists; add 80). The paper shows top temperature as a
-   first-order driver. In SERTS, 85 °C is exactly T_VL + 5 K (`hinweis` of `ptes.T_oben`), so a lower top temperature
-   should hit direct discharge hard (check what the model does below 85 °C before running). Cost: 2 extra tornado
-   runs.
-2. **Boosting when the forward temperature exceeds T_oben**: generalise the `vorwaermen` constraint so that
-   `entladen_direkt` needs α(t)·(HP + PtH) whenever T_VL(t) > T_oben (Eq. 4a, α precomputed per hour). Only relevant
-   if a scenario raises the forward temperature above 85 °C (e.g. an existing high-temperature network). Not needed
-   for the base case; document as "not needed because 80 < 85 °C".
-3. **Sensitivity: cheaper storage HP**. The paper prices PTES heat pumps ≈ 34 % below air heat pumps. In SERTS
-   both share one capacity. Either a sensitivity on `waermepumpe.kosten_spez`, or later two separate HP
-   capacities (one more variable).
-4. **Energy-to-power limit on charge/discharge** (Eq. 2d). Effect is small in SERTS: solar charging is limited by
-   the collector, discharge by the load, grid charging by the PtH capacity. Only worth adding with a sourced e2p
-   value (Danish Energy Agency technology data; not looked up, no number invented).
-5. **Citations for the report**: the paper supports our loss rate (0.19 %/d ≈ 8.6·10⁻⁵ 1/h at 6,000 m³), the land
-   factor (2.8 vs 2.65 m³/m²), and the main methodological argument of E34–E39: temperature-agnostic PTES
-   overstates savings by up to 4×.
+| Paper | SERTS today |
+|---|---|
+| Boosting when the forward temperature exceeds the storage top (Eq. 4) | Direct discharge needs reheating by heat pump or PtH whenever T_VL + 5 K > T_top; not active in the base case (80 °C forward, 85 °C top) |
+| Separate, cheaper heat pump on the storage | Air-source and storage heat pump are separate units (storage HP 1,100 €/kW, air-source HP 1,730 / 1,340 €/kW by network size, KWW catalogue) |
+| COP after Jensen et al. (2018) | Storage heat pump uses the same method; reproduces the paper's Fig. S7 within ±0.02 (COP ≈ 3.9 instead of a fixed 4.5) |
+| Charge/discharge limited by storage size (Eq. 2d) | Flow limit 0.0094 h⁻¹ · V, taken from the Dronninglund diffusers |
+| Power-to-heat charges the storage in cheap hours | Base case uses hourly day-ahead prices; heat pump and PtH may charge the hot core |
+| Top temperature as a first-order driver | Tested (80 / 90 °C): only +2 / −1 €/MWh in SERTS, because direct discharge at 85 °C already covers an 80 °C network; dropped from the tornado |
 
-## 7 Where SERTS goes beyond the paper (useful for positioning)
+The paper also backs three SERTS inputs: the standing loss rate (0.19 %/d ≈ 8·10⁻⁵ h⁻¹, SERTS 8.6·10⁻⁵ h⁻¹ at
+6,000 m³), the land use of the storage (2.8 vs. 2.65 m³ per m²), and the central modelling argument that a
+temperature-agnostic PTES model overstates the value of the storage.
 
-- Stratification with a validated transition zone; separate charging bands; size-dependent losses.
-- Solar thermal as the main charging source and the land competition between collector field and PTES (the paper
-  limits land per storage only).
-- Hourly resolution and a single-site cost curve (KWW) instead of one flat €/m³.
+## 7 How the two models complement each other
 
-The paper in turn goes beyond SERTS in system scope (endogenous prices, CHP, TTES, many heat sources), its COP method,
-and its explicit boosting configurations.
+SERTS adds what a national model cannot resolve at a single site:
+
+- **Solar thermal as the main heat source,** and the competition for land between collector field and storage
+  (the paper leaves solar thermal out and limits land per storage only).
+- **Stratification:** three storage layers with a transition zone, checked against measured data from Dronninglund,
+  and losses that depend on storage size.
+- **Hourly resolution and site-specific costs:** a degressive cost curve (KWW catalogue) instead of one flat €/m³,
+  network costs and a comparison with gas district heating at the customer.
+
+The paper covers what SERTS takes as given: electricity prices that respond to the energy system (SERTS uses
+historic day-ahead prices), existing CHP plants, tank storage, many heat sources and high-temperature networks of
+90 °C and more. Read together, both point the same way: a PTES pays off where it is charged cheaply (solar or cheap
+electricity) and where its temperatures fit the network.
