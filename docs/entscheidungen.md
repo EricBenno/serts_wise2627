@@ -474,3 +474,38 @@ vernachlässigbar; die Auswahl hatte nur die Spanne zwischen sens-Werten verglic
 Vorlauf jetzt fester Teil des Tornados: `netz.T_VL` 70/90 °C fest, `netz.T_VL_min` gleitend 80 → 60/70 °C
 (75/85 °C nur noch einzeln, Ergebnisse 21.11.). Segmentsuche: sind Startsegment und Nachbarn alle unzulässig
 (z. B. Variante mit weniger Fläche), rechnet sie die übrigen Segmente, statt abzubrechen.
+
+## E43 Strom Day-Ahead als Basis, Gas ohne CO2-Preis, Leistungspreis obere Bandbreite (23.11.2026)
+
+- *Strom:* Basis ist jetzt der Day-Ahead-Tarif (Preisjahr 2024 + Marge 2,5 ct + Netzentgelt 7,99 ct + Abgaben
+  5,7 ct/kWh, Mittel ≈ 24 ct/kWh); WP und PtH dürfen den Speicher laden (`ptes.laden_aus_netz: true`). Der feste
+  Tarif bleibt als Szenario `strom_fest` (30 ct) und im Tornado über `strom.preis_fest` 20/30/40 ct (die Variante
+  schaltet dort auf `tarif: fest`). Das Szenario `strom_day_ahead_2024` entfällt (= Basis); dazu im Tornado
+  `strom.preisjahr` 2023/2022.
+- *Leistungspreis* 45 statt 15,50 €/(kW·a): Ein neuer Anschluss braucht einen Baukostenzuschuss, und der WWN-Wert ist
+  das untere Ende. Obere Bandbreite = Leistungspreis Mittelspannung < 2.500 h/a bis 31,53 €/(kW·a) (Preisblätter
+  2025: Industriepark Neckarsulm 31,53, Flughafen München 25,49, Baden-Baden 25,31, WWN 15,50) + BKZ WWN 2025
+  164 €/kW (2026: 125; Mittelspannung 2026 ≈ 108–154 €/kW laut dvlp.energy) als Annuität über 20 a bei 5 %
+  (13,2 €/(kW·a)). Tornado 15,5 / 80.
+- *Gas-Referenz:* nur noch ein Gaspreis von 12 ct/kWh netto inkl. CO2-Bepreisung; `gas_referenz.co2_preis` und
+  `oekonomie.preisaenderung.co2` gestrichen (CO2-Menge wird weiter ausgewiesen). Tornado 6/8/10/14 ct/kWh.
+- *Status:* Werte, deren Quelle nur Briefing (BRF), Modellschema (SCH) oder Teamabsprache (TEAM) ist, sind jetzt
+  `annahme` statt `vorgabe` (28 Parameter); `vorgabe` bleibt für Modellschalter (Tarif, Solver, Raster, Listen).
+- *Tornado gekürzt:* `ptes.austauschrate`, `waermepumpe.jensen_isentrop`, `netz.T_RL`,
+  `waermepumpe.kosten_spez_speicher`, `kollektor.iam_b0` (Tornado 22.11.: höchstens 0,3 / 0,3 / 1,1 / 1,1 / 1,5 €/MWh,
+  Größen ±10 %) und `gas_referenz.co2_preis`.
+
+## E44 Abgaben nach Monitoringbericht, realer Zins 4 %, WP und PtH je Netz nach KWW (23.11.2026)
+
+- *Abgaben* 48 statt 57 €/MWh: BNetzA/BKartA Monitoringbericht Energie 2025 (Tab. 35/37, Stand 01.04.2025):
+  Stromsteuer 2,05 + Konzessionsabgabe für Sondervertragskunden 0,10 + KWKG 0,277 + Offshore 0,816 + §19 StromNEV
+  1,558 ct/kWh (voller Satz, Bezug nur wenige GWh/a). Die alte Summe hatte die Konzessionsabgabe für Tarifkunden
+  (1,67 ct) und keine Offshore-Umlage. Tornado 34 (Abnahmefall Industrie 24 GWh/a) / 56 (Gewerbe 50 MWh/a).
+  Mögliche Entlastungen (Tab. 36, z. B. Stromsteuer) nicht angesetzt.
+- *Zins* real 4 % statt 5 % (TEAM), Tornado 2 / 6 %. Der Baukostenzuschuss im Leistungspreis wird damit mit
+  12,1 statt 13,2 €/(kW·a) umgelegt: Leistungspreis 44 statt 45 €/(kW·a).
+- *Luft-WP* nach KWW-Größenklasse je Netz: klein 1.730 €/kW (1 MW), groß 1.340 €/kW (10 MW, wie bisher).
+  Tornado klein 1.340 / 1.970, groß 1.000 / 1.730.
+- *PtH* nach KWW Tab. 31/32 statt 100 €/kW (Frederikssund): klein 340 €/kW (Widerstandserhitzer 2 MW,
+  PtH ≥ P_max ≈ 1,6 MW), groß 180 €/kW (Elektrodenkessel 10 MW, P_max ≈ 15,5 MW). Die Szenarien
+  `kww_komplett(_gross)` weichen damit bei WP/PtH kaum noch von der Basis ab.

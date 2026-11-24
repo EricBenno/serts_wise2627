@@ -62,7 +62,7 @@ standort:
   flaeche_verfuegbar:
     wert: 13000
     einheit: "m2"
-    status: vorgabe
+    status: annahme
     quelle: "TEAM: ca. 13.000 m2 Grundstück am Erzeugerstandort, annähernd quadratisch"
     sens: [.inf]
     hinweis: "Muss Kollektorfeld (inkl. Reihenabstand, Technik) UND PTES aufnehmen -> Flächencheck je Rasterpunkt. Sensitivität .inf = keine Flächenbegrenzung (Speicher dann nur durch ptes.segmente_m3 bis 35.000 m3 begrenzt)."
@@ -127,14 +127,14 @@ last:
   ankerkunde_anteil:
     wert: 0.0
     einheit: "-"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §3.5: Anteil 0/20/40 % von Q_a. Basis 0, da Gewerbe (GMK, GKO = 29 % von Q_gebaeude) im NB-Lastgang bereits enthalten"
     sens: [0.2, 0.4]
     hinweis: "Anteil bezogen auf Q_gebaeude, wird ZUSÄTZLICH zum NB-Lastgang addiert."
   ankerkunde_profil:
     wert: band
     einheit: "-"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §3.5"
     sens: [werktag, saisonal]
 
@@ -143,14 +143,14 @@ netz:
   T_VL:
     wert: 80
     einheit: "degC"
-    status: vorgabe
+    status: annahme
     quelle: "TEAM: Netz bleibt bei 80 degC Vorlauf wie in der NB (ersetzt BRF-Wert 75 degC)"
     sens: [70, 90]
     hinweis: "Wirkt auf COP Luft- und Speicher-WP, Direktentladung (über 80 °C Boosting, da T_oben 85), Übergangszone und Vorwärmen. Netzverluste bleiben die der Netzberechnung (80/50 °C) -> Vorteil niedriger Vorläufe eher unterschätzt. Im Tornado 70/90 °C fest; 75/85 °C einzeln (Stand 21.11. in docs/ergebnisse*.md)."
   T_VL_min:
     wert: 80
     einheit: "degC"
-    status: vorgabe
+    status: annahme
     quelle: "Basis = konstanter Vorlauf (TEAM). Kleiner als T_VL -> gleitender Vorlauf: T_VL bei Tagesmittel <= gleit_T_kalt, linear fallend auf T_VL_min bei >= gleit_T_warm (Szenario vl_gleitend)"
     sens: [60, 70]
     hinweis: "Wirkt stündlich auf den COP von Luft- und Speicher-WP und das Boosting (heatpump.vorlauf). Übergangszone, Vorwärmen und Netzverluste rechnen weiter mit T_VL -> eher vorsichtig. Im Tornado: gleitend 80 -> 60 / 80 -> 70 °C."
@@ -167,7 +167,7 @@ netz:
   T_RL:
     wert: 45
     einheit: "degC"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §2 (TEAM: Rücklauf frei '80/x'); NB rechnet 50 degC"
     sens: [40, 50]
   T_VL_netzberechnung:
@@ -198,7 +198,7 @@ netz:
   anteil_strasse:
     wert: 0.8
     einheit: "-"
-    status: vorgabe
+    status: annahme
     quelle: "TEAM: Großteil der Trasse unter Straßen, Rest 'grüne Wiese' – Verhältnis nachsteuerbar"
     sens: [0.5, 1.0]
   kosten_trasse_strasse:
@@ -233,7 +233,7 @@ ptes:
   T_oben:
     wert: 85
     einheit: "degC"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §3.1; Liner-Grenze (Xiang et al. 2022)"
     sens: [80, 90]
     hinweis: "Direktentladung braucht T_oben >= T_VL + direkt_dT = 85 degC. Darunter muss WP/PtH nachheizen (Boosting, docs E41): je MWh Entladung (T_VL + dT - T_oben)/(T_oben - T_RL) MWh, z. B. 80 degC -> 0,14. Schauß et al. 2026: Top-Temperatur ist ein Haupttreiber des PTES-Werts."
@@ -247,7 +247,7 @@ ptes:
   T_unten:
     wert: 10
     einheit: "degC"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §3.1; DRL Tmin 9-12 degC"
   verlustrate:
     wert: 4.0e-5
@@ -288,15 +288,14 @@ ptes:
     quelle: "Wasser der Übergangszone (≈ 65 °C) wärmt den Rücklauf auf ≈ 60 °C vor, WP/PtH heizen in derselben Stunde auf Vorlauf nach (übliche Betriebsweise). false = Übergangszone nur über die Speicher-WP nutzbar (docs E39)"
     sens: [false]
   laden_aus_netz:
-    wert: false
+    wert: true
     einheit: "-"
     status: vorgabe
-    quelle: "false = der Speicher nimmt nur Solarwärme auf (docs E29). true = WP und PtH dürfen den heißen Teil laden; sinnvoll nur bei zeitvariablem Strompreis (Szenarien strom_day_ahead_*)"
-    sens: [true]
+    quelle: "true = WP und PtH dürfen den heißen Teil laden (sinnvoll bei zeitvariablem Strompreis, Basis Day-Ahead seit E43); false = der Speicher nimmt nur Solarwärme auf (docs E29)"
   direkt_dT:
     wert: 5
     einheit: "K"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §3.1: Direktentladung braucht T_oben >= T_VL + 5 K (Wärmeübertrager/Übergabe)"
   kosten_ref:
     wert: 67.77
@@ -375,7 +374,7 @@ kollektor:
   T_m:
     wert: 67.5
     einheit: "degC"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §3.3: mittlere Kollektortemperatur 50 -> 85 degC; ein Niveau für Direktnutzung und Speicherladen (docs E20)"
   iam_b0:
     wert: 0.1
@@ -434,7 +433,7 @@ waermepumpe:
   approach:
     wert: 3
     einheit: "K"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §3.4 (je Seite 3 K)"
   cop_ansatz_luft:
     wert: kww
@@ -458,7 +457,7 @@ waermepumpe:
   luft_spreizung:
     wert: 5
     einheit: "K"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §3.4: Quelle T_a -> T_a - 5 K"
   abtau_abschlag:
     wert: 0.05
@@ -520,12 +519,12 @@ waermepumpe:
     quelle: "BRF §3.4: Schrittmittel 45->10 degC ≈ 4,9, konservativ 4,5; Marstal NH3 Jahresmittel 5-5,5"
     hinweis: "Nur bei cop_ansatz_speicher = fest (seit E41 nicht mehr Basis)."
   kosten_spez:
-    wert: 1340000
+    wert: 1730000
     einheit: "EUR/MW_th"
-    status: vorgabe
-    quelle: "TEAM 10.11.2026: unteres Ende des KWW Technikkatalogs (Tab. 24, Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto): 1.340 EUR/kW_th (10 MW); Spanne 1.970 (0,3 MW) / 1.730 (1 MW) / 1.600 (2 MW) / 1.440 (5 MW), Unsicherheit ±30 %"
-    sens: [1000000, 1730000]
-    hinweis: "Nur Luft-WP (seit E41 eigene Leistung wp_luft_out). Für das kleine Netz (≈ 1 MW) optimistisch (KWW-Größenklasse 1.730 EUR/kW, Szenario kww_komplett). Lebensdauer/O&M weiter 20 a / 2,5 % (KWW: 28 a / 3 %)."
+    status: belegt
+    quelle: "KWW Technikkatalog Tab. 24 (Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto), Größenklasse 1 MW wie das kleine Netz: 1.730 EUR/kW_th; Spanne 1.970 (0,3 MW) / 1.600 (2 MW) / 1.440 (5 MW) / 1.340 (10 MW), Unsicherheit ±30 % (docs E44)"
+    sens: [1340000, 1970000]
+    hinweis: "Nur Luft-WP (seit E41 eigene Leistung wp_luft_out). Netz groß: 1.340 EUR/kW (10-MW-Klasse, config/netze/gross.yaml). Lebensdauer/O&M weiter 20 a / 2,5 % (KWW: 28 a / 3 %)."
   kosten_spez_speicher:
     wert: 1100000
     einheit: "EUR/MW_th"
@@ -539,7 +538,7 @@ pth:
   eta:
     wert: 0.99
     einheit: "-"
-    status: vorgabe
+    status: annahme
     quelle: "BRF §2"
   redundanz:
     wert: 1.0
@@ -549,11 +548,12 @@ pth:
     sens: [0.0]
     hinweis: "0 = PtH nur so groß, wie das LP sie braucht (Variante SCH A6: x_PtH = P_max - x_WP)."
   kosten_spez:
-    wert: 100000
+    wert: 340000
     einheit: "EUR/MW_th"
-    status: annahme
-    quelle: "Frederikssund 2022: ≈ 0,5 Mio. DKK/MW ≈ 0,07 Mio. EUR/MW (SCH); kleine Leistung -> 0,1 Mio. EUR/MW"
-    sens: [70000, 150000]
+    status: belegt
+    quelle: "KWW Technikkatalog Tab. 31 (Widerstandserhitzer, 2026, netto, ohne Kesselhaus): 550 (1 MW) / 340 (2 MW) / 180 (5 MW) / 110 EUR/kW_th (10 MW), Unsicherheit ±50 %; PtH hier ≥ P_max ≈ 1,6 MW -> 2-MW-Klasse 340 EUR/kW (docs E44)"
+    sens: [180000, 550000]
+    hinweis: "Vorher 100 EUR/kW (Frederikssund, SCH). Netz groß: 180 EUR/kW (config/netze/gross.yaml)."
 
 biomasse:
   eta:
@@ -565,7 +565,7 @@ biomasse:
   brennstoffkosten:
     wert: 100
     einheit: "EUR/MWh"
-    status: vorgabe
+    status: annahme
     quelle: "TEAM: 10 ct/kWh, real konstant"
 
 gas_referenz:
@@ -577,7 +577,7 @@ gas_referenz:
   emissionsfaktor:
     wert: 0.201
     einheit: "t/MWh_Hi"
-    status: vorgabe
+    status: belegt
     quelle: "UBA: Erdgas ≈ 55,8 t/TJ (Hi) = 0,201 t/MWh; TEAM bestätigt"
   hs_hi:
     wert: 1.11
@@ -587,15 +587,9 @@ gas_referenz:
   gaspreis:
     wert: 120
     einheit: "EUR/MWh_Hs"
-    status: vorgabe
-    quelle: "TEAM: ca. 12 ct/kWh; interpretiert als Bezugspreis netto OHNE CO2-Bepreisung (CO2 separat über co2_preis)"
-    sens: [80, 160]
-  co2_preis:
-    wert: 100
-    einheit: "EUR/t"
-    status: vorgabe
-    quelle: "TEAM: ETS ca. 100 EUR/t"
-    sens: [55, 200]
+    status: annahme
+    quelle: "TEAM: ca. 12 ct/kWh, Gesamtpreis netto inkl. CO2-Bepreisung (kein separater CO2-Preis, docs E43)"
+    sens: [60, 80, 100, 140]
   kosten_spez:
     wert: 100000
     einheit: "EUR/MW_th"
@@ -610,17 +604,16 @@ gas_referenz:
 # -------------------------------------------------------------------------------------
 strom:
   tarif:
-    wert: fest
+    wert: day_ahead
     einheit: "-"
     status: vorgabe
-    quelle: "BRF §3.5 / TEAM: Basis fester Tarif; Option day_ahead (Zeitreihe) über Szenarien strom_day_ahead_*.yaml"
-    sens: [day_ahead]
+    quelle: "TEAM 23.11.2026: Basis Day-Ahead-Zeitreihe (+ Marge, Netzentgelt, Abgaben); fester Tarif 20/30/40 ct/kWh als Szenario strom_fest bzw. im Tornado über strom.preis_fest (docs E43)"
   preis_fest:
     wert: 300
     einheit: "EUR/MWh"
-    status: vorgabe
-    quelle: "TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto)"
-    sens: [200, 400]
+    status: annahme
+    quelle: "TEAM: 30 ct/kWh (inkl. Netzentgelte/Abgaben, netto); wirkt nur bei tarif fest"
+    sens: [200, 300, 400]
     hinweis: "Gesamtpreis beim festen Tarif; Beschaffung+Vertrieb = Gesamt - Netzentgelt - Abgaben. Bandbreite ±1/3 als Annahme. BDEW-Strompreisanalyse nennt für Industrie 2025 ≈ 16-18 ct/kWh (ohne Gewerbeaufschläge) -> 30 ct ist eher hoch, 20 ct plausibel (docs/ausblick.md)."
   netzentgelt:
     wert: 79.9
@@ -630,18 +623,19 @@ strom:
     sens: [60, 110]
     hinweis: "Arbeitspreis. Vorher 93 EUR/MWh (BDEW-Durchschnitt). Benutzungsdauer hier ≈ 1.000-1.500 h/a (Strombezug / höchste Leistung). Ab 2.500 h/a gälte 163,73 EUR/kW und 2,06 ct/kWh. Preisblatt 2026 war am 14.11.2026 nur vorläufig veröffentlicht."
   leistungspreis:
-    wert: 15.5
+    wert: 44
     einheit: "EUR/(kW a)"
-    status: belegt
-    quelle: "Westfalen Weser Netz, Preisblatt Netznutzung Strom ab 01.01.2025, Mittelspannung, < 2.500 h/a: Leistungspreis 15,50 EUR/kWa (auf die höchste Bezugsleistung des Jahres)"
-    sens: [0.0, 163.73]
-    hinweis: "Im Modell: Kosten der Anschlussleistung (Link netzanschluss) = höchster Strombezug einer Stunde. Zusätzlich zu strom.preis_fest. 163,73 EUR/kWa gehört zur Preisregelung ab 2.500 h/a (dann Arbeitspreis 2,06 ct/kWh) und ist als alleinige Variante nur ein Grenzfall."
-  abgaben:
-    wert: 57
-    einheit: "EUR/MWh"
     status: annahme
-    quelle: "Stromsteuer 2,05 + Konzessionsabgabe 1,67 + KWKG-Umlage 0,45 + §19-Aufschlag 1,56 ct/kWh (BDEW/Versorger-Preisblätter 2026, uneinheitlich); Offshore-Umlage 0,94 ct nicht enthalten; evtl. Entlastungen für WP (§22 EnFG) ungeprüft"
-    sens: [40, 70]
+    quelle: "Obere Bandbreite, da neuer Anschluss: Leistungspreis Mittelspannung < 2.500 h/a bis 31,53 EUR/kWa (Industriepark Neckarsulm 2025; Baden-Baden 25,31, Flughafen München 25,49, WWN 15,50) + Baukostenzuschuss WWN 2025 164 EUR/kW (2026: 125; Spanne MS 2026 ≈ 108-154, dvlp.energy 06.02.2026) annuitätisch über 20 a, 4 % (realer Zins seit E44) = 12,1 EUR/kWa -> ≈ 44 EUR/kWa (docs E43/E44)"
+    sens: [15.5, 80]
+    hinweis: "Im Modell: Kosten der Anschlussleistung (Link netzanschluss) = höchster Strombezug einer Stunde, zusätzlich zum Arbeitspreis. 15,5 = WWN-Preisblatt ohne BKZ (alter Basiswert). Ab 2.500 h/a gälte 163,73 EUR/kWa mit 2,06 ct/kWh (Benutzungsdauer hier ≈ 1.000-1.500 h/a)."
+  abgaben:
+    wert: 48
+    einheit: "EUR/MWh"
+    status: belegt
+    quelle: "BNetzA/BKartA Monitoringbericht Energie 2025, Tab. 35/37 (Stand 01.04.2025, netto): Stromsteuer 2,05 + Konzessionsabgabe Sondervertrag 0,10 + KWKG-Umlage 0,277 + Offshore-Netzumlage 0,816 + §19-StromNEV-Aufschlag 1,558 ct/kWh (voller Satz, da Bezug hier nur wenige GWh/a) = 4,80 ct/kWh (docs E44)"
+    sens: [34, 56]
+    hinweis: "34 = Abnahmefall Industrie 24 GWh/a (Tab. 35: KA 0,10 + Umlagen 1,21 + Stromsteuer 2,05, §19 ermäßigt); 56 = Abnahmefall Gewerbe 50 MWh/a (Tab. 37: KA 0,87 + Umlagen 2,65 + Stromsteuer 2,05). Mögliche Entlastungen (Stromsteuer §9b, Tab. 36) nicht angesetzt."
   vertriebsmarge:
     wert: 25
     einheit: "EUR/MWh"
@@ -676,25 +670,25 @@ strom:
 # -------------------------------------------------------------------------------------
 oekonomie:
   zins:
-    wert: 0.05
+    wert: 0.04
     einheit: "-"
-    status: vorgabe
-    quelle: "TEAM 09.11.2026: Zins bleibt REAL (5 %), damit alle Preise real konstant (Preisänderung 0 %/a); Preisänderungsfaktoren nur für Varianten"
-    sens: [0.03, 0.07]
+    status: annahme
+    quelle: "TEAM 23.11.2026: realer Zins 4 % (vorher 5 %), damit alle Preise real konstant (Preisänderung 0 %/a); Preisänderungsfaktoren nur für Varianten (docs E44)"
+    sens: [0.02, 0.06]
   betrachtungszeitraum:
     wert: 20
     einheit: "a"
-    status: vorgabe
+    status: annahme
     quelle: "TEAM"
   preisbasisjahr:
     wert: 2025
     einheit: "a"
-    status: vorgabe
+    status: annahme
     quelle: "TEAM: 2025/26"
   nebenkosten:
     wert: 0.10
     einheit: "-"
-    status: vorgabe
+    status: annahme
     quelle: "TEAM 09.11.2026: ca. 10 % Planungs-/Nebenkosten auf alle Investitionen (Kollektor, PTES, WP, PtH, Netz, Hausanschluss, Gaskessel)"
     sens: [0.0, 0.2]
     hinweis: "Wirkt auf Annuität und O&M. Planung (HOAI LPh 5-8) ist teilweise BEW-förderfähig; Modell wendet die Förderquote auf Invest inkl. Nebenkosten an."
@@ -737,7 +731,7 @@ oekonomie:
   foerderquote:
     wert: 0.0
     einheit: "-"
-    status: vorgabe
+    status: annahme
     quelle: "AP 10 Einfach: Basis ohne Förderung; Variante pauschaler Investitionszuschuss"
     sens: [0.4]
     hinweis: "Variante 0,4 = BEW Modul 2 (BAFA, bis zu 40 % der förderfähigen Ausgaben). Gilt nur für Komponenten mit oekonomie.foerderfaehig = true (Kollektor, PTES, WP, Trasse); nicht für PtH, Hausanschluss (ungeklärt) und die Gas-Referenz. Wirkt auf die Optimierung (Szenario bew_modul2)."
@@ -751,35 +745,29 @@ oekonomie:
     invest:
       wert: 0.0
       einheit: "1/a"
-      status: vorgabe
+      status: annahme
       quelle: "TEAM: reale Rechnung, Ersatzinvestitionen ohne reale Preisänderung (VDI 2067: r_K)"
     betrieb:
       wert: 0.0
       einheit: "1/a"
-      status: vorgabe
+      status: annahme
       quelle: "TEAM: reale Rechnung (VDI 2067: r_IN für Instandhaltung)"
     strom:
       wert: 0.0
       einheit: "1/a"
-      status: vorgabe
+      status: annahme
       quelle: "TEAM: real gleichbleibende Preise (reale Rechnung); Variante +2 %/a"
       sens: [0.02]
     gas:
       wert: 0.0
       einheit: "1/a"
-      status: vorgabe
+      status: annahme
       quelle: "TEAM: real gleichbleibend; Variante +2 %/a"
       sens: [0.02]
-    co2:
-      wert: 0.0
-      einheit: "1/a"
-      status: vorgabe
-      quelle: "TEAM: real gleichbleibend"
-      sens: [0.05]
     biomasse:
       wert: 0.0
       einheit: "1/a"
-      status: vorgabe
+      status: annahme
       quelle: "TEAM: real gleichbleibend"
   lebensdauer:
     ptes:
@@ -895,19 +883,15 @@ tornado:
       - standort.flaeche_verfuegbar
       - kollektor.strahlung_skalierung
       - strom.preis_fest
+      - strom.preisjahr
       - last.skalierung
       - last.ankerkunde_anteil
       - ptes.verlustrate
       - ptes.groessen_exponent
       - ptes.vorwaermen
       - ptes.T_oben
-      - ptes.austauschrate
       - strom.leistungspreis
-      - kollektor.iam_b0
-      - waermepumpe.jensen_isentrop
-      - waermepumpe.kosten_spez_speicher
       - waermepumpe.guetegrad_faktor
-      - netz.T_RL
       - netz.T_VL
       - netz.T_VL_min
       - kollektor.kosten_spez
@@ -923,7 +907,6 @@ tornado:
       - netz.kosten_trasse_strasse
       - netz.kosten_hausanschluss
       - gas_referenz.gaspreis
-      - gas_referenz.co2_preis
     einheit: "-"
     status: vorgabe
     quelle: "BRF §1 Pflicht 6 (Speicherkosten, Solarressource, Strompreis, Lastprofil) + ergebnisrelevante Annahmen; Werte je Parameter aus 'sens'"

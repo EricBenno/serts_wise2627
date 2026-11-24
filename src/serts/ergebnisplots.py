@@ -213,7 +213,6 @@ def jahresbilanz(r: pd.DataFrame, k: dict, out: Path) -> Path:
     gas_teile = {
         "Kessel": k["gas_capex_a"],
         "Gas": k["gas_brennstoffkosten_a"],
-        "CO₂": k["gas_co2_kosten_a"],
         "Wärmenetz Trasse": k.get("kosten_a_netz_trasse", 0.0),
         "Hausanschl. + Übergabest.": k.get("kosten_a_netz_hausanschluss", 0.0),
     }

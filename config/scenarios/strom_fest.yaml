@@ -1,0 +1,10 @@
+# Fester Strompreis statt Day-Ahead (Basis bis 22.11.2026, docs E43): 30 ct/kWh inkl. Netzentgelt/Abgaben.
+# Varianten 20/40 ct/kWh im Tornado (strom.preis_fest) oder hier wert ändern.
+meta:
+  beschreibung: "Strompreis fest 30 ct/kWh (statt Day-Ahead)"
+strom:
+  tarif: fest
+  preis_fest: 300
+# Bei konstantem Preis bringt Laden aus dem Netz nichts (docs E29)
+ptes:
+  laden_aus_netz: false

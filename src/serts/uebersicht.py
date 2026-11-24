@@ -39,8 +39,7 @@ GRUPPEN: list[tuple[str, list[Zeile]]] = [
             ("strom.vertriebsmarge", "Day-Ahead-Tarif: Vertriebsmarge", 0.1, "ct/kWh"),
             ("strom.preisjahr", "Day-Ahead-Tarif: Preisjahr", 1, None),
             ("strom.emissionsfaktor", "Strom: CO2-Faktor", 1000, "g/kWh"),
-            ("gas_referenz.gaspreis", "Erdgas (Brennwert Hs, ohne CO2-Preis)", 0.1, "ct/kWh"),
-            ("gas_referenz.co2_preis", "CO2-Preis (ETS)", 1, None),
+            ("gas_referenz.gaspreis", "Erdgas (Brennwert Hs, inkl. CO2-Preis)", 0.1, "ct/kWh"),
             ("gas_referenz.emissionsfaktor", "Erdgas: CO2-Faktor (Hi)", 1000, "g/kWh"),
             ("biomasse.brennstoffkosten", "Biomasse (Option, nicht im Basisfall)", 0.1, "ct/kWh"),
         ],
@@ -56,7 +55,6 @@ GRUPPEN: list[tuple[str, list[Zeile]]] = [
             ("oekonomie.bew_ausweis_quote", "BEW Modul 2: Ausweis je Lauf (Obergrenze)", 100, "%"),
             ("oekonomie.preisaenderung.strom", "Preisänderung Strom (real)", 100, "%/a"),
             ("oekonomie.preisaenderung.gas", "Preisänderung Gas (real)", 100, "%/a"),
-            ("oekonomie.preisaenderung.co2", "Preisänderung CO2 (real)", 100, "%/a"),
         ],
     ),
     (

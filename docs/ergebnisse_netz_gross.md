@@ -1,10 +1,48 @@
-# Ergebnisse Netz groß (oben Stand 21.11.2026 nach E41, darunter 14.11. und 10.11.2026)
+# Ergebnisse Netz groß (oben Stand 24.11.2026 nach E43/E44, darunter 21.11. nach E41, darunter 14.11. und 10.11.2026)
 
 Netzfall `gross` (`config/netze/gross.yaml`, Aufruf `uv run serts run --netz gross`, Ergebnisse in `results/gross/`):
 877 Gebäude, davon 54 % der Wärme in Nichtwohngebäuden (GMK/GKO), 42.782 MWh/a Gebäude + 5.440 MWh/a Netzverluste,
 Spitze 15,5 MW (Stundensumme), Trasse 14.291 m, Freifläche 80.000 m². Alle anderen Annahmen wie Netz klein
 (`docs/eingangsparameter.md` zeigt beide nebeneinander). Kollektor 276 €/m² Brutto (KWW, Klasse ≥ 15.000 m²
 Apertur), Trasse 1.140/640 €/m (KWW, größere Rohre), Luft-WP nach KWW-Gütegrad, Speicher mit Kennlinie (E34–E36).
+
+## Stand 24.11.2026 nach E43/E44 (Day-Ahead-Basis, Gas 12 ct, Zins 4 %, Kosten je Netz)
+
+Annahmen wie Netz klein (`docs/ergebnisse.md`, Abschnitt 24.11.), aber Luft-WP 1.340 €/kW und PtH 180 €/kW (KWW,
+größere Klassen). Ergebnisse: `results/gross/20261123-212251_base_opt`, `..._varianten` (20261123-212255),
+`..._heatmap` (20261123-214212), `..._tornado` (20261124-010559).
+
+**Basis:** 28.351 m² / 39.200 m³, WP 9,11 MW, PtH 15,5 MW, Solar 29 %, 4,8 Zyklen, LCOH 127,8 €/MWh,
+**Wärmepreis inkl. Netz 189,2 €/MWh (Gas 207,3)**, mit BEW 164,1. Strom gewichtet 221 €/MWh, höchster Bezug 4,3 MW.
+Varianten: ohne Speicher 222,0, nur WP + PtH 224,3, BEW-optimiert 164,0 €/MWh.
+
+**Tornado** (Δ zum Wärmepreis inkl. Netz 189,2 €/MWh):
+
+| Parameter | niedrig | hoch |
+|---|---|---|
+| fester Tarif 20 / 30 / 40 ct statt Day-Ahead | −9,4 | +27,0 / +63,2 |
+| Preisjahr 2023 / 2022 | | +7,6 / +33,7 |
+| Förderquote 40 % | −25,2 | |
+| Ankerkunde 20 / 40 % | −13,7 / −22,9 | |
+| Zins 2 / 6 % | −18,0 | +19,1 |
+| Strompreis +2 %/a real | | +15,8 |
+| WP-Gütegrad ×0,85 / ×1,15 | +14,6 | −10,9 |
+| Vorlauf gleitend 60 / 70 °C | −14,1 / −7,0 | |
+| Last ×0,8 / ×1,2 | +12,6 | −8,3 |
+| Fläche unbegrenzt (130.000 m³ = Rasterende, Solar 58 %) | −12,1 | |
+| Vorlauf fest 70 / 90 °C | −10,8 | +4,1 |
+| Hausanschluss 5.000 / 15.000 € | −9,8 | +9,8 |
+| Nebenkosten 0 / 20 % | −9,4 | +9,3 |
+| Luft-WP 1.000 / 1.730 €/kW | −7,5 | +8,0 |
+| Trasse Straße 730 / 1.560 €/m | −8,1 | +8,2 |
+| PtH ohne Redundanz | −6,7 | |
+| Leistungspreis 15,5 / 80 €/(kW·a) | −2,9 | +3,6 |
+
+Übrige ≤ ±4 €/MWh. Gas-Referenz 6 / 8 / 10 / 14 ct/kWh: Abstand −54,1 / −30,7 / −7,3 / +39,4 €/MWh (Basis +16,0),
+Gleichstand bei ≈ 11 ct/kWh. Lesart: Das große Netz bleibt unter Gas außer bei Gas ≤ 11 ct, Preisjahr 2022 oder
+festem Tarif ≥ 30 ct.
+
+**Heatmap:** ab ≈ 20.000 m³ Speicher flach (190–199 €/MWh); ohne Speicher 222–228.
 
 ## Stand 21.11.2026 nach E41 (Boosting, zwei WP, COP Jensen, Durchflussgrenze)
 

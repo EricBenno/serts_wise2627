@@ -95,3 +95,19 @@ heatmap:
     einheit: "m3"
     status: vorgabe
     quelle: "Raster Speichervolumen Netz groß, um das Optimum ≈ 36.700 m3; Punkte über 80.000 m2 Fläche entfallen"
+
+waermepumpe:
+  kosten_spez:
+    wert: 1340000
+    einheit: "EUR/MW_th"
+    status: belegt
+    quelle: "KWW Technikkatalog Tab. 24 (Kompressions-WP Luft, zweistufig, 70 °C, 2026, netto), 10-MW-Klasse (Netz groß, Spitzenlast ≈ 15,5 MW): 1.340 EUR/kW_th; 5 MW: 1.440, Unsicherheit ±30 % (docs E44)"
+    sens: [1000000, 1730000]
+
+pth:
+  kosten_spez:
+    wert: 180000
+    einheit: "EUR/MW_th"
+    status: belegt
+    quelle: "KWW Technikkatalog Tab. 31/32 (2026, netto): Widerstandserhitzer 180 EUR/kW (5 MW), Elektrodenkessel 180 (10 MW) / 140 EUR/kW (20 MW); PtH hier ≥ P_max ≈ 15,5 MW -> oberer Wert 180 EUR/kW (docs E44)"
+    sens: [110000, 340000]

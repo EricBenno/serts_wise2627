@@ -90,6 +90,8 @@ def tornado(
         label = f"{p}\n(Basis {bw:g}; Variante {werte})"
         if p == "netz.T_VL_min":  # sonst als fester Vorlauf missverständlich
             label = f"{p} (gleitender Vorlauf)\n(Basis {bw:g} fest; Sommer {werte} °C)"
+        if p == "strom.preis_fest":  # Basis ist Day-Ahead, Varianten fester Tarif (E43)
+            label = f"{p} (fester Tarif statt Day-Ahead)\n({werte} EUR/MWh)"
         # größter Ausschlag zuerst zeichnen, damit kleinere Balken sichtbar bleiben
         g = g.reindex(g["delta"].abs().sort_values(ascending=False).index)
         gruppen.append((label, bw, g))
@@ -99,7 +101,8 @@ def tornado(
     for i, (_label, bw, g) in enumerate(gruppen):
         for _, row in g.iterrows():
             # Farbe = Richtung der Parameteränderung (nicht der Kennzahl)
-            farbe = "tab:blue" if float(row["wert"]) < bw else "tab:orange"
+            w = float(row["wert"])
+            farbe = "tab:blue" if w < bw else "tab:orange" if w > bw else "tab:gray"
             ax.barh(i, row["delta"], left=basis, color=farbe, alpha=0.8, height=0.6)
             ax.text(
                 basis + row["delta"],

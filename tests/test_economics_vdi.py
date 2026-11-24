@@ -73,6 +73,6 @@ def test_strompreis_komponenten(cfg):
     import pandas as pd
 
     idx = pd.date_range("2022-01-01", periods=3, freq="h")
-    p = strompreis(cfg, idx)
+    p = strompreis(cfg.variante("strom.tarif", "fest"), idx)
     assert (p == cfg.get("strom.preis_fest")).all()
     assert cfg.get("strom.netzentgelt") + cfg.get("strom.abgaben") < cfg.get("strom.preis_fest")

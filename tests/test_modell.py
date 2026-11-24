@@ -146,6 +146,7 @@ def test_schichtung_kern_uebergang_kalt(cfg, ts, netz_fest):
 
 def test_ohne_kern_keine_direktentladung(cfg, ts):
     """Kalter Teil voll, Übergangszone halb voll, kein Kern: nichts geht direkt ins Netz (kein Ballast)."""
+    cfg = cfg.variante("ptes.laden_aus_netz", False)  # sonst darf die WP den Kern laden (E43)
     n = network.build_network(cfg, ts, A_m2=0.0, V_m3=3000.0)
     _mit_startinhalt(n, kern=0.0, ueb=0.5, kalt=1.0)
     network.optimize(n, cfg, ts)
@@ -239,8 +240,9 @@ def test_einschichtanteil_geht_in_die_uebergangszone(cfg, ts):
     assert n.links.at["laden_heiss", "efficiency2"] == pytest.approx(0.2)
 
 
-def test_laden_aus_netz_nur_auf_wunsch(cfg, ts):
-    assert "laden_netz" not in network.build_network(cfg, ts, 1000.0, 3000.0).links.index
+def test_laden_aus_netz_schaltbar(cfg, ts):
+    aus = cfg.variante("ptes.laden_aus_netz", False)
+    assert "laden_netz" not in network.build_network(aus, ts, 1000.0, 3000.0).links.index
     n = network.build_network(cfg.variante("ptes.laden_aus_netz", True), ts, 1000.0, 3000.0)
     assert n.links.at["laden_netz", "bus0"] == "waerme"  # WP und PtH speisen in den Wärmeknoten
     assert n.links.at["laden_netz", "bus1"] == "heiss"
@@ -307,6 +309,7 @@ def test_pth_redundanz(cfg, ts, netz_fest):
 
 
 def test_flaeche_begrenzt_optimierte_groessen(cfg, ts):
+    cfg = cfg.variante("ptes.laden_aus_netz", False)  # nur Solar lädt: Speichergröße wie bis E42
     _, k, _ = loese(cfg, ts)  # A und V optimiert, je Kostensegment ein Lauf
     assert k["flaeche_m2"] <= cfg.get("standort.flaeche_verfuegbar") * (1 + 1e-6)
     assert len(k["segmente_vergleich"]) == len(cfg.get("ptes.segmente_m3")) - 1

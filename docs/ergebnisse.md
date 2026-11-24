@@ -1,4 +1,4 @@
-# Ergebnisse Netz klein (oben Stand 21.11.2026 nach E41, darunter 14.11. und 10.11.2026)
+# Ergebnisse Netz klein (oben Stand 24.11.2026 nach E43/E44, darunter 21.11. nach E41, darunter 14.11. und 10.11.2026)
 
 Vorläufig: Kollektorkennwerte und mehrere Kosten sind Annahmen (`docs/annahmen.md`, Übersicht:
 `docs/eingangsparameter.md`). Basis: Normaljahr (PVGIS-TMY), Lastgang/Temperatur 2022, Vorlauf 80 °C, **Zins real 5 %**,
@@ -8,6 +8,49 @@ Speicher in drei Teilen mit Schichtung, Vorwärmen und größenabhängigen Verlu
 vor dem 14.11.: Temperaturkennlinie E34/E36). Großes Netz:
 **`docs/ergebnisse_netz_gross.md`**. Prüfung gegen die Leitfrage: **`docs/kernfragen.md`**. Speichermodell
 erklärt: `docs/speichermodell.md`.
+
+## Stand 24.11.2026 nach E43/E44 (Day-Ahead-Basis, Gas 12 ct, Zins 4 %, Kosten je Netz)
+
+Geändert gegenüber 21.11.: Strom Day-Ahead 2024 + Marge 2,5 + Netzentgelt 7,99 + Abgaben 4,8 ct/kWh (Mittel
+231 €/MWh) statt fest 30 ct, WP/PtH laden den Speicher, Leistungspreis 44 €/(kW·a) inkl. BKZ, Gas 12 ct/kWh inkl.
+CO2 (kein eigener CO2-Preis), Zins real 4 %, Luft-WP 1.730 €/kW, PtH 340 €/kW (KWW). Ergebnisse:
+`results/klein/20261123-203346_base_opt`, `..._varianten` (20261123-203353), `..._heatmap` (20261123-205117),
+`..._tornado` (20261123-220147).
+
+**Basis:** 4.635 m² / 6.199 m³, WP 0,93 MW, PtH 1,59 MW, Solar 41 %, 3,8 Zyklen, Speicher 41 % Entladung Nov–Mär,
+LCOH 140,0 €/MWh, **Wärmepreis inkl. Netz 225,7 €/MWh (Gas 229,9)**, mit BEW 193,1. Strom gewichtet 225 €/MWh
+(Jahresmittel 231), höchster Bezug 0,43 MW. Varianten: ohne Speicher 257,8, nur WP + PtH 260,0, BEW-optimiert
+193,0 €/MWh.
+
+**Tornado** (Wärmepreis inkl. Netz, Größen je Variante neu optimiert; Δ zur Basis 225,7):
+
+| Parameter | niedrig | hoch |
+|---|---|---|
+| fester Tarif 20 / 30 / 40 ct statt Day-Ahead | −10,0 | +23,9 / +57,6 |
+| Förderquote 40 % | −32,7 | |
+| Ankerkunde 20 / 40 % | −19,1 / −32,0 | |
+| Preisjahr 2023 / 2022 | | +6,6 / +31,0 |
+| Zins 2 / 6 % | −24,8 | +26,4 |
+| Last ×0,8 / ×1,2 | +19,1 | −12,5 |
+| Hausanschluss 5.000 / 15.000 € | −16,8 | +16,8 |
+| Strompreis +2 %/a real | | +14,9 |
+| Fläche unbegrenzt (33.600 m³, Solar 93 %) | −14,4 | |
+| WP-Gütegrad ×0,85 / ×1,15 | +13,4 | −10,0 |
+| Nebenkosten 0 / 20 % | −13,1 | +13,1 |
+| Vorlauf gleitend 60 / 70 °C | −12,5 / −6,3 | |
+| PtH ohne Redundanz | −12,2 | |
+| Vorlauf fest 70 / 90 °C | −10,0 | +3,9 |
+| Trasse Straße 370 / 940 €/m | −8,8 | +9,2 |
+| Luft-WP 1.340 / 1.970 €/kW | −7,7 | +4,6 |
+| Kollektor 240 / 380 €/m² | −5,6 | +6,5 |
+| Leistungspreis 15,5 / 80 €/(kW·a) | −2,8 | +3,4 |
+
+Übrige (Strahlung, Straßenanteil, Speicherkosten/-verluste/-exponent, eta0, T_oben, Vorwärmen, Feldverluste) ≤ ±5,5 €/MWh.
+Gas-Referenz 6 / 8 / 10 / 14 ct/kWh: Abstand zu Gas −66,6 / −43,2 / −19,9 / +26,9 €/MWh (Basis +3,5); bei gleichem
+Wärmepreis des Systems. Lesart: Das kleine Netz liegt jetzt praktisch gleichauf mit Gas (−4 €/MWh); schon Zins 6 %,
+WP-Gütegrad −15 %, Preisjahr 2023, fester Tarif 30 ct oder 20 % Nebenkosten kehren das um.
+
+**Heatmap:** Optimum flach, 4.000 m² mit 4.000–10.000 m³ liegen bei 227–228 €/MWh; ohne Speicher 258–273.
 
 ## Stand 21.11.2026 nach E41 (Boosting, zwei WP, COP Jensen, Durchflussgrenze)
 
