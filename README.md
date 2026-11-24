@@ -79,6 +79,9 @@ source: [docs/eingangsparameter.md](docs/eingangsparameter.md) (overview small/l
 
 As of 24.11.2026 (decisions E43/E44), preliminary.
 
+> **Note:** the land lease (1,000 €/(ha·a), decision E45) and the updated tornado parameters are already in the model
+> but not yet in the results and figures below. Expected effect in the base case ≈ +0.3 €/MWh; an update follows soon.
+
 | | Small network | Large network |
 |---|---|---|
 | Cost optimum collector / storage | 4,635 m² / 6,200 m³ | 28,350 m² / 39,200 m³ |
