@@ -15,6 +15,8 @@ Code, config keys and parts of `docs/` are in German (e.g. `netz` = network, `kl
 ## The two networks
 
 ![Network areas small and large in Bad Lippspringe](docs/img/netze.jpg)
+*Map: own network calculation (F|Heat). Aerial image: Esri, Maxar, Earthstar Geographics, and the GIS User Community.
+Streets: © OpenStreetMap contributors (ODbL). Buildings/land use: Geobasis NRW (ALKIS); heat demand: LANUV NRW.*
 
 > **Example networks, not a real project:** the team designed both networks for this student study on open building
 > and geodata of Bad Lippspringe (NRW, Germany) and calculated them with F|Heat (route, house connections, losses,
@@ -243,7 +245,7 @@ Third-party data shipped with the repo keep their own terms; name the source whe
 | Heat demand per building (space heating + hot water), heat density | Land NRW, LANUV: Planungsgrundlagen Kommunale Wärmeplanung NRW (space heating demand model, municipal package 05774008) |
 | Street network (routing) | © OpenStreetMap contributors, ODbL 1.0 |
 | Network calculation (route, house connections, losses, load) | own calculation of the team with F\|Heat based on the rows above |
-| Aerial image in the network map | Esri World Imagery (Esri, Maxar, Earthstar Geographics) |
+| Aerial image in the network map | Esri World Imagery (Esri, Maxar, Earthstar Geographics, and the GIS User Community) |
 | Reference values Dronninglund | Winterscheid & Schmidt, Solites 2019 (monitoring report); Sifnaios et al. 2023, Solar Energy 251 |
 
 Further values (costs, efficiencies, subsidy) are documented per parameter with source in `config/base.yaml`,
